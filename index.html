@@ -477,6 +477,8 @@ body.libcol #bLibCol:hover{opacity:1}
 <div id="vb" class="hide nx-der">
   <div class="vh">
     <b id="vbT">Vídeo</b>
+    <button class="ib" id="vbMudo" title="Silenciar este PC (el sonido sale de la tele)"
+            style="width:26px;height:26px;font-size:13px">🔊</button>
     <button class="ib" id="vbFull" title="Pantalla completa con el aviso dentro (tecla P)"
             style="width:26px;height:26px;font-size:13px">⛶</button>
     <button class="ib" id="vbX" style="width:26px;height:26px;font-size:13px">✕</button>
@@ -1050,6 +1052,7 @@ function play(id){
     startWatchdog();
   }
   accion({accion:'sonando', id:id});
+  aplicarMudo();          // cada vídeo nuevo nace con volumen: hay que recordárselo
   if(S.openVideo) $('#vb').classList.remove('hide');
   $('#vbT').textContent = t.title;
   draw(); startTimer();
@@ -1263,7 +1266,31 @@ $('#bLibCol').addEventListener('click', ()=> setLibCol(!S.libCol));
 $('#bProy').addEventListener('click',()=>{
   const url = location.pathname.replace(/[^/]*$/,'') + 'proyector.php';
   window.open(url, 'karaoke_proyector', 'width=1280,height=720');
-  toast('📺 Arrástrala a la tele y pulsa «Encender la pantalla»');
+  /* Con dos pantallas el sonido sale de la tele, así que este PC estorba.
+     Se calla solo al abrir el proyector: antes había que acordarse de
+     bajar el volumen de Windows a mano, y se olvidaba. */
+  silenciar(true);
+  toast('📺 Arrástrala a la tele. Este PC queda mudo: el sonido sale de allí');
+});
+
+/* ---- Dos pantallas: el PC manda, la tele suena --------------------------
+   El PC sigue reproduciendo su copia aunque esté mudo, porque es quien
+   sabe cuándo acaba una canción y encadena la siguiente. Callarlo no es
+   pararlo. */
+let mudo = false;
+
+function aplicarMudo(){
+  try{ if(ready && yt) mudo ? yt.mute() : yt.unMute(); }catch(e){}
+  $('#vlocal').muted = mudo;
+  const b = $('#vbMudo');
+  b.textContent = mudo ? '🔇' : '🔊';
+  b.title = mudo ? 'Devolver el sonido a este PC' : 'Silenciar este PC (el sonido sale de la tele)';
+}
+function silenciar(si){ mudo = !!si; aplicarMudo(); }
+
+$('#vbMudo').addEventListener('click',()=>{
+  silenciar(!mudo);
+  toast(mudo ? '🔇 Este PC en silencio' : '🔊 Vuelve el sonido a este PC');
 });
 
 $('#bQR').addEventListener('click',()=>{

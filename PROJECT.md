@@ -197,6 +197,12 @@ que diga `sonando` y no toca la cola. Si mandaran las dos pantallas, se
 pelearían por decidir la siguiente canción. El PC conserva los controles.
 Como no escribe nada, tampoco abre ninguna puerta nueva a los invitados.
 
+**El PC se calla, pero no se para.** Al abrir el proyector, el reproductor
+del PC se silencia solo: con dos pantallas el sonido sale de la tele y si no
+se oiría doble. Sigue reproduciendo en silencio a propósito, porque es quien
+detecta el final de la canción y encadena la siguiente. Silenciarlo no es
+pararlo, y esa diferencia es justo la que hace que funcione.
+
 **Los invitados solo pueden añadir.** `estado.php` comprueba la bandera
 `invitado` y rechaza cualquier acción que no sea `anadir_cola`. Un invitado
 no puede vaciar la cola, ni reordenarla, ni tocar la biblioteca. Con gente
