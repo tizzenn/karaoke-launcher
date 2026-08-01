@@ -563,109 +563,49 @@ body.libcol #bLibCol:hover{opacity:1}
 <input type="file" id="file" accept="application/json,.json" hidden>
 <div id="toast"></div>
 
+<!-- Los módulos van antes que la lógica y en este orden: el núcleo crea
+     KL, y el almacén decide dónde viven los datos. Para la versión Lite
+     se cambia esta línea por js/almacen-local.js y no hay que tocar
+     nada más. -->
+<script src="js/nucleo.js"></script>
+<script src="js/almacen-servidor.js"></script>
+
 <script>
 'use strict';
 /* =====================================================================
    1. ESTADO Y PERSISTENCIA
+
+   El estado en memoria, las utilidades y el guardado están en js/.
+   Aquí solo quedan los enlaces, para que el resto del archivo siga
+   escribiéndose igual que siempre: S, $, esc(), accion()…
    ===================================================================== */
-const KEY = 'karaoke_launcher_v1';
+const S = KL.estado;
+const { $, $$, uid, fmt, iso, esc, unesc } = KL;
 
-const S = {
-  apiKey:'', suffix:'karaoke',   // pon aquí tu clave: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-  openVideo:true, alsoStar:false,
-  quality:'medium', antiCut:true, view:'full', libCol:true,
-  avisoSig:'der',      // esquina del aviso «después canta»: der, izq o no
-  library:[], seeded:false,   // colección fija del usuario
-  queue:[],            // lo que se va a cantar
-  curId:null,          // pista de la cola en reproducción
-  autoNext:true,
-  filterLib:'',
-  results:[], sel:null
-};
+const load         = KL.prefs.cargar;
+const guardarPrefs = KL.prefs.guardar;
+function save(){ /* lo guarda el almacén */ }
 
-
-
-/* ---- Estado en el servidor ------------------------------------------
-   La cola y la biblioteca ya no viven en el navegador: viven en
-   data/estado.json. Así el PC y los móviles ven lo mismo.            */
-
-let VERSION = -1;
-
-/* Si fetch falla del todo —«NetworkError», «Failed to fetch»— es que no hay
-   nadie escuchando: se ha cerrado la ventana negra de Karaoke.bat, o la
-   página se abrió con doble clic. Decirlo así evita mandar a revisar la
-   clave, que es lo último que pasa. */
-async function api(url, cuerpo){
-  const o = cuerpo
-    ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cuerpo)}
-    : {};
-  let r;
-  try{
-    r = await fetch(url, o);
-  }catch(err){
-    throw new Error(location.protocol === 'file:'
-      ? 'Has abierto la aplicación con doble clic. Ciérrala y arranca Karaoke.bat: sin servidor no funciona nada.'
-      : 'El karaoke no está en marcha. Abre Karaoke.bat y NO cierres la ventana negra.');
-  }
-  const j = await r.json().catch(()=>({ok:false,error:'respuesta ilegible del servidor'}));
-  if(!j.ok) throw new Error(j.error || ('error '+r.status));
-  return j;
-}
-
+/* Lo que hay que repintar cuando llegan datos nuevos, venga el cambio
+   de este PC o del móvil de alguien. El almacén no sabe dibujar; esto
+   no sabe guardar. */
 function aplicar(e){
   S.library = e.biblioteca || [];
   S.queue   = e.cola || [];
   if(e.sonando !== undefined && !S.curId) S.curId = e.sonando;
-  VERSION = e.version ?? VERSION;
   if(e.peticiones !== undefined) S.peticiones = e.peticiones;
   if(e.con_clave  !== undefined){ S.conClave = e.con_clave; mode(); }
   draw();
 }
 
-async function cargar(){
-  try{ aplicar(await api('api/estado.php')); mode(); }
-  catch(err){ toast('⚠ No hay servidor: '+err.message); }
-}
+KL.almacen.iniciar({ aplicar, aviso: m => toast(m) });
 
-async function accion(datos){
-  try{ aplicar(await api('api/estado.php', datos)); }
-  catch(err){ toast('⚠ '+err.message); }
-}
+const cargar   = () => KL.almacen.cargar();
+const accion   = datos => KL.almacen.accion(datos);
+const escuchar = () => KL.almacen.escuchar();
 
-/* Sondeo: si alguien pide desde el móvil, aparece aquí solo.
-   Cada vuelta deja respirar al servidor: php -S atiende de una en una. */
-const ESPERA_SONDEO = 1500;
-async function escuchar(){
-  while(true){
-    try{
-      const e = await api('api/estado.php?desde='+VERSION);
-      if((e.version??0) > VERSION) aplicar(e);
-      await new Promise(r=>setTimeout(r,ESPERA_SONDEO));
-    }catch(err){ await new Promise(r=>setTimeout(r,4000)); }
-  }
-}
-
-function save(){ /* lo guarda el servidor */ }
-function load(){
-  try{
-    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if(!d) return;
-    S.quality = d.quality || 'medium';
-    S.antiCut = d.antiCut !== false;
-    S.openVideo = d.openVideo !== false;
-    S.view = d.view || 'full';
-    S.libCol = d.libCol !== false;
-    S.autoNext = d.autoNext !== false;
-    if(['der','izq','no'].includes(d.avisoSig)) S.avisoSig = d.avisoSig;
-  }catch(e){}
-}
-/* Las preferencias sí son de cada dispositivo. */
-function guardarPrefs(){
-  try{ localStorage.setItem(KEY, JSON.stringify({
-    quality:S.quality, antiCut:S.antiCut, openVideo:S.openVideo,
-    view:S.view, autoNext:S.autoNext, libCol:S.libCol,
-    avisoSig:S.avisoSig })); }catch(e){}
-}
+/* Buscar y descargar hablan con el mismo servidor que el almacén. */
+const api = (url, cuerpo) => KL.almacen.peticion(url, cuerpo);
 
 /* Primera vez: se carga tu colección con los títulos aún por resolver. */
 function seed(){
@@ -679,22 +619,11 @@ function seed(){
 
 /* =====================================================================
    2. UTILIDADES
+
+   $, $$, uid, fmt, iso, esc y unesc viven ahora en js/nucleo.js y se
+   enlazan arriba. Aquí queda solo lo que necesita el DOM de esta
+   página.
    ===================================================================== */
-const $  = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-
-function fmt(s){
-  s = Math.max(0, Math.floor(s||0));
-  const h = s/3600|0, m = s%3600/60|0, x = s%60;
-  return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`
-           : `${m}:${String(x).padStart(2,'0')}`;
-}
-const iso = t => { const m=/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(t||'');
-  return m ? (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0) : 0; };
-const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const unesc = s => String(s??'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
-
 let tT;
 function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on');
   clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),2300); }
@@ -709,7 +638,7 @@ const qGet  = id  => S.queue.find(t => t.id === id);
    Cada usuario construye la suya buscando o pegando enlaces de YouTube. */
 const SEED = [];
 
-const thumbOf = id => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+const thumbOf = KL.miniatura;
 
 /* Extrae el ID de youtube.com/watch?v=, youtu.be/, /embed/, /shorts/
    o de un ID pegado tal cual. Devuelve null si no es ninguna de esas. */
