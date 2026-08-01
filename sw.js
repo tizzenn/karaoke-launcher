@@ -1,10 +1,13 @@
 /* Service worker: la interfaz carga aunque la red vaya mal.
    Los vídeos NO se cachean (los descargados ya están en disco). */
-/* v2 añade la pantalla del televisor. Al cambiar el nombre de la caché,
-   el navegador se trae la lista nueva y tira la vieja. */
-const CACHE = 'karaoke-v2';
+/* v3 añade los módulos de js/. Sin ellos en la caché, la aplicación
+   abierta sin red se quedaba en blanco: el HTML estaba, pero el código
+   que lo hace funcionar no. Al cambiar el nombre de la caché, el
+   navegador se trae la lista nueva y tira la vieja. */
+const CACHE = 'karaoke-v3';
 const BASE = [
   './', './index.html', './pedir.php', './proyector.php',
+  './js/nucleo.js', './js/almacen-servidor.js',
   './manifest.webmanifest', './iconos/icono.svg'
 ];
 
