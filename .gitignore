@@ -1,0 +1,17 @@
+# Datos del usuario: nunca se suben
+data/ajustes.json
+data/estado.json
+data/videos/*
+!data/videos/.gitkeep
+
+# Instalado por Preparar.bat
+php/
+yt-dlp.exe
+ffmpeg.exe
+ffprobe.exe
+*.zip
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

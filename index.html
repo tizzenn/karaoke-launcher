@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0f14">
+<title>Karaoke Launcher</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="iconos/icono.svg">
+<style>
+/* =====================================================================
+   Karaoke Launcher — Lite v0.8
+   Alcance congelado: Buscador · Biblioteca rápida · Cola
+   ===================================================================== */
+:root{
+  --bg:#0d0f14; --bg2:#141821; --bg3:#1b2029; --bg4:#252b38;
+  --line:#2b323f; --line2:#39424f;
+  --txt:#eaedf3; --txt2:#98a1b2; --txt3:#6a7383;
+  --ac:#22d97a; --ac2:#18b464; --ac-d:#0d3d24;
+  --star:#ffc94d; --dang:#ff5d6c;
+  --r:12px; --sh:0 20px 60px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  font-size:15px;overflow:hidden;
+}
+button,input{font-family:inherit;color:inherit}
+button{cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3a4250;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#4d5768;background-clip:content-box}
+
+/* ---------- armazón ---------- */
+#app{display:flex;flex-direction:column;height:100dvh}
+
+/* ---------- cabecera ---------- */
+header{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 18px;background:var(--bg2);
+  border-bottom:1px solid var(--line);flex-shrink:0;
+}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;white-space:nowrap}
+.logo .m{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:17px;
+  background:linear-gradient(140deg,var(--ac),#0a8a4b);
+}
+.logo small{display:block;font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.5px}
+.sbox{position:relative;flex:1;max-width:620px;margin:0 auto}
+.sbox .mg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--txt3);pointer-events:none}
+#q{
+  width:100%;padding:13px 15px 13px 42px;background:var(--bg3);
+  border:1px solid var(--line);border-radius:999px;font-size:15px;outline:none;transition:.18s
+}
+#q:focus{border-color:var(--ac);background:var(--bg4)}
+#q::placeholder{color:var(--txt3)}
+.btn{
+  background:var(--ac);color:#052b16;border:none;padding:12px 22px;
+  border-radius:999px;font-weight:800;font-size:14px;white-space:nowrap;transition:.15s
+}
+.btn:hover{background:var(--ac2)}
+.btn:active{transform:scale(.97)}
+.btn.g{background:var(--bg3);color:var(--txt2);border:1px solid var(--line);font-weight:600}
+.btn.g:hover{background:var(--bg4);color:var(--txt)}
+.ib{
+  background:none;border:none;color:var(--txt3);width:34px;height:34px;border-radius:8px;
+  display:grid;place-items:center;font-size:16px;transition:.15s;flex-shrink:0
+}
+.ib:hover{background:var(--bg4);color:var(--txt)}
+.badge{
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;
+  padding:4px 9px;border-radius:6px;background:var(--bg4);color:var(--txt3);border:1px solid var(--line);white-space:nowrap
+}
+.badge.demo{color:#ffcb5c;background:#2b2415;border-color:#584a22}
+.badge.live{color:var(--ac);background:var(--ac-d);border-color:#1c6b41}
+
+/* ---------- paneles ---------- */
+#tabs{display:none;gap:6px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--line)}
+#tabs button{
+  flex:1;padding:11px;background:var(--bg3);border:1px solid var(--line);
+  border-radius:9px;font-weight:700;font-size:13.5px;color:var(--txt2)
+}
+#tabs button.on{background:var(--ac);color:#052b16;border-color:var(--ac)}
+
+main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;min-width:0}
+.pane+.pane{border-left:1px solid var(--line)}
+.ph{
+  display:flex;align-items:center;gap:10px;padding:14px 18px 10px;flex-shrink:0
+}
+.ph h2{margin:0;font-size:16px;display:flex;align-items:center;gap:8px}
+.ph .n{font-size:12px;color:var(--txt3);font-weight:600}
+.ph .sp{flex:1}
+.ph .lnk{background:none;border:none;color:var(--txt3);font-size:12px;font-weight:700;padding:5px 8px;border-radius:6px}
+.ph .lnk:hover{background:var(--bg3);color:var(--txt)}
+.ph .lnk.d:hover{color:var(--dang)}
+.fbox{padding:0 18px 8px;flex-shrink:0}
+.fbox input{
+  width:100%;padding:9px 13px;background:var(--bg3);border:1px solid var(--line);
+  border-radius:9px;font-size:13.5px;outline:none
+}
+.fbox input:focus{border-color:var(--ac)}
+.scroll{flex:1;overflow-y:auto;padding:0 12px 16px;min-height:0}
+
+/* ---------- fila ---------- */
+.it{
+  display:grid;grid-template-columns:auto 76px 1fr auto;align-items:center;gap:12px;
+  padding:8px 10px;border-radius:11px;cursor:pointer;transition:background .12s;
+  border:1px solid transparent
+}
+.it:hover{background:var(--bg3)}
+.it.play{background:rgba(34,217,122,.12);border-color:rgba(34,217,122,.3)}
+.it.play .t{color:var(--ac)}
+.it.drag{opacity:.3}
+.it.over{box-shadow:inset 0 3px 0 var(--ac)}
+.it .idx{width:26px;text-align:center;color:var(--txt3);font-size:13px;font-variant-numeric:tabular-nums}
+.it .th{width:76px;height:44px;border-radius:7px;object-fit:cover;background:var(--bg4);display:block}
+.it .meta{min-width:0}
+.it .t{font-size:14px;font-weight:650;line-height:1.3;margin-bottom:2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.it .c{font-size:11.5px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .acts{display:flex;align-items:center;gap:1px}
+.it .acts .ib{width:32px;height:32px;font-size:15px}
+.it .dur{font-size:12px;color:var(--txt3);font-variant-numeric:tabular-nums;padding:0 4px}
+.starred{color:var(--star)!important}
+.warn{color:#ffb648!important;cursor:help}
+.ok{color:var(--ac)!important;cursor:help}
+#buf{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:rgba(10,12,17,.94);border:1px solid var(--line2);border-radius:14px;
+  padding:22px 30px;text-align:center;box-shadow:var(--sh);z-index:85;display:none
+}
+#buf.on{display:block}
+#buf .sp{margin-bottom:12px}
+#buf b{display:block;font-size:14px;margin-bottom:4px}
+#buf span{font-size:12px;color:var(--txt3)}
+.eq{display:none;gap:2px;height:15px;align-items:flex-end;justify-content:center}
+.it.play .eq{display:flex}
+.it.play .idx .num{display:none}
+.eq i{width:3px;background:var(--ac);border-radius:1px;animation:eq .9s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:.3s}
+.eq i:nth-child(3){animation-delay:.6s}
+@keyframes eq{0%,100%{height:4px}50%{height:15px}}
+.grip{cursor:grab;color:var(--txt3);font-size:15px;padding:0 2px;touch-action:none}
+
+.empty{text-align:center;padding:56px 22px;color:var(--txt3)}
+.empty .b{font-size:42px;opacity:.45;margin-bottom:12px}
+.empty p{margin:5px 0;font-size:13.5px;line-height:1.55}
+
+/* ---------- reproductor ---------- */
+#pl{
+  display:flex;align-items:center;gap:16px;padding:10px 18px;
+  background:var(--bg2);border-top:1px solid var(--line);flex-shrink:0;min-height:78px
+}
+#np{display:flex;align-items:center;gap:11px;width:280px;min-width:0}
+#np img{width:50px;height:50px;border-radius:9px;object-fit:cover;background:var(--bg4);flex-shrink:0}
+#np .t{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#np .c{font-size:11.5px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ct{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.crow{display:flex;align-items:center;gap:14px}
+.cb{background:none;border:none;color:var(--txt2);font-size:18px;width:36px;height:36px;
+  border-radius:50%;display:grid;place-items:center;transition:.15s}
+.cb:hover{color:var(--txt);background:var(--bg3)}
+.cb.on{color:var(--ac)}
+.cb.big{background:var(--txt);color:var(--bg);width:44px;height:44px;font-size:17px}
+.cb.big:hover{background:#fff;transform:scale(1.06)}
+.brow{display:flex;align-items:center;gap:10px;width:100%;max-width:480px}
+.brow span{font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums;width:38px;flex-shrink:0}
+.brow span:last-child{text-align:right}
+#sk{flex:1;height:5px;background:var(--bg4);border-radius:3px;cursor:pointer;position:relative}
+#skf{height:100%;width:0;background:var(--txt2);border-radius:3px;transition:width .3s linear}
+#sk:hover #skf{background:var(--ac)}
+#rc{width:280px;display:flex;justify-content:flex-end;align-items:center;gap:6px}
+
+#vb{
+  position:fixed;right:18px;bottom:92px;width:360px;max-width:calc(100vw - 36px);
+  background:#000;border:1px solid var(--line2);border-radius:12px;overflow:hidden;
+  box-shadow:var(--sh);z-index:50
+}
+#vb.hide{display:none}
+#vb .vh{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:var(--bg2);font-size:11.5px;color:var(--txt3)}
+#vb .vh b{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#yt{width:100%;aspect-ratio:16/9;display:block}
+
+/* ---------- Quién canta después -------------------------------------
+   Va encima del vídeo, en una esquina, para que el siguiente se vaya
+   preparando sin tener que mirar el portátil. Solo se ve si hay una
+   canción detrás de la actual.
+   Ojo: si se pone a pantalla completa el iframe de YouTube en vez de
+   esta ventana, el aviso desaparece — YouTube ocupa la pantalla él solo
+   y nada nuestro puede pintarse encima. Por eso el botón ⛶ de la
+   cabecera agranda la ventana entera, con el aviso dentro.          */
+#vzona{position:relative}
+#vnext{
+  position:absolute;top:10px;z-index:3;max-width:min(58%,340px);
+  background:rgba(6,8,12,.82);border:1px solid rgba(255,255,255,.14);
+  border-left:3px solid var(--ac);border-radius:9px;
+  padding:7px 12px;pointer-events:none;
+  backdrop-filter:blur(6px);
+  opacity:0;transition:opacity .35s
+}
+#vb.nx-der #vnext{right:10px}
+#vb.nx-izq #vnext{left:10px}
+#vb.nx-no  #vnext{display:none}
+#vnext.on{opacity:1}
+#vnext .e{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--ac);font-weight:800;line-height:1}
+#vnext .q{font-size:14px;font-weight:800;margin-top:3px;line-height:1.15;
+  color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vnext .t{font-size:11px;color:#c9d1e0;margin-top:2px;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* A pantalla completa se lee de lejos: todo más grande. */
+#vb:fullscreen{width:100vw;max-width:none;border:0;border-radius:0}
+#vb:fullscreen .vh{display:none}
+#vb:fullscreen #yt,#vb:fullscreen #vlocal{height:100vh;aspect-ratio:auto}
+#vb:fullscreen #vnext{top:3vh;max-width:42vw;padding:1.4vh 2vw;border-radius:1.2vh}
+#vb:fullscreen #vnext .e{font-size:1.3vh;letter-spacing:.35vw}
+#vb:fullscreen #vnext .q{font-size:3.4vh}
+#vb:fullscreen #vnext .t{font-size:1.9vh}
+#vb:fullscreen.nx-der #vnext{right:2.5vw}
+#vb:fullscreen.nx-izq #vnext{left:2.5vw}
+
+/* ---------- modales ---------- */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:70;padding:16px}
+.ov.on{display:flex}
+.md{background:var(--bg2);border:1px solid var(--line);border-radius:16px;
+  width:min(760px,100%);max-height:88dvh;display:flex;flex-direction:column;box-shadow:var(--sh);
+  animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.mh{display:flex;align-items:center;gap:12px;padding:16px 20px 13px;border-bottom:1px solid var(--line);flex-shrink:0}
+.mh h3{margin:0;font-size:17px;flex:1}
+.mh .hi{font-size:12px;color:var(--txt3)}
+.mb{padding:10px 12px 12px;overflow-y:auto}
+.mf{display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--line);flex-shrink:0}
+.mf .sp{flex:1}
+.mf .hi{font-size:11.5px;color:var(--txt3)}
+
+/* 3 resultados visibles exactos, después scroll */
+#res{max-height:calc(3 * 90px);overflow-y:auto;padding-right:6px}
+.rs{display:grid;grid-template-columns:132px 1fr auto;gap:14px;align-items:center;
+  height:90px;padding:9px;border-radius:11px;cursor:pointer;border:1px solid transparent;transition:.12s}
+.rs:hover{background:var(--bg3);border-color:var(--line)}
+.rs.sel{background:rgba(34,217,122,.11);border-color:var(--ac)}
+.rs img{width:132px;height:72px;border-radius:8px;object-fit:cover;background:var(--bg4)}
+.rs .t{font-size:14px;font-weight:650;line-height:1.32;margin-bottom:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rs .c{font-size:11.5px;color:var(--txt3)}
+.rs .ba{display:flex;flex-direction:column;gap:5px}
+.rs .ba button{
+  border-radius:999px;padding:7px 13px;font-size:11.5px;font-weight:800;white-space:nowrap;
+  background:var(--bg4);border:1px solid var(--line);color:var(--txt2);transition:.13s
+}
+.rs .ba .aq:hover{background:var(--ac);color:#052b16;border-color:var(--ac)}
+.rs .ba .al:hover{background:var(--star);color:#3a2c00;border-color:var(--star)}
+.load{padding:56px 20px;text-align:center;color:var(--txt3);font-size:13.5px}
+.sp{width:28px;height:28px;border:3px solid var(--bg4);border-top-color:var(--ac);
+  border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.fld{margin-bottom:16px}
+.fld label{display:block;font-size:12.5px;font-weight:700;color:var(--txt2);margin-bottom:6px}
+.fld input[type=text],.fld input[type=password]{
+  width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--line);
+  border-radius:9px;font-size:14px;outline:none}
+.fld input:focus{border-color:var(--ac)}
+.fld .h{font-size:11.5px;color:var(--txt3);margin-top:7px;line-height:1.6}
+.sw{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--txt2);cursor:pointer;margin-bottom:10px}
+.sw input{width:17px;height:17px;accent-color:var(--ac)}
+
+#toast{position:fixed;left:50%;bottom:98px;transform:translateX(-50%) translateY(18px);
+  background:var(--bg4);border:1px solid var(--line2);padding:12px 22px;border-radius:999px;
+  font-size:13.5px;font-weight:700;box-shadow:var(--sh);opacity:0;pointer-events:none;
+  transition:.22s;z-index:90;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- MODO FIESTA: vistas discretas ----------
+   completo → compacto (solo la cola) → mini (barra flotante) */
+body.compact #pLib{display:none}
+body.compact main{grid-template-columns:1fr}
+body.compact #tabs{display:none}
+
+body.mini #app{
+  position:fixed;left:auto;right:14px;bottom:14px;top:auto;
+  width:min(430px,calc(100vw - 28px));height:auto;
+  border:1px solid var(--line2);border-radius:16px;overflow:hidden;
+  box-shadow:var(--sh);background:var(--bg2)
+}
+body.mini main,body.mini #tabs,body.mini .sbox,body.mini .badge{display:none}
+body.mini header{padding:9px 12px;gap:8px}
+body.mini .logo{font-size:13px}
+body.mini .logo .m{width:24px;height:24px;font-size:13px}
+body.mini #pl{flex-direction:column;align-items:stretch;gap:6px;padding:8px 12px 10px;min-height:0}
+body.mini #np{width:auto}
+body.mini #np img{width:38px;height:38px}
+body.mini #rc{width:auto;justify-content:center}
+body.mini #ct{width:100%}
+body.mini #vb{right:14px;bottom:auto;top:14px}
+body.mini{background:transparent}
+
+
+/* ---------- Biblioteca colapsable a una estrellita ---------- */
+body.libcol main{grid-template-columns:54px 1fr}
+body.libcol #pLib .fbox,
+body.libcol #pLib .scroll,
+body.libcol #pLib .ph h2,
+body.libcol #pLib .ph .n,
+body.libcol #pLib .ph .sp,
+body.libcol #pLib .ph .lnk{display:none}
+body.libcol #pLib{align-items:center;background:var(--bg2)}
+body.libcol #pLib .ph{padding:14px 0;flex-direction:column;gap:8px}
+#bLibCol{
+  background:none;border:none;width:38px;height:38px;border-radius:10px;
+  display:grid;place-items:center;font-size:19px;color:var(--star);
+  transition:.15s;flex-shrink:0;cursor:pointer
+}
+#bLibCol:hover{background:var(--bg4);transform:scale(1.08)}
+body.libcol #bLibCol{font-size:23px}
+#libCount{
+  display:none;font-size:10.5px;font-weight:800;color:var(--txt3);
+  background:var(--bg4);border-radius:999px;padding:2px 7px
+}
+body.libcol #libCount{display:block}
+body.compact #pLib,body.mini #pLib{display:none}
+
+
+/* Con la biblioteca plegada, el foco es el buscador. */
+body.libcol .sbox{max-width:780px}
+body.libcol #q{padding:16px 18px 16px 46px;font-size:16.5px}
+body.libcol .sbox .mg{left:18px;font-size:17px}
+body.libcol #pLib{border-right:1px solid var(--line)}
+body.libcol #bLibCol{opacity:.45}
+body.libcol #bLibCol:hover{opacity:1}
+
+/* ---------- responsive ---------- */
+@media(max-width:1100px){#np,#rc{width:200px}}
+@media(max-width:900px){
+  header{flex-wrap:wrap;padding:10px 12px;gap:8px}
+  .logo small{display:none}
+  .sbox{order:3;flex:1 0 100%;max-width:none}
+  #tabs{display:flex}
+  main{grid-template-columns:1fr}
+  .pane{display:none}
+  .pane.act{display:flex}
+  .pane+.pane{border-left:none}
+  #np{width:auto;flex:1}
+  #np .c{display:none}
+  #rc{width:auto}
+  #ct{flex:0 0 auto;order:-1;width:100%}
+  #pl{flex-wrap:wrap;gap:10px;padding:8px 12px 10px}
+  .brow{max-width:none}
+  #vb{right:10px;left:10px;width:auto;bottom:150px}
+  .rs{grid-template-columns:104px 1fr;height:auto;padding:10px}
+  .rs img{width:104px;height:60px}
+  .rs .ba{flex-direction:row;grid-column:1/-1}
+  .rs .ba button{flex:1;padding:10px}
+  #res{max-height:none}
+  .it{grid-template-columns:auto 60px 1fr auto}
+  .it .th{width:60px;height:36px}
+}
+@media(max-width:520px){
+  .it .dur{display:none}
+  .mf .hi{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <header>
+    <div class="logo">
+      <span class="m">🎤</span>
+      <span>Karaoke Launcher<small>v1.0 · PHP</small></span>
+    </div>
+    <div class="sbox">
+      <span class="mg">🔍</span>
+      <input id="q" type="text" placeholder="Buscar karaokes en YouTube, o pegar un enlace…" autocomplete="off" enterkeyhint="search">
+    </div>
+    <button class="btn" id="bSearch" title="Busca en todo YouTube, no en tu biblioteca">Buscar en YouTube</button>
+    <span class="badge demo" id="mode">Demo</span>
+    <button class="ib" id="bQR" title="Peticiones desde el móvil">📱</button>
+    <button class="ib" id="bProy" title="Pantalla para el televisor (se abre en otra ventana)">📺</button>
+    <button class="ib" id="bView" title="Vista: completo → compacto → mini  (tecla V)">⤡</button>
+    <button class="ib" id="bCfg" title="Ajustes">⚙</button>
+  </header>
+
+  <div id="tabs">
+    <button data-p="lib" class="on">⭐ Biblioteca</button>
+    <button data-p="que">🎵 Cola</button>
+  </div>
+
+  <main>
+    <!-- BIBLIOTECA RÁPIDA -->
+    <section class="pane act" id="pLib">
+      <div class="ph">
+        <button id="bLibCol" title="Plegar la biblioteca">★</button>
+        <span id="libCount">0</span>
+        <h2>Biblioteca rápida</h2>
+        <span class="n" id="nLib">0</span>
+        <button class="lnk" id="bFix" title="Volver a pedir títulos y carátulas a YouTube">Reparar títulos</button>
+        <button class="lnk" id="bAddAll">Añadir todo a la cola</button>
+      </div>
+      <div class="fbox"><input id="fLib" type="text" placeholder="Filtrar en la biblioteca…" autocomplete="off"></div>
+      <div class="scroll" id="lib"></div>
+    </section>
+
+    <!-- COLA -->
+    <section class="pane" id="pQue">
+      <div class="ph">
+        <h2>🎵 Cola</h2>
+        <span class="n" id="nQue">0</span>
+        <button class="lnk" id="bShuffleQ">Mezclar</button>
+        <button class="lnk d" id="bClearQ">Vaciar</button>
+      </div>
+      <div class="scroll" id="que"></div>
+    </section>
+  </main>
+
+  <div id="pl">
+    <div id="np">
+      <img id="npImg" alt="">
+      <div style="min-width:0">
+        <div class="t" id="npT">Nada en reproducción</div>
+        <div class="c" id="npC">Busca una canción para empezar</div>
+      </div>
+    </div>
+    <div id="ct">
+      <div class="crow">
+        <button class="cb" id="bPrev" title="Anterior">⏮</button>
+        <button class="cb big" id="bPlay" title="Reproducir / Pausa">▶</button>
+        <button class="cb" id="bNext" title="Siguiente">⏭</button>
+        <button class="cb on" id="bAuto" title="Encadenar automáticamente">🔁</button>
+      </div>
+      <div class="brow">
+        <span id="tc">0:00</span>
+        <div id="sk"><div id="skf"></div></div>
+        <span id="tt">0:00</span>
+      </div>
+    </div>
+    <div id="rc">
+      <button class="cb" id="bVid" title="Mostrar / ocultar vídeo">📺</button>
+      <button class="cb" id="bYT" title="Abrir en YouTube">↗</button>
+    </div>
+  </div>
+</div>
+
+<div id="vb" class="hide nx-der">
+  <div class="vh">
+    <b id="vbT">Vídeo</b>
+    <button class="ib" id="vbFull" title="Pantalla completa con el aviso dentro (tecla P)"
+            style="width:26px;height:26px;font-size:13px">⛶</button>
+    <button class="ib" id="vbX" style="width:26px;height:26px;font-size:13px">✕</button>
+  </div>
+  <div id="vzona">
+    <div id="yt"></div>
+    <video id="vlocal" controls style="display:none;width:100%;aspect-ratio:16/9;background:#000"></video>
+    <div id="vnext">
+      <div class="e">Después canta</div>
+      <div class="q" id="vnextQ"></div>
+      <div class="t" id="vnextT"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTADOS -->
+<div class="ov" id="ovRes">
+  <div class="md">
+    <div class="mh">
+      <h3>Resultados</h3>
+      <span class="hi">Doble clic = a la cola</span>
+      <button class="ib" data-x>✕</button>
+    </div>
+    <div class="mb"><div id="res"></div></div>
+    <div class="mf">
+      <span class="hi" id="resF"></span>
+      <button class="btn g" data-x>Cerrar</button>
+      <button class="btn" id="bAddSel">✓ Añadir a la cola</button>
+    </div>
+  </div>
+</div>
+
+<!-- AJUSTES -->
+<div class="ov" id="ovCfg">
+  <div class="md" style="width:min(540px,100%)">
+    <div class="mh"><h3>Ajustes</h3><button class="ib" data-x>✕</button></div>
+    <div class="mb" style="padding:18px 22px">
+      <div class="fld">
+        <label>Clave de la API (se configura en el servidor)</label>
+        <input id="cKey" type="text" disabled value="Está en api/config.php" style="opacity:.5">
+        <div class="h">Sin clave la aplicación arranca en <b>modo demo</b> con resultados de ejemplo.
+        Se obtiene gratis en console.cloud.google.com → Credenciales, habilitando «YouTube Data API v3».
+        La clave se guarda solo en este navegador.</div>
+      </div>
+      <div class="fld">
+        <label>Texto añadido a cada búsqueda</label>
+        <input id="cSuf" type="text" placeholder="karaoke">
+        <div class="h">Se añade automáticamente a lo que escribas. Vacío = buscar tal cual.</div>
+      </div>
+      <div class="fld">
+        <label>Calidad de vídeo</label>
+        <select id="cQual" style="width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--line);border-radius:9px;font-size:14px;outline:none">
+          <option value="auto">Automática (la decide YouTube)</option>
+          <option value="hd720">720p — buena imagen</option>
+          <option value="large">480p — equilibrada</option>
+          <option value="medium">360p — recomendada para karaoke</option>
+          <option value="small">240p — conexión mala</option>
+        </select>
+        <div class="h">En un karaoke lo que importa es que <b>no se corte</b>, no la resolución.
+        A 360p el vídeo pesa mucho menos y aguanta bajadas de conexión sin pararse.</div>
+      </div>
+      <div class="fld">
+        <label>Aviso de «quién canta después», sobre el vídeo</label>
+        <select id="cSig" style="width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--line);border-radius:9px;font-size:14px;outline:none">
+          <option value="der">Arriba a la derecha</option>
+          <option value="izq">Arriba a la izquierda</option>
+          <option value="no">No mostrarlo</option>
+        </select>
+        <div class="h">Para que el siguiente se vaya preparando sin preguntar.
+        Se ve también a pantalla completa, pero solo si la agrandas con el botón
+        <b>⛶</b> de la ventana de vídeo; si usas el de YouTube, el vídeo tapa
+        la pantalla él solo y el aviso no cabe.</div>
+      </div>
+      <label class="sw"><input type="checkbox" id="cAntiCut" checked> Antiparones: bajar calidad sola si la conexión cae</label>
+      <label class="sw"><input type="checkbox" id="cAuto"> Abrir la ventana de vídeo al empezar una canción</label>
+      <label class="sw"><input type="checkbox" id="cStar"> Al añadir a la cola, guardar también en la biblioteca</label>
+      <div style="display:flex;gap:9px;margin-top:18px">
+        <a class="btn g" href="ajustes.php" style="flex:1;text-align:center;text-decoration:none;line-height:1.6">⚙ Ajustes del servidor</a>
+        <button class="btn g" id="bExp" style="flex:1">⬇ Exportar copia</button>
+        <button class="btn g" id="bImp" style="flex:1">⬆ Importar copia</button>
+      </div>
+    </div>
+    <div class="mf"><button class="btn g" data-x>Cancelar</button><button class="btn" id="bSaveCfg">Guardar</button></div>
+  </div>
+</div>
+
+<div id="buf">
+  <div class="sp"></div>
+  <b id="bufT">Recuperando la reproducción…</b>
+  <span id="bufS">La conexión ha bajado</span>
+</div>
+
+<div class="ov" id="ovQR">
+  <div class="md" style="width:min(440px,100%)">
+    <div class="mh"><h3>Que pidan desde el móvil</h3><button class="ib" data-x>✕</button></div>
+    <div class="mb" style="padding:22px;text-align:center">
+      <div id="qrimg" style="background:#fff;padding:14px;border-radius:14px;display:inline-block;min-height:220px"></div>
+      <div style="margin-top:16px;font-size:13px;color:var(--txt2);line-height:1.6">
+        Que apunten con la cámara del móvil.<br>
+        Tienen que estar en <b>tu misma wifi</b>.
+      </div>
+      <code id="qrurl" style="display:block;margin-top:14px;padding:11px;background:var(--bg3);
+        border:1px solid var(--line);border-radius:9px;font-size:13px;word-break:break-all"></code>
+    </div>
+    <div class="mf"><button class="btn" data-x>Cerrar</button></div>
+  </div>
+</div>
+
+<input type="file" id="file" accept="application/json,.json" hidden>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   1. ESTADO Y PERSISTENCIA
+   ===================================================================== */
+const KEY = 'karaoke_launcher_v1';
+
+const S = {
+  apiKey:'', suffix:'karaoke',   // pon aquí tu clave: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+  openVideo:true, alsoStar:false,
+  quality:'medium', antiCut:true, view:'full', libCol:true,
+  avisoSig:'der',      // esquina del aviso «después canta»: der, izq o no
+  library:[], seeded:false,   // colección fija del usuario
+  queue:[],            // lo que se va a cantar
+  curId:null,          // pista de la cola en reproducción
+  autoNext:true,
+  filterLib:'',
+  results:[], sel:null
+};
+
+
+
+/* ---- Estado en el servidor ------------------------------------------
+   La cola y la biblioteca ya no viven en el navegador: viven en
+   data/estado.json. Así el PC y los móviles ven lo mismo.            */
+
+let VERSION = -1;
+
+/* Si fetch falla del todo —«NetworkError», «Failed to fetch»— es que no hay
+   nadie escuchando: se ha cerrado la ventana negra de Karaoke.bat, o la
+   página se abrió con doble clic. Decirlo así evita mandar a revisar la
+   clave, que es lo último que pasa. */
+async function api(url, cuerpo){
+  const o = cuerpo
+    ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cuerpo)}
+    : {};
+  let r;
+  try{
+    r = await fetch(url, o);
+  }catch(err){
+    throw new Error(location.protocol === 'file:'
+      ? 'Has abierto la aplicación con doble clic. Ciérrala y arranca Karaoke.bat: sin servidor no funciona nada.'
+      : 'El karaoke no está en marcha. Abre Karaoke.bat y NO cierres la ventana negra.');
+  }
+  const j = await r.json().catch(()=>({ok:false,error:'respuesta ilegible del servidor'}));
+  if(!j.ok) throw new Error(j.error || ('error '+r.status));
+  return j;
+}
+
+function aplicar(e){
+  S.library = e.biblioteca || [];
+  S.queue   = e.cola || [];
+  if(e.sonando !== undefined && !S.curId) S.curId = e.sonando;
+  VERSION = e.version ?? VERSION;
+  if(e.peticiones !== undefined) S.peticiones = e.peticiones;
+  if(e.con_clave  !== undefined){ S.conClave = e.con_clave; mode(); }
+  draw();
+}
+
+async function cargar(){
+  try{ aplicar(await api('api/estado.php')); mode(); }
+  catch(err){ toast('⚠ No hay servidor: '+err.message); }
+}
+
+async function accion(datos){
+  try{ aplicar(await api('api/estado.php', datos)); }
+  catch(err){ toast('⚠ '+err.message); }
+}
+
+/* Sondeo: si alguien pide desde el móvil, aparece aquí solo.
+   Cada vuelta deja respirar al servidor: php -S atiende de una en una. */
+const ESPERA_SONDEO = 1500;
+async function escuchar(){
+  while(true){
+    try{
+      const e = await api('api/estado.php?desde='+VERSION);
+      if((e.version??0) > VERSION) aplicar(e);
+      await new Promise(r=>setTimeout(r,ESPERA_SONDEO));
+    }catch(err){ await new Promise(r=>setTimeout(r,4000)); }
+  }
+}
+
+function save(){ /* lo guarda el servidor */ }
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if(!d) return;
+    S.quality = d.quality || 'medium';
+    S.antiCut = d.antiCut !== false;
+    S.openVideo = d.openVideo !== false;
+    S.view = d.view || 'full';
+    S.libCol = d.libCol !== false;
+    S.autoNext = d.autoNext !== false;
+    if(['der','izq','no'].includes(d.avisoSig)) S.avisoSig = d.avisoSig;
+  }catch(e){}
+}
+/* Las preferencias sí son de cada dispositivo. */
+function guardarPrefs(){
+  try{ localStorage.setItem(KEY, JSON.stringify({
+    quality:S.quality, antiCut:S.antiCut, openVideo:S.openVideo,
+    view:S.view, autoNext:S.autoNext, libCol:S.libCol,
+    avisoSig:S.avisoSig })); }catch(e){}
+}
+
+/* Primera vez: se carga tu colección con los títulos aún por resolver. */
+function seed(){
+  if(S.seeded || S.library.length) return;
+  S.library = SEED.map(id=>({
+    videoId:id, title:'Cargando título…', channel:'', duration:0,
+    thumb:thumbOf(id), resolved:false
+  }));
+  S.seeded = true; save();
+}
+
+/* =====================================================================
+   2. UTILIDADES
+   ===================================================================== */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function fmt(s){
+  s = Math.max(0, Math.floor(s||0));
+  const h = s/3600|0, m = s%3600/60|0, x = s%60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`
+           : `${m}:${String(x).padStart(2,'0')}`;
+}
+const iso = t => { const m=/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(t||'');
+  return m ? (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0) : 0; };
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const unesc = s => String(s??'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+let tT;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on');
+  clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),2300); }
+
+const inLib = vid => S.library.some(t => t.videoId === vid);
+const qGet  = id  => S.queue.find(t => t.id === id);
+
+/* =====================================================================
+   3. BÚSQUEDA EN YOUTUBE
+   ===================================================================== */
+/* La versión pública arranca con la biblioteca vacía.
+   Cada usuario construye la suya buscando o pegando enlaces de YouTube. */
+const SEED = [];
+
+const thumbOf = id => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+
+/* Extrae el ID de youtube.com/watch?v=, youtu.be/, /embed/, /shorts/
+   o de un ID pegado tal cual. Devuelve null si no es ninguna de esas. */
+function parseYT(s){
+  s = (s||'').trim();
+  if(/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+  const m = s.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+/* oEmbed: título y canal reales SIN clave de API. Es lo que arregla los
+   "Pendiente — xxxx" y las carátulas que no cuadraban con el texto. */
+async function resolveTitle(t){
+  try{
+    const r = await fetch('https://www.youtube.com/oembed?format=json&url='
+              + encodeURIComponent('https://www.youtube.com/watch?v='+t.videoId));
+    if(!r.ok){ t.dead = r.status===404 || r.status===401; return false; }
+    const j = await r.json();
+    t.title = j.title || t.title;
+    t.channel = j.author_name || t.channel;
+    if(j.thumbnail_url) t.thumb = j.thumbnail_url;
+    t.resolved = true; t.dead = false;
+    return true;
+  }catch(e){ return false; }
+}
+
+async function resolveAll(force){
+  const pend = S.library.filter(t => force || !t.title || /^Cargando|^Vídeo /.test(t.title));
+  for(const t of pend){
+    try{
+      const j = await api('api/buscar.php?id='+encodeURIComponent(t.videoId));
+      const v = j.items[0];
+      await accion({accion:'actualizar_pista', videoId:t.videoId,
+                    title:v.title, channel:v.channel, thumb:v.thumb});
+    }catch(e){}
+  }
+  toast('Títulos actualizados');
+}
+
+async function search(text){
+  const j = await api('api/buscar.php?q='+encodeURIComponent(text));
+  return j.items || [];
+}
+
+async function doSearch(){
+  const text = $('#q').value.trim();
+  if(!text){ $('#q').focus(); return; }
+  S.sel = null;
+  open('#ovRes');
+  $('#res').innerHTML = '<div class="load"><div class="sp"></div>Buscando en YouTube…</div>';
+  $('#resF').textContent = '';
+  try{
+    S.results = await search(text);
+    drawResults();
+  }catch(e){
+    /* El consejo depende del fallo: si no hay servidor, el engranaje no
+       arregla nada y solo despista. */
+    const esDeClave = /clave|cuota|API|habilitada/i.test(e.message);
+    const consejo = esDeClave
+      ? 'Revísala en el engranaje ⚙ de la cabecera.'
+      : 'Mientras tanto puedes pegar el enlace de YouTube aquí mismo.';
+    $('#res').innerHTML = `<div class="load" style="color:var(--dang)">⚠ ${esc(e.message)}
+      <div style="margin-top:10px;color:var(--txt3)">${esc(consejo)}</div></div>`;
+  }
+}
+
+function drawResults(){
+  const r = S.results, box = $('#res');
+  if(!r.length){
+    box.innerHTML = S.apiKey
+      ? '<div class="load">Sin resultados. Prueba con otras palabras.</div>'
+      : `<div class="load" style="line-height:1.7">
+           <b style="color:var(--txt);font-size:14px">Sin clave de API solo busco en tu biblioteca.</b><br>
+           Y ahí no hay nada que coincida con «${esc($('#q').value.trim())}».<br><br>
+           <b style="color:var(--ac)">Solución rápida:</b> busca la canción en YouTube,
+           copia el enlace y pégalo aquí en el buscador.<br>
+           Funciona sin clave y la añade con su título y carátula reales.<br><br>
+           <span style="color:var(--txt3)">Para buscar en todo YouTube desde aquí,
+           pon tu clave en el engranaje ⚙.</span>
+         </div>`;
+    $('#resF').textContent=''; return;
+  }
+
+  box.innerHTML = r.map((x,i)=>`
+    <div class="rs" data-i="${i}">
+      <img src="${esc(x.thumb)}" alt="" loading="lazy">
+      <div style="min-width:0">
+        <div class="t">${esc(x.title)}</div>
+        <div class="c">${esc(x.channel)}${x.duration?' · '+fmt(x.duration):''}</div>
+      </div>
+      <div class="ba">
+        <button class="aq">＋ A la cola</button>
+        <button class="al">${inLib(x.videoId)?'★ Guardada':'☆ Biblioteca'}</button>
+      </div>
+    </div>`).join('');
+
+  $('#resF').textContent = `${r.length} resultados · 3 visibles, desliza para ver el resto`;
+
+  box.querySelectorAll('.rs').forEach(el=>{
+    const i = +el.dataset.i, v = r[i];
+    el.addEventListener('click', ev=>{
+      if(ev.target.classList.contains('aq')){ addQueue(v); close('#ovRes'); return; }
+      if(ev.target.classList.contains('al')){ toggleLib(v); drawResults(); return; }
+      box.querySelectorAll('.rs').forEach(n=>n.classList.remove('sel'));
+      el.classList.add('sel'); S.sel = i;
+    });
+    el.addEventListener('dblclick', ()=>{ addQueue(v); close('#ovRes'); });
+  });
+}
+
+/* =====================================================================
+   4. BIBLIOTECA Y COLA
+   ===================================================================== */
+function addQueue(v, quiet){
+  accion({accion:'anadir_cola', video:v}).then(()=>{ if(!quiet) toast('✓ Añadida a la cola'); });
+}
+function toggleLib(v){
+  const dentro = inLib(v.videoId);
+  accion(dentro ? {accion:'quitar_biblioteca', videoId:v.videoId}
+                : {accion:'anadir_biblioteca', video:v});
+  toast(dentro ? 'Quitada de la biblioteca' : '★ Guardada en la biblioteca');
+}
+
+function libItems(){
+  const f = S.filterLib.toLowerCase();
+  return S.library.filter(t=>!f || t.title.toLowerCase().includes(f) || (t.channel||'').toLowerCase().includes(f));
+}
+
+function drawLib(){
+  const all = libItems();
+  $('#libCount').textContent = S.library.length;
+  $('#nLib').textContent = S.library.length + (S.filterLib?` · ${all.length} visibles`:'');
+  if(!S.library.length){
+    $('#lib').innerHTML = `<div class="empty"><div class="b">⭐</div>
+      <p><b>Tu biblioteca está vacía.</b></p>
+      <p>Busca una canción arriba y pulsa <b>☆ Biblioteca</b> en el resultado.
+      Lo que guardes aquí queda listo para el próximo karaoke sin volver a buscarlo.</p></div>`;
+    return;
+  }
+  if(!all.length){
+    $('#lib').innerHTML = `<div class="empty"><div class="b">🔎</div><p>Nada coincide con «${esc(S.filterLib)}».</p></div>`;
+    return;
+  }
+  $('#lib').innerHTML = all.map(t=>`
+    <div class="it" data-v="${esc(t.videoId)}">
+      <span class="idx">★</span>
+      <img class="th" src="${esc(t.thumb)}" alt="" loading="lazy">
+      <div class="meta"><div class="t">${esc(t.title)}</div><div class="c">${esc(t.channel||'')}</div></div>
+      <div class="acts">
+        <span class="dur">${t.duration?fmt(t.duration):''}</span>
+        ${t.local?'<span class="ib ok" title="Descargado: suena sin internet">⭳</span>':''}
+        ${t.noEmbed?'<span class="ib warn" title="Este vídeo no permite incrustarse">⚠</span>':''}
+        <button class="ib dl" title="Descargar para cantar sin internet">⤓</button>
+        <button class="ib aq" title="Añadir a la cola">＋</button>
+        <button class="ib rm" title="Quitar de la biblioteca">🗑</button>
+      </div>
+    </div>`).join('');
+
+  $$('#lib .it').forEach(el=>{
+    const t = S.library.find(x=>x.videoId===el.dataset.v);
+    el.addEventListener('click',ev=>{
+      const b = ev.target.closest('button');
+      if(!b){ addQueue(t); return; }
+      if(b.classList.contains('aq')) addQueue(t);
+      else if(b.classList.contains('dl')) descargar(t);
+      else if(b.classList.contains('rm')) toggleLib(t);
+    });
+  });
+  $$('#lib .it .idx').forEach(e=>e.classList.add('starred'));
+}
+
+function drawQue(){
+  const total = S.queue.reduce((a,t)=>a+(t.duration||0),0);
+  $('#nQue').textContent = S.queue.length ? `${S.queue.length} · ${fmt(total)}` : '0';
+  if(!S.queue.length){
+    $('#que').innerHTML = `<div class="empty"><div class="b">🎵</div>
+      <p><b>La cola está vacía.</b></p>
+      <p>Añade canciones desde el buscador o pulsando una de tu biblioteca.
+      Se encadenan solas, una detrás de otra.</p></div>`;
+    return;
+  }
+  $('#que').innerHTML = S.queue.map((t,i)=>`
+    <div class="it ${t.id===S.curId?'play':''}" data-id="${t.id}" draggable="true">
+      <span class="idx"><span class="num">${i+1}</span><span class="eq"><i></i><i></i><i></i></span></span>
+      <img class="th" src="${esc(t.thumb)}" alt="" loading="lazy">
+      <div class="meta"><div class="t">${esc(t.title)}</div><div class="c">${esc(t.channel||'')}</div></div>
+      <div class="acts">
+        <span class="dur">${t.duration?fmt(t.duration):''}</span>
+        ${t.noEmbed?'<span class="ib warn" title="No permite incrustarse: se abre en YouTube">⚠</span>':''}
+        <button class="ib st ${inLib(t.videoId)?'starred':''}" title="Guardar en la biblioteca">${inLib(t.videoId)?'★':'☆'}</button>
+        <button class="ib rm" title="Quitar de la cola">✕</button>
+        <span class="ib grip" title="Arrastra para reordenar">⠿</span>
+      </div>
+    </div>`).join('');
+  bindQueue();
+}
+
+function bindQueue(){
+  let from = null;
+  $$('#que .it').forEach(el=>{
+    const id = el.dataset.id;
+
+    el.addEventListener('click', ev=>{
+      const b = ev.target.closest('button');
+      if(!b){ play(id); return; }
+      const t = qGet(id);
+      if(b.classList.contains('st')) toggleLib(t);
+      else if(b.classList.contains('rm')){
+        accion({accion:'quitar_cola', id:id});
+        if(S.curId===id) stop();
+      }
+    });
+
+    el.addEventListener('dragstart',ev=>{ from=id; el.classList.add('drag');
+      ev.dataTransfer.effectAllowed='move'; ev.dataTransfer.setData('text/plain',id); });
+    el.addEventListener('dragend',()=>{ from=null; $$('#que .it').forEach(n=>n.classList.remove('drag','over')); });
+    el.addEventListener('dragover',ev=>{ ev.preventDefault(); if(from&&from!==id) el.classList.add('over'); });
+    el.addEventListener('dragleave',()=>el.classList.remove('over'));
+    el.addEventListener('drop',ev=>{
+      ev.preventDefault(); el.classList.remove('over');
+      if(!from||from===id) return;
+      const a = S.queue.findIndex(x=>x.id===from), b = S.queue.findIndex(x=>x.id===id);
+      if(a<0||b<0) return;
+      S.queue.splice(b,0,S.queue.splice(a,1)[0]);
+      draw();
+      accion({accion:'ordenar_cola', orden:S.queue.map(x=>x.id)});
+    });
+  });
+}
+
+function draw(){ drawLib(); drawQue(); drawNP(); dibujarSiguiente(); }
+
+/* Quién va detrás de la que suena. Si no hay nadie —última de la cola— el
+   aviso se apaga en vez de mentir. */
+function siguientePista(){
+  const i = S.queue.findIndex(t => t.id === S.curId);
+  if(i < 0) return null;
+  return S.queue[i+1] || null;
+}
+function dibujarSiguiente(){
+  const vb = $('#vb');
+  vb.classList.remove('nx-der','nx-izq','nx-no');
+  vb.classList.add('nx-' + S.avisoSig);
+
+  const t = siguientePista();
+  const caja = $('#vnext');
+  if(!t || S.avisoSig === 'no'){ caja.classList.remove('on'); return; }
+
+  /* Si la pidió alguien, su nombre manda: es a quien hay que avisar. */
+  $('#vnextQ').textContent = t.pedida || t.title;
+  $('#vnextT').textContent = t.pedida ? t.title : (t.channel || '');
+  caja.classList.add('on');
+}
+
+/* =====================================================================
+   5. REPRODUCCIÓN
+   ===================================================================== */
+let yt=null, ready=false, timer=null;
+
+/* ---------- Antiparones ----------------------------------------------
+   YouTube no avisa de que la red va mal: simplemente entra en BUFFERING
+   y se queda ahí. Vigilamos ese estado y actuamos en escalera:
+   1) bajar la calidad, 2) volver a intentarlo desde donde estaba,
+   3) recargar el vídeo en el punto exacto. Y guardamos el segundo actual
+   cada 2s para no perder nunca la posición.                          */
+const QUAL = ['hd720','large','medium','small','tiny'];
+const BUF = { since:0, step:0, last:0, watch:null };
+
+function qIndex(q){ const i=QUAL.indexOf(q); return i<0?2:i; }
+
+function applyQuality(q){
+  if(!ready||!yt||!yt.setPlaybackQuality) return;
+  if(q && q!=='auto'){ try{ yt.setPlaybackQuality(q); }catch(e){} }
+}
+
+function showBuf(on,txt,sub){
+  const b=$('#buf');
+  if(on){ $('#bufT').textContent=txt||'Recuperando la reproducción…';
+          $('#bufS').textContent=sub||'La conexión ha bajado'; b.classList.add('on'); }
+  else b.classList.remove('on');
+}
+
+function startWatchdog(){
+  clearInterval(BUF.watch);
+  BUF.since=0; BUF.step=0;
+  BUF.watch = setInterval(()=>{
+    if(!ready||!yt||!yt.getPlayerState) return;
+    const st = yt.getPlayerState();
+
+    // posición conocida, para poder volver a ella
+    if(st===1){                       // 1 = PLAYING
+      BUF.last = yt.getCurrentTime()||BUF.last;
+      if(BUF.since){ BUF.since=0; BUF.step=0; showBuf(false); }
+      return;
+    }
+    if(st!==3){ return; }             // 3 = BUFFERING
+    if(!S.antiCut){ return; }
+
+    if(!BUF.since){ BUF.since=Date.now(); return; }
+    const secs = (Date.now()-BUF.since)/1000;
+
+    // 3 s parado -> bajamos un escalón de calidad
+    if(secs>3 && BUF.step===0){
+      BUF.step=1;
+      const cur = (yt.getPlaybackQuality && yt.getPlaybackQuality()) || 'medium';
+      const nx  = QUAL[Math.min(qIndex(cur)+1, QUAL.length-1)];
+      applyQuality(nx);
+      showBuf(true,'Bajando calidad para no cortar','La conexión ha bajado · '+nx);
+      return;
+    }
+    // 7 s -> reintento en el mismo punto
+    if(secs>7 && BUF.step===1){
+      BUF.step=2;
+      showBuf(true,'Reintentando…','Recuperando desde '+fmt(BUF.last));
+      try{ yt.seekTo(Math.max(0,BUF.last-1),true); yt.playVideo(); }catch(e){}
+      return;
+    }
+    // 14 s -> recarga completa en el punto guardado, a la calidad mínima
+    if(secs>14 && BUF.step===2){
+      BUF.step=3;
+      const t = S.curId && qGet(S.curId);
+      if(t){
+        showBuf(true,'Recargando el vídeo','Desde '+fmt(BUF.last)+' a calidad baja');
+        try{ yt.loadVideoById({videoId:t.videoId, startSeconds:Math.max(0,BUF.last-2),
+                               suggestedQuality:'small'}); }catch(e){}
+      }
+      return;
+    }
+    // 25 s -> nos rendimos con esta y pasamos a la siguiente
+    if(secs>25 && BUF.step===3){
+      BUF.step=4; showBuf(false);
+      toast('⚠ La conexión no aguanta este vídeo. Paso al siguiente.');
+      if(S.autoNext) next();
+    }
+  },1000);
+}
+
+window.onYouTubeIframeAPIReady = function(){
+  yt = new YT.Player('yt',{
+    playerVars:{autoplay:1,rel:0,modestbranding:1,playsinline:1,iv_load_policy:3},
+    events:{
+      onReady:()=>{ ready=true; applyQuality(S.quality); },
+      onStateChange:e=>{
+        $('#bPlay').textContent = e.data===YT.PlayerState.PLAYING ? '❚❚' : '▶';
+        if(e.data===YT.PlayerState.PLAYING){ showBuf(false); applyQuality(S.quality); }
+        if(e.data===YT.PlayerState.ENDED){ showBuf(false); S.autoNext ? next() : stop(); }
+      },
+      onError:e=>{
+        /* 101/150 = el dueño no permite incrustar. 100 = borrado o privado.
+           Se marca la canción para que la veas y se pasa a la siguiente. */
+        const t = S.curId && qGet(S.curId);
+        if(t){
+          t.noEmbed = true;
+          const l = S.library.find(x=>x.videoId===t.videoId);
+          if(l) l.noEmbed = true;
+          save();
+        }
+        toast('⚠ Ese vídeo no deja incrustarse (error '+(e&&e.data)+'). Paso al siguiente.');
+        draw();
+        setTimeout(()=>{ if(S.autoNext) next(); },1400);
+      }
+    }
+  });
+};
+(function(){ const s=document.createElement('script');
+  s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s); })();
+
+function play(id){
+  const t = qGet(id); if(!t) return;
+  S.curId = id;
+  BUF.last = 0; showBuf(false);
+  const vLocal = $('#vlocal');
+  if(t.local){
+    /* Descargado: se reproduce del disco. Ni internet, ni 153, ni cortes. */
+    if(ready && yt) yt.stopVideo();
+    $('#yt').style.display='none'; vLocal.style.display='block';
+    vLocal.src = t.local; vLocal.play().catch(()=>{});
+    clearInterval(BUF.watch);
+  } else {
+    vLocal.pause(); vLocal.removeAttribute('src'); vLocal.style.display='none';
+    $('#yt').style.display='block';
+    if(ready && yt) yt.loadVideoById({videoId:t.videoId, startSeconds:0,
+      suggestedQuality: S.quality==='auto' ? undefined : S.quality});
+    startWatchdog();
+  }
+  accion({accion:'sonando', id:id});
+  if(S.openVideo) $('#vb').classList.remove('hide');
+  $('#vbT').textContent = t.title;
+  draw(); startTimer();
+  const row = $(`#que .it[data-id="${id}"]`);
+  if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function next(){
+  const i = S.queue.findIndex(t=>t.id===S.curId);
+  if(i>=0 && i<S.queue.length-1) play(S.queue[i+1].id);
+  else if(S.queue.length && S.autoNext) play(S.queue[0].id);
+  else stop();
+}
+function prev(){
+  if(ready && yt && yt.getCurrentTime && yt.getCurrentTime()>4){ yt.seekTo(0,true); return; }
+  const i = S.queue.findIndex(t=>t.id===S.curId);
+  if(i>0) play(S.queue[i-1].id);
+}
+function stop(){
+  S.curId=null; clearInterval(timer); clearInterval(BUF.watch); showBuf(false);
+  if(ready && yt) yt.stopVideo();
+  $('#bPlay').textContent='▶'; draw();
+}
+function drawNP(){
+  const t = S.curId && qGet(S.curId);
+  $('#npT').textContent = t ? t.title : 'Nada en reproducción';
+  $('#npC').textContent = t ? (t.channel||'') : 'Busca una canción para empezar';
+  $('#npImg').src = t ? t.thumb : '';
+  $('#npImg').style.visibility = t ? 'visible' : 'hidden';
+  if(!t){ $('#skf').style.width='0'; $('#tc').textContent='0:00'; $('#tt').textContent='0:00'; }
+}
+function startTimer(){
+  clearInterval(timer);
+  timer = setInterval(()=>{
+    if(!ready||!yt||!yt.getDuration) return;
+    const d=yt.getDuration()||0, c=yt.getCurrentTime()||0;
+    $('#tt').textContent=fmt(d); $('#tc').textContent=fmt(c);
+    $('#skf').style.width = d ? (c/d*100)+'%' : '0';
+  },500);
+}
+
+/* =====================================================================
+   6. MODALES Y ATAJOS
+   ===================================================================== */
+const open  = s => $(s).classList.add('on');
+const close = s => $(s).classList.remove('on');
+$$('.ov').forEach(o=>o.addEventListener('click',ev=>{
+  if(ev.target===o || ev.target.hasAttribute('data-x')) o.classList.remove('on');
+}));
+document.addEventListener('keydown',ev=>{
+  const typing = ['INPUT','TEXTAREA'].includes(document.activeElement.tagName);
+  if(ev.key==='Escape') $$('.ov.on').forEach(o=>o.classList.remove('on'));
+  if(ev.key==='/' && !typing){ ev.preventDefault(); $('#q').focus(); }
+  if((ev.key==='v'||ev.key==='V') && !typing){ $('#bView').click(); }
+  if(ev.code==='Space' && !typing){ ev.preventDefault(); $('#bPlay').click(); }
+  if(ev.key==='ArrowRight' && ev.ctrlKey) next();
+  if(ev.key==='ArrowLeft'  && ev.ctrlKey) prev();
+});
+
+/* =====================================================================
+   7. EVENTOS
+   ===================================================================== */
+$('#bSearch').addEventListener('click',doSearch);
+$('#q').addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
+$('#bAddSel').addEventListener('click',()=>{
+  if(S.sel===null){ toast('Selecciona antes un vídeo'); return; }
+  addQueue(S.results[S.sel]); close('#ovRes');
+});
+
+$('#fLib').addEventListener('input',e=>{ S.filterLib=e.target.value; drawLib(); });
+$('#bFix').addEventListener('click',()=>{ toast('Pidiendo títulos a YouTube…'); resolveAll(true); });
+$('#bAddAll').addEventListener('click',()=>{
+  const a = libItems(); if(!a.length){ toast('No hay nada que añadir'); return; }
+  a.forEach(t=>addQueue(t,true)); toast(`${a.length} canciones a la cola`);
+});
+$('#bClearQ').addEventListener('click',()=>{
+  if(!S.queue.length) return;
+  if(confirm('¿Vaciar la cola por completo?')){ stop(); accion({accion:'vaciar_cola'}); }
+});
+$('#bShuffleQ').addEventListener('click',()=>{
+  if(S.queue.length<2) return;
+  for(let i=S.queue.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [S.queue[i],S.queue[j]]=[S.queue[j],S.queue[i]]; }
+  draw();
+  accion({accion:'ordenar_cola', orden:S.queue.map(x=>x.id)});
+  toast('Cola mezclada');
+});
+
+$('#bPlay').addEventListener('click',()=>{
+  if(!S.curId){ S.queue.length ? play(S.queue[0].id) : toast('La cola está vacía'); return; }
+  if(!ready||!yt) return;
+  yt.getPlayerState()===1 ? yt.pauseVideo() : yt.playVideo();
+});
+$('#bNext').addEventListener('click',next);
+$('#bPrev').addEventListener('click',prev);
+$('#bAuto').addEventListener('click',e=>{
+  S.autoNext=!S.autoNext; e.currentTarget.classList.toggle('on',S.autoNext); guardarPrefs();
+  toast(S.autoNext?'Se encadenan automáticamente':'Se detiene al acabar cada canción');
+});
+/* vistas: completo → compacto → mini */
+const VIEWS = ['full','compact','mini'];
+const VNAME = {full:'Vista completa', compact:'Compacta · solo la cola', mini:'Mini · barra discreta'};
+function setView(v){
+  S.view = v; guardarPrefs();
+  document.body.classList.toggle('compact', v==='compact');
+  document.body.classList.toggle('mini',    v==='mini');
+  $('#bView').textContent = v==='mini' ? '⤢' : '⤡';
+  $('#bView').title = 'Vista: ' + VNAME[v] + '  (tecla V)';
+}
+$('#bView').addEventListener('click',()=>{
+  const v = VIEWS[(VIEWS.indexOf(S.view)+1) % VIEWS.length];
+  setView(v); toast(VNAME[v]);
+});
+
+$('#bVid').addEventListener('click',()=>$('#vb').classList.toggle('hide'));
+$('#vbX').addEventListener('click',()=>$('#vb').classList.add('hide'));
+
+/* Pantalla completa de la ventana entera, no del iframe: así el aviso de
+   quién canta después sigue viéndose. Si se usa el botón de YouTube, el
+   vídeo tapa la pantalla él solo y el aviso no puede pintarse. */
+function pantallaCompletaVideo(){
+  const vb = $('#vb');
+  if(document.fullscreenElement){ document.exitFullscreen(); return; }
+  vb.classList.remove('hide');
+  vb.requestFullscreen().catch(()=>toast('Tu navegador no me deja poner la pantalla completa'));
+}
+$('#vbFull').addEventListener('click', pantallaCompletaVideo);
+$('#bYT').addEventListener('click',()=>{
+  const t = S.curId && qGet(S.curId);
+  t ? window.open('https://www.youtube.com/watch?v='+t.videoId,'_blank')
+    : toast('No hay nada en reproducción');
+});
+$('#sk').addEventListener('click',ev=>{
+  if(!ready||!yt||!yt.getDuration) return;
+  const r=ev.currentTarget.getBoundingClientRect();
+  yt.seekTo(yt.getDuration()*((ev.clientX-r.left)/r.width),true);
+});
+
+$$('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#tabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  $('#pLib').classList.toggle('act', b.dataset.p==='lib');
+  $('#pQue').classList.toggle('act', b.dataset.p==='que');
+}));
+
+/* ajustes */
+$('#bCfg').addEventListener('click',()=>{
+  $('#cKey').value=S.apiKey; $('#cSuf').value=S.suffix;
+  $('#cAuto').checked=S.openVideo; $('#cStar').checked=S.alsoStar;
+  $('#cQual').value=S.quality; $('#cAntiCut').checked=S.antiCut;
+  $('#cSig').value=S.avisoSig;
+  open('#ovCfg');
+});
+$('#bSaveCfg').addEventListener('click',()=>{
+  S.suffix=$('#cSuf').value.trim();
+  S.openVideo=$('#cAuto').checked; S.alsoStar=$('#cStar').checked;
+  S.quality=$('#cQual').value; S.antiCut=$('#cAntiCut').checked;
+  S.avisoSig=$('#cSig').value; dibujarSiguiente();
+  applyQuality(S.quality); guardarPrefs(); close('#ovCfg');
+  toast(S.apiKey?'Búsqueda real de YouTube activada':'Modo demo');
+});
+function mode(){
+  const b=$('#mode');
+  b.textContent = S.conClave ? 'YouTube' : 'Sin clave';
+  b.className = 'badge ' + (S.conClave?'live':'demo');
+  b.title = S.conClave ? 'Clave configurada en el servidor'
+                       : 'Sin clave: pega enlaces de YouTube, o pulsa aquí para configurarla';
+  b.style.cursor = S.conClave ? 'default' : 'pointer';
+  b.onclick = S.conClave ? null : ()=>location.href='ajustes.php';
+}
+
+/* copia de seguridad */
+$('#bExp').addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify({app:'karaoke-launcher-lite',version:'0.8',
+    date:new Date().toISOString(),library:S.library,queue:S.queue},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='karaoke-copia.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Copia descargada');
+});
+$('#bImp').addEventListener('click',()=>$('#file').click());
+$('#file').addEventListener('change',ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(Array.isArray(d.library)) S.library=d.library;
+      if(Array.isArray(d.queue))   S.queue=d.queue.map(t=>({...t,id:t.id||uid()}));
+      save(); draw(); close('#ovCfg'); toast('Copia importada');
+    }catch(e){ toast('⚠ El archivo no es válido'); }
+  };
+  rd.readAsText(f); ev.target.value='';
+});
+
+/* =====================================================================
+   8. ARRANQUE
+   ===================================================================== */
+load();
+
+/* ---- QR para las peticiones ---------------------------------------- */
+
+/* La biblioteca se pliega a una estrellita para no molestar en la fiesta. */
+function setLibCol(on){
+  S.libCol = !!on; guardarPrefs();
+  document.body.classList.toggle('libcol', S.libCol);
+  $('#bLibCol').title = S.libCol ? 'Abrir la biblioteca' : 'Plegar la biblioteca';
+}
+$('#bLibCol').addEventListener('click', ()=> setLibCol(!S.libCol));
+
+/* La pantalla del televisor va en otra ventana: este PC conserva los
+   mandos y allí solo se ve el vídeo. Se abre suelta para poder
+   arrastrarla a la segunda pantalla. */
+$('#bProy').addEventListener('click',()=>{
+  const url = location.pathname.replace(/[^/]*$/,'') + 'proyector.php';
+  window.open(url, 'karaoke_proyector', 'width=1280,height=720');
+  toast('📺 Arrástrala a la tele y pulsa «Encender la pantalla»');
+});
+
+$('#bQR').addEventListener('click',()=>{
+  const url = location.origin + location.pathname.replace(/[^/]*$/,'') + 'pedir.php';
+  $('#qrurl').textContent = url;
+  $('#qrimg').innerHTML = '<img alt="QR" style="width:200px;height:200px;display:block" src="'
+    + 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data='
+    + encodeURIComponent(url) + '">';
+  if(/localhost|127\.0\.0\.1/.test(location.hostname)){
+    $('#qrimg').innerHTML += '<div style="color:#B71C1C;font-size:12px;margin-top:8px;max-width:200px">'
+      + 'Estás en localhost: el QR solo te vale a ti. Arranca con Karaoke.bat '
+      + 'para que salga la IP de tu wifi.</div>';
+  }
+  open('#ovQR');
+});
+
+/* ---- descarga con yt-dlp -------------------------------------------- */
+async function descargar(t){
+  toast('⤓ Descargando «'+t.title.slice(0,28)+'»…');
+  try{
+    const j = await api('api/descargar.php', {videoId:t.videoId});
+    await accion({accion:'actualizar_pista', videoId:t.videoId, local:j.local});
+    toast(j.nuevo ? '✓ Descargada. Ya suena sin internet.' : 'Ya la tenías descargada');
+  }catch(e){ toast('⚠ '+e.message); }
+}
+
+/* ---- PWA ------------------------------------------------------------ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+$('#bAuto').classList.toggle('on',S.autoNext);
+setView(S.view);
+setLibCol(S.libCol);
+draw();
+if(window.innerWidth>900) setTimeout(()=>$('#q').focus(),120);
+
+/* El estado viene del servidor, y a partir de ahí escuchamos cambios. */
+cargar().then(escuchar);
+
+/* Si el vídeo local acaba, encadenamos igual que con YouTube. */
+$('#vlocal').addEventListener('ended',()=>{ S.autoNext ? next() : stop(); });
+
+</script>
+</body>
+</html>
