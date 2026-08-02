@@ -1,0 +1,133 @@
+/* ═══════════════════════════════════════════════════════════════════
+   interpretacion.css — la misma ventana, sin nada que estorbe
+
+   No es otra pantalla ni otra página: es el monitor del PC cambiando de
+   modo. Al pulsar Play, `data-pantalla` pasa a "interpretacion" y todo
+   el puesto de mando desaparece; al terminar la canción, vuelve.
+
+   La pantalla completa se pide UNA vez, sobre el documento entero, y no
+   se suelta entre canciones. Así el encadenado automático no necesita
+   un clic para volver a pedirla — el navegador solo la concede tras un
+   gesto del usuario, y a la tercera canción ya no hay ninguno.
+   ═══════════════════════════════════════════════════════════════════ */
+
+body[data-pantalla="interpretacion"] header,
+body[data-pantalla="interpretacion"] #tabs,
+body[data-pantalla="interpretacion"] main,
+body[data-pantalla="interpretacion"] #pl,
+body[data-pantalla="interpretacion"] #redbar,
+body[data-pantalla="interpretacion"] #cuenta{display:none}
+
+body[data-pantalla="interpretacion"]{background:#000}
+body[data-pantalla="interpretacion"] #app{height:100dvh}
+
+body[data-pantalla="interpretacion"] #vb{
+  position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;
+  border:0;border-radius:0;box-shadow:none;z-index:60;display:block
+}
+body[data-pantalla="interpretacion"] #vb.hide{display:block}
+body[data-pantalla="interpretacion"] #vb .vh{display:none}
+body[data-pantalla="interpretacion"] #vzona{height:100dvh}
+body[data-pantalla="interpretacion"] #yt,
+body[data-pantalla="interpretacion"] #vlocal{
+  width:100%;height:100dvh;aspect-ratio:auto;display:block}
+
+/* El aviso de quién canta después, en grande para leerlo de lejos. */
+body[data-pantalla="interpretacion"] #vnext{
+  top:3vh;max-width:42vw;padding:1.4vh 2vw;border-radius:1.2vh}
+body[data-pantalla="interpretacion"] #vnext .e{font-size:1.3vh;letter-spacing:.35vw}
+body[data-pantalla="interpretacion"] #vnext .q{font-size:3.4vh}
+body[data-pantalla="interpretacion"] #vnext .t{font-size:1.9vh}
+body[data-pantalla="interpretacion"] #vb.nx-der #vnext{right:2.5vw}
+body[data-pantalla="interpretacion"] #vb.nx-izq #vnext{left:2.5vw}
+
+/* ---- La salida, SIEMPRE visible --------------------------------------
+   Antes esto aparecía al mover el ratón y se iba a los tres segundos.
+   No funcionaba, y el motivo no era obvio: **el iframe de YouTube se
+   traga los eventos del ratón**. Con el vídeo ocupando la pantalla
+   entera, ningún `mousemove` llega a la página, así que el botón se
+   quedaba invisible para siempre y la única salida era recargar la
+   dirección a mano. Lo mismo le pasa al teclado si alguien llega a
+   pulsar sobre el vídeo: el foco se va dentro del marco y Esc deja de
+   llegar aquí.
+
+   Por eso ahora está fijo. Discreto —translúcido, en una esquina—, pero
+   nunca invisible. Cuando algo falla no se puede depender de que el
+   usuario descubra un gesto.                                          */
+#salirInterp{
+  position:fixed;top:2vh;left:2vw;z-index:75;
+  display:none;align-items:center;gap:9px;
+  background:rgba(6,8,12,.72);border:1px solid rgba(255,255,255,.22);
+  color:#fff;border-radius:999px;padding:11px 20px;
+  font-size:13.5px;font-weight:700;
+  backdrop-filter:blur(6px);
+  opacity:.42;transition:opacity .18s,transform .18s,background .18s
+}
+body[data-pantalla="interpretacion"] #salirInterp{display:flex}
+#salirInterp:hover,#salirInterp:focus-visible{
+  opacity:1;transform:scale(1.04);background:rgba(120,14,24,.92);border-color:#ff8a94}
+#salirInterp .ic{width:16px;height:16px}
+/* El cursor sí se esconde: eso lo controla la ventana, no el iframe. */
+body[data-pantalla="interpretacion"].quieto{cursor:none}
+
+/* ---- Cuando el vídeo no arranca --------------------------------------
+   YouTube pinta su propio «Se ha producido un error» dentro del marco y
+   a veces no avisa por la API. Aquí se tapa con algo que sí se puede
+   pulsar, porque delante de una fiesta nadie va a abrir la consola. */
+#falloVideo{
+  position:fixed;inset:0;z-index:80;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:rgba(6,8,12,.94);text-align:center;padding:6vh 6vw
+}
+body.fallo-video #falloVideo{display:flex}
+#falloVideo .ic{width:56px;height:56px;color:#ffb648}
+#falloVideo h3{margin:0;font-size:26px;font-weight:800}
+#falloVideo p{margin:0;color:var(--txt2);font-size:15px;max-width:620px;line-height:1.6}
+#falloVideo .bots{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+
+/* ---- Fin de actuación ------------------------------------------------
+   Los segundos entre canciones. El puesto de mando ya está a pantalla
+   completa (nunca se soltó), así que aquí solo hace falta decir cuánto
+   queda y qué viene, para que el operador sepa si le da tiempo a algo. */
+#cuenta{
+  display:none;align-items:center;gap:14px;
+  padding:11px 18px;flex-shrink:0;
+  background:linear-gradient(90deg,var(--ac-d),var(--bg2));
+  border-top:1px solid var(--ac2);font-size:13.5px
+}
+body[data-evento="FIN_ACTUACION"] #cuenta,
+body[data-evento="PREPARADA"] #cuenta{display:flex}
+#cuenta .ic{width:18px;height:18px;color:var(--ac)}
+#cuenta .txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cuenta .txt b{color:var(--ac)}
+#cuenta .seg{
+  font-variant-numeric:tabular-nums;font-weight:800;font-size:15px;color:var(--ac);
+  background:var(--bg);border:1px solid var(--ac2);border-radius:999px;
+  padding:3px 12px;min-width:52px;text-align:center}
+body[data-evento="PREPARADA"] #cuenta .seg{display:none}
+#cuenta .btn{padding:8px 16px;font-size:12.5px}
+
+/* ---- La llamada -------------------------------------------------------
+   La cuenta atrás entre el «Empezar» del operador y la primera nota. Va
+   encima del vídeo ya cargado, no sobre el puesto de mando: así no hay
+   salto de interfaz justo cuando empieza a sonar. */
+#llamada{
+  position:fixed;inset:0;z-index:70;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:1.5vh;
+  background:radial-gradient(circle at 50% 45%,rgba(var(--ac-rgb),.13),rgba(0,0,0,.93) 60%);
+  text-align:center;
+  animation:pop .25s ease-out
+}
+body[data-evento="LLAMADA"] #llamada{display:flex}
+#llamada .et{font-size:1.7vh;letter-spacing:.5vw;text-transform:uppercase;
+  color:var(--ac);font-weight:800}
+#llamada .tit{font-size:5vh;font-weight:900;line-height:1.05;max-width:80vw;
+  text-shadow:0 .4vh 3vh rgba(0,0,0,.9)}
+#llamada .num{
+  font-size:26vh;font-weight:900;line-height:1;color:var(--ac);
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 8vh rgba(var(--ac-rgb),.45);
+  animation:latido 1s ease-out infinite
+}
+@keyframes latido{0%{transform:scale(1.12);opacity:.75}35%,100%{transform:scale(1);opacity:1}}
+#llamada .pie{font-size:1.8vh;color:var(--txt3);font-weight:700}

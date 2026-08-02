@@ -1,4 +1,10 @@
 @echo off
+rem ===================================================================
+rem  ASCII PURO, sin tildes ni enes. Con `chcp 65001`, un solo caracter
+rem  UTF-8 descoloca el analizador de cmd y a partir de ahi se come el
+rem  primer caracter de cada linea. Ver la explicacion larga en
+rem  Preparar.bat.
+rem ===================================================================
 setlocal enabledelayedexpansion
 title Karaoke Launcher v1.0
 cd /d "%~dp0"

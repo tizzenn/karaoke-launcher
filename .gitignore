@@ -15,3 +15,7 @@ ffprobe.exe
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Lo que generan las pruebas: es de usar y tirar
+data/pruebas.json
+data/descargas/

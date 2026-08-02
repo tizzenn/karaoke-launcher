@@ -1,329 +1,249 @@
 <?php
 /* ═══════════════════════════════════════════════════════════════════
-   proyector.php — la pantalla del televisor
+   proyector.php — la pantalla del público
 
-   Se abre en una segunda ventana y se arrastra a la tele. Muestra el
-   vídeo a pantalla completa, quién canta ahora y quién va después.
+   Se abre en una segunda ventana y se arrastra a la tele. Es la segunda
+   de las dos superficies físicas del sistema; la otra es el monitor del
+   PC, que se reparten el operador y el cantante.
 
-   Esta pantalla NO manda: sigue a «sonando», que decide el PC. Si
-   mandaran las dos, se pelearían por la cola. Aquí no se escribe nada
-   en el estado, solo se lee.
+   Esta pantalla NO manda: lee `evento.estado` de data/estado.json y
+   obedece. Si mandaran las dos, se pelearían por decidir la siguiente
+   canción. Como no escribe nada, tampoco abre ninguna puerta nueva a
+   los invitados.
 
-   El sonido sale de aquí, porque es lo que está enchufado a la tele.
-   El portátil se queda mudo — hay un aviso que lo recuerda.
+   Cinco escenas, y la que toca la decide el estado del evento:
+
+     CALENTAMIENTO   el rato de antes: cómo pedir, la cola llenándose
+     ESPERA          nadie cantando
+     PREPARADA       el operador está montando la siguiente
+     LLAMADA         cuenta atrás: «ahora canta…», 5, 4, 3…
+     INTERPRETACION  el vídeo a pantalla completa
+     FIN_ACTUACION   aplausos y quién va ahora
+
+   Los nombres salen en UN solo sitio: la cuenta atrás de la llamada, y
+   solo si la canción la pidió alguien desde el móvil —o sea, si el
+   nombre ya existe y no hay que escribir nada de más—. Es el único
+   momento en que saber quién sale cambia algo. En las listas, en la
+   franja del vídeo y en los aplausos no aparece ninguno: ahí el título
+   basta, y una pantalla proyectada llena de nombres escritos por gente
+   bebida no mejora nada.
+
+   El sonido sale de aquí, porque es lo que está enchufado a la tele. El
+   portátil se queda mudo, pero sigue reproduciendo: es quien detecta el
+   final de la canción y encadena la siguiente.
    ═══════════════════════════════════════════════════════════════════ */
 
 require __DIR__ . '/api/comun.php';
 $cfg = cfg();
 
-/* La dirección para los móviles, para enseñarla mientras no suena nada. */
-$host = preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+/* La dirección del QR sale de la red del servidor, NUNCA de la URL con
+   la que se abrió esta ventana: el proyector se abre desde el operador,
+   que está en `localhost`, y el QR resultante solo servía para el propio
+   PC. Lo que hace falta es la IP con la que se ve este ordenador desde
+   los móviles. */
+$ip     = ip_local();
 $puerto = (int)($_SERVER['SERVER_PORT'] ?? 8123);
-$urlPedir = 'http://' . $host . ($puerto == 80 ? '' : ':' . $puerto) . '/pedir.php';
+$urlPedir = $ip ? 'http://' . $ip . ($puerto == 80 ? '' : ':' . $puerto) . '/pedir.php' : '';
 $hayPeticiones = (bool)$cfg['peticiones'];
+
+/* Sin dirección de red no hay nada que ofrecer a los móviles, y decirlo
+   con un icono de wifi tachada es más honesto que enseñar un QR muerto. */
+$esLocal = ($ip === null);
+
+/* ---- La wifi para el QR ---------------------------------------------
+   El nombre de la red se puede sacar de Windows sin permisos especiales.
+   La contraseña NO: `netsh wlan show profile key=clear` exige
+   administrador, y pedirle a alguien que arranque el karaoke como
+   administrador para dibujar un QR no compensa. Por eso la contraseña se
+   escribe una vez en los ajustes.
+
+   Sin contraseña no se enseña el QR de wifi: un QR que no conecta
+   confunde más que no poner ninguno. */
+function ssid_actual(): string {
+  if (stripos(PHP_OS_FAMILY, 'Windows') === false) return '';
+  if (!function_exists('shell_exec')) return '';
+  $s = @shell_exec('netsh wlan show interfaces 2>&1');
+  if (!$s) return '';
+  /* La salida está traducida al idioma del sistema; se busca la línea
+     que empieza por SSID pero no por «BSSID». */
+  foreach (preg_split('/\R/', $s) as $linea) {
+    if (preg_match('/^\s*SSID\s*:\s*(.+?)\s*$/i', $linea, $m)) return $m[1];
+  }
+  return '';
+}
+
+$ssid  = trim((string)($cfg['wifi_ssid'] ?? '')) ?: ssid_actual();
+$clave = (string)($cfg['wifi_clave'] ?? '');
+$calentamientoMin = (int)($cfg['calentamiento_min'] ?? 20);
+$limite = (int)$cfg['limite_por_invitado'];
+$conClave = (string)$cfg['clave_fiesta'] !== '';
 ?><!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-modo="karaoke">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000">
-<title>Karaoke — pantalla</title>
-<style>
-:root{--bg:#000;--bg2:#0d0f14;--bg3:#1b2029;--line:#2b323f;
---txt:#eaedf3;--txt2:#98a1b2;--txt3:#6a7383;--ac:#22d97a;--dang:#ff5d6c}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--txt);
- font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif}
-body.quieto{cursor:none}
-
-/* ---- el vídeo ocupa la pantalla entera; lo demás flota encima ---- */
-#escena{position:fixed;inset:0;background:#000}
-#yt,#vlocal{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
-#vlocal{object-fit:contain}
-.oculto{display:none!important}
-
-/* ---- franja de abajo: quién canta y quién va después ---- */
-#franja{position:fixed;left:0;right:0;bottom:0;padding:4.6vh 4vw 3.4vh;
- background:linear-gradient(to top,rgba(0,0,0,.93) 55%,rgba(0,0,0,0));
- display:flex;align-items:flex-end;gap:4vw;
- transition:opacity .5s;pointer-events:none}
-#franja.fuera{opacity:0}
-.ahora{flex:1;min-width:0}
-.et{font-size:1.5vw;letter-spacing:.35vw;text-transform:uppercase;
- color:var(--ac);font-weight:800;margin-bottom:.7vh}
-.canta{font-size:5.2vw;font-weight:800;line-height:1.02;
- white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
- text-shadow:0 .3vh 2vh rgba(0,0,0,.9)}
-.tema{font-size:2vw;color:var(--txt2);margin-top:1vh;font-weight:600;
- white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.luego{text-align:right;max-width:34vw;flex-shrink:0}
-.luego .et{color:var(--txt3)}
-.luego .n{font-size:2.6vw;font-weight:800;line-height:1.1;
- white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.luego .t{font-size:1.5vw;color:var(--txt3);margin-top:.6vh;
- white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* ---- pantalla de espera: no suena nada ---- */
-#espera{position:fixed;inset:0;background:var(--bg2);
- display:flex;flex-direction:column;align-items:center;justify-content:center;
- gap:3vh;padding:6vh 6vw;text-align:center}
-#espera h1{font-size:7vw;font-weight:800;letter-spacing:-.15vw}
-#espera .sub{font-size:2.2vw;color:var(--txt2);max-width:60vw;line-height:1.5}
-#espera .url{font-size:2.8vw;font-weight:800;color:var(--ac);
- background:var(--bg3);border:.2vh solid var(--line);border-radius:1.4vh;
- padding:1.6vh 3vw;word-break:break-all}
-#lista{margin-top:1vh;width:min(74vw,1100px);max-height:34vh;overflow:hidden}
-#lista .f{display:flex;gap:1.6vw;align-items:center;padding:1.1vh 1.6vw;
- border-bottom:.1vh solid var(--line);font-size:1.9vw;text-align:left}
-#lista .f:last-child{border-bottom:0}
-#lista .n{color:var(--txt3);font-weight:800;width:2.5vw;flex-shrink:0}
-#lista .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#lista .q{color:var(--ac);font-weight:800;flex-shrink:0}
-
-/* ---- el botón de arrancar: los navegadores no dejan sonar sin un clic ---- */
-#arranque{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.94);
- display:flex;flex-direction:column;align-items:center;justify-content:center;
- gap:3vh;text-align:center;padding:6vw;cursor:pointer}
-#arranque .b{background:var(--ac);color:#052b16;border:0;border-radius:2vh;
- padding:2.6vh 6vw;font-size:3.4vw;font-weight:800;font-family:inherit;cursor:pointer}
-#arranque .p{font-size:1.9vw;color:var(--txt2);max-width:52vw;line-height:1.6}
-#arranque .p b{color:var(--txt)}
-
-/* ---- avisos ---- */
-#aviso{position:fixed;top:3vh;left:50%;transform:translateX(-50%);z-index:40;
- background:rgba(0,0,0,.9);border:.2vh solid var(--line);border-radius:1.4vh;
- padding:1.6vh 3vw;font-size:1.9vw;font-weight:700;max-width:80vw;text-align:center}
-#aviso.mal{border-color:var(--dang);color:#ffc4ca}
-#aviso.bien{border-color:var(--ac);color:#a9f0c8}
-
-/* En un monitor pequeño el vw se queda enano: subimos el mínimo. */
-@media (max-width:900px){
-  .canta{font-size:8vw}.tema{font-size:3.4vw}.et{font-size:2.6vw}
-  .luego .n{font-size:4vw}.luego .t{font-size:2.6vw}
-  #espera h1{font-size:11vw}#espera .sub,#espera .url{font-size:4vw}
-  #lista .f{font-size:3.4vw}#arranque .b{font-size:6vw}#arranque .p{font-size:3.4vw}
-}
-</style>
+<title>📺 Pantalla del público · Karaoke Launcher</title>
+<!-- La paleta y los tres modos salen de base.css, igual que en el resto
+     del proyecto. proyector.css solo cambia lo que de verdad es distinto
+     en una tele: el fondo negro de verdad. -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/proyector.css">
 </head>
-<body>
+<body data-lado="der" data-escena="ESPERA">
+
+<script src="js/simbolos.js"></script>
 
 <div id="escena">
   <div id="yt"></div>
   <video id="vlocal" class="oculto" playsinline></video>
 </div>
 
-<div id="espera">
-  <h1>🎤 Karaoke</h1>
-  <div class="sub" id="esperaSub">Elige una canción en el ordenador y empieza la fiesta.</div>
-<?php if ($hayPeticiones): ?>
-  <div class="url"><?= htmlspecialchars($urlPedir, ENT_QUOTES, 'UTF-8') ?></div>
-  <div class="sub">Entra desde el móvil y pide la tuya.</div>
-<?php endif; ?>
-  <div id="lista"></div>
+<div id="halo" class="no"></div>
+<div id="barras"></div>
+
+<!-- ═══ CALENTAMIENTO ═══ -->
+<div class="escena oculto" id="calent">
+  <div class="marca"><svg class="ic"><use href="#ic-microfono"></use></svg> <span id="marcaTxt">Karaoke</span></div>
+  <div class="reloj" id="reloj"></div>
+
+  <!-- 1 · Cómo pedir, en tres pasos -->
+  <div class="panel on" data-k="pedir">
+    <h1>Pide tu canción <span class="ac">desde el móvil</span></h1>
+    <div class="pasos">
+      <div class="paso">
+        <span class="num">1</span>
+        <div class="pic" id="picWifi"><svg class="ic"><use href="#ic-wifi"></use></svg></div>
+        <div class="tit" id="tWifi">Conéctate al wifi</div>
+        <div class="txt" id="dWifi">Apunta con la cámara y acepta la red</div>
+      </div>
+      <div class="flecha">›</div>
+      <div class="paso">
+        <span class="num">2</span>
+        <div class="pic" id="picPedir"><svg class="ic"><use href="#ic-qr"></use></svg></div>
+        <div class="tit">Escanea esto</div>
+        <div class="txt" id="dPedir">Se abre solo. No hay que instalar nada</div>
+      </div>
+      <div class="flecha">›</div>
+      <div class="paso">
+        <span class="num">3</span>
+        <div class="pic"><svg class="ic"><use href="#ic-buscar"></use></svg></div>
+        <div class="tit">Busca y envía</div>
+        <div class="txt" id="dEnviar">Tu canción entra en la cola</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · La cola, llenándose en directo -->
+  <div class="panel" data-k="cola">
+    <h1>La cola <span class="ac">ahora mismo</span></h1>
+    <div class="sub" id="colaSub"></div>
+    <div class="cola" id="colaLista"></div>
+  </div>
+
+  <!-- 3 · Cómo funciona esto por dentro -->
+  <div class="panel" data-k="funciona">
+    <h1>Cómo <span class="ac">funciona</span></h1>
+    <div class="circuito">
+      <div class="nodo"><svg class="ic"><use href="#ic-movil"></use></svg>
+        <span class="q">Tú pides</span><span class="d">desde tu móvil</span></div>
+      <div class="flecha">›</div>
+      <div class="nodo vivo"><svg class="ic"><use href="#ic-musica"></use></svg>
+        <span class="q">A la cola</span><span class="d" id="nodoCola">esperando turno</span></div>
+      <div class="flecha">›</div>
+      <div class="nodo"><svg class="ic"><use href="#ic-tv"></use></svg>
+        <span class="q">A la pantalla</span><span class="d">con la letra</span></div>
+      <div class="flecha">›</div>
+      <div class="nodo"><svg class="ic"><use href="#ic-microfono"></use></svg>
+        <span class="q">Cantas</span><span class="d">y aplaudimos</span></div>
+    </div>
+    <div class="consejo">Nadie tiene que buscar nada en YouTube ni pasarle el móvil a nadie.
+    Se encadenan solas, una detrás de otra.</div>
+  </div>
+
+  <!-- 4 · Datos y consejos -->
+  <div class="panel" data-k="datos">
+    <h1>Antes de <span class="ac">empezar</span></h1>
+    <div class="datos">
+      <div class="dato"><div class="g" id="dCola">0</div><div class="p">en la cola</div></div>
+      <div class="dato"><div class="g" id="dBib">0</div><div class="p">en la biblioteca</div></div>
+      <div class="dato"><div class="g" id="dMin">—</div><div class="p">de música ya pedida</div></div>
+    </div>
+    <div class="consejo" id="consejo"></div>
+  </div>
+
+  <div class="puntos" id="puntos"></div>
 </div>
 
-<div id="franja" class="fuera">
-  <div class="ahora">
-    <div class="et">Ahora canta</div>
-    <div class="canta" id="quien">—</div>
-    <div class="tema" id="tema"></div>
-  </div>
-  <div class="luego oculto" id="luego">
-    <div class="et">Después</div>
-    <div class="n" id="luegoQuien"></div>
-    <div class="t" id="luegoTema"></div>
-  </div>
+<!-- ═══ ESPERA / PREPARADA ═══ -->
+<div class="escena oculto" id="espera">
+  <h1 id="esperaTit">🎤 Karaoke</h1>
+  <div class="sub" id="esperaSub">Elige una canción en el ordenador y empieza la fiesta.</div>
+  <div class="cola" id="esperaLista" style="width:64vw;max-height:38vh"></div>
 </div>
+
+<!-- ═══ LLAMADA ═══ -->
+<div class="escena oculto" id="llamada">
+  <div class="et">Ahora canta</div>
+  <div class="quien" id="llamQuien"></div>
+  <div class="tit" id="llamTit"></div>
+  <div class="num" id="llamNum">5</div>
+</div>
+
+<!-- ═══ FIN DE ACTUACIÓN ═══ -->
+<div class="escena oculto" id="aplausos">
+  <h1>👏 <span class="ac">¡Bien!</span></h1>
+  <div class="sub" id="finQue"></div>
+  <div class="sub" style="font-size:2.6vw;color:var(--txt)" id="finSig"></div>
+</div>
+
+<!-- ═══ Encima del vídeo ═══ -->
+<div id="franja" class="fuera oculto">
+  <div class="et">Suena ahora</div>
+  <div class="canta" id="quien">—</div>
+  <div class="tema" id="tema"></div>
+</div>
+
+<div id="proximas" class="oculto"></div>
+<div id="esquina"></div>
 
 <div id="arranque">
   <button class="b" id="empezar">Encender la pantalla</button>
   <div class="p">
     Pulsa una vez y ya se queda. El navegador no deja que suene el vídeo
     hasta que alguien toca la pantalla.<br><br>
-    <b>El sonido sale de aquí.</b> Baja el volumen del ordenador, que lleva
-    el mismo vídeo por su cuenta.
+    <span id="quienSuena"></span>
   </div>
+  <label><input type="checkbox" id="conMicro" checked>
+    Que la pantalla reaccione al ruido de la sala</label>
 </div>
 
+<script src="js/cancion.js"></script>
+<script src="js/actuacion.js"></script>
+<script src="js/estados.js"></script>
+<script src="js/qr.js"></script>
 <script>
 'use strict';
-const $ = s => document.querySelector(s);
-const esc = s => String(s??'').replace(/[&<>"']/g,c=>
-  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-let version   = -1;    // última versión del estado que hemos pintado
-let arrancado = false; // ¿ya ha pulsado alguien? sin eso no hay sonido
-let sonandoId = null;  // qué pista tenemos puesta, para no recargarla en cada sondeo
-let ultimo    = null;  // último estado recibido, por si arrancan tarde
-let yt = null, listo = false;
-
-/* ---- el reproductor de YouTube ---------------------------------------- */
-window.onYouTubeIframeAPIReady = function(){
-  yt = new YT.Player('yt', {
-    playerVars:{autoplay:1, controls:0, rel:0, modestbranding:1,
-                playsinline:1, iv_load_policy:3, disablekb:1},
-    events:{
-      onReady:()=>{ listo = true; if(ultimo) pintar(ultimo, true); },
-      onError:e=>{
-        /* 101/150 = el dueño no deja incrustarlo. Aquí no pasamos a la
-           siguiente: manda el ordenador, y allí ya salta el aviso. */
-        aviso('Ese vídeo no se puede ver aquí. Míralo en el ordenador.', 'mal');
-      }
-    }
-  });
+/* Lo único que sigue aquí dentro: los valores que pone PHP. El resto
+   está en js/proyector/, que se puede leer sin ejecutar nada. */
+const CFG = {
+  urlPedir:  <?= json_encode($urlPedir) ?>,
+  peticiones:<?= $hayPeticiones ? 'true' : 'false' ?>,
+  esLocal:   <?= $esLocal ? 'true' : 'false' ?>,
+  ssid:      <?= json_encode($ssid) ?>,
+  clave:     <?= json_encode($clave) ?>,
+  limite:    <?= (int)$limite ?>,
+  conClave:  <?= $conClave ? 'true' : 'false' ?>
 };
-(function(){ const s=document.createElement('script');
-  s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s); })();
-
-/* ---- avisos que se van solos ------------------------------------------ */
-let avisoT = null;
-function aviso(txt, tipo){
-  clearTimeout(avisoT);
-  let d = $('#aviso');
-  if(!txt){ if(d) d.remove(); return; }
-  if(!d){ d = document.createElement('div'); d.id='aviso'; document.body.appendChild(d); }
-  d.className = tipo || '';
-  d.textContent = txt;
-  avisoT = setTimeout(()=>{ const x=$('#aviso'); if(x) x.remove(); }, 6000);
-}
-
-/* ---- poner una pista -------------------------------------------------- */
-function poner(pista){
-  const v = $('#vlocal');
-  if(pista.local){
-    /* Descargada: del disco. Ni internet, ni error 153, ni cortes. */
-    if(listo && yt) yt.stopVideo();
-    $('#yt').classList.add('oculto');
-    v.classList.remove('oculto');
-    v.src = pista.local;
-    v.play().catch(()=>aviso('Pulsa la pantalla para que suene', 'mal'));
-  } else {
-    v.pause(); v.removeAttribute('src'); v.classList.add('oculto');
-    $('#yt').classList.remove('oculto');
-    if(listo && yt) yt.loadVideoById({videoId: pista.videoId, startSeconds: 0});
-  }
-}
-
-function parar(){
-  const v = $('#vlocal');
-  v.pause(); v.removeAttribute('src'); v.classList.add('oculto');
-  if(listo && yt) yt.stopVideo();
-  $('#yt').classList.add('oculto');
-}
-
-/* ---- pintar el estado -------------------------------------------------- */
-function pintar(e, forzar){
-  ultimo  = e;
-  version = e.version ?? version;
-
-  const cola = e.cola || [];
-  const i    = cola.findIndex(t => t.id === e.sonando);
-  const hoy  = i >= 0 ? cola[i] : null;
-  const next = i >= 0 ? cola[i+1] : cola[0];
-
-  /* --- nada sonando: pantalla de espera con la cola --- */
-  if(!hoy){
-    if(sonandoId !== null || forzar){ parar(); sonandoId = null; }
-    $('#espera').classList.remove('oculto');
-    $('#franja').classList.add('fuera');
-    $('#esperaSub').textContent = cola.length
-      ? 'Hay ' + cola.length + (cola.length===1 ? ' canción esperando.' : ' canciones esperando.')
-      : 'Elige una canción en el ordenador y empieza la fiesta.';
-    $('#lista').innerHTML = cola.slice(0,8).map((t,n)=>`
-      <div class="f">
-        <span class="n">${n+1}</span>
-        <span class="t">${esc(t.title)}</span>
-        ${t.pedida ? `<span class="q">${esc(t.pedida)}</span>` : ''}
-      </div>`).join('');
-    return;
-  }
-
-  /* --- suena algo --- */
-  $('#espera').classList.add('oculto');
-  $('#franja').classList.remove('fuera');
-
-  /* Quien la pidió va en grande; si la puso el PC, el título manda. */
-  $('#quien').textContent = hoy.pedida || hoy.title;
-  $('#tema').textContent  = hoy.pedida ? hoy.title : (hoy.channel || '');
-
-  if(next){
-    $('#luego').classList.remove('oculto');
-    $('#luegoQuien').textContent = next.pedida || next.title;
-    $('#luegoTema').textContent  = next.pedida ? next.title : (next.channel || '');
-  } else {
-    $('#luego').classList.add('oculto');
-  }
-
-  /* Solo recargamos si ha cambiado de canción: si no, cada sondeo
-     cortaría el vídeo por la mitad. */
-  if(hoy.id !== sonandoId || forzar){
-    sonandoId = hoy.id;
-    if(arrancado) poner(hoy);
-  }
-
-  /* La franja estorba: se retira sola y vuelve al cambiar de canción. */
-  clearTimeout(pintar.t);
-  pintar.t = setTimeout(()=>$('#franja').classList.add('fuera'), 12000);
-}
-
-/* ---- hablar con el servidor -------------------------------------------- */
-async function leer(url){
-  const r = await fetch(url);
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error || ('error ' + r.status));
-  return j;
-}
-
-async function escuchar(){
-  /* Preguntamos cada segundo y medio y soltamos. Retener la conexión, que
-     era lo suyo, deja clavado al servidor de PHP: atiende de una en una y
-     la tele estaría acaparándolo mientras los móviles esperan. */
-  while(true){
-    try{
-      const e = await leer('api/estado.php?desde=' + version);
-      if((e.version ?? 0) > version) pintar(e);
-      await new Promise(r => setTimeout(r, 1500));
-    }catch(err){
-      aviso('Sin conexión con el karaoke. Reintentando…', 'mal');
-      await new Promise(r => setTimeout(r, 5000));
-    }
-  }
-}
-
-/* ---- arranque ---------------------------------------------------------- */
-$('#empezar').addEventListener('click', async () => {
-  arrancado = true;
-  $('#arranque').remove();
-  try{ await document.documentElement.requestFullscreen(); }catch(e){}
-  if(ultimo) pintar(ultimo, true);
-});
-
-/* El ratón encima de la tele se ve; lo escondemos cuando nadie lo mueve. */
-let quietoT = null;
-addEventListener('mousemove', () => {
-  document.body.classList.remove('quieto');
-  clearTimeout(quietoT);
-  quietoT = setTimeout(()=>document.body.classList.add('quieto'), 3000);
-});
-
-/* Al mover el ratón vuelve la franja, por si alguien pregunta quién canta. */
-addEventListener('mousemove', () => {
-  if(sonandoId){
-    $('#franja').classList.remove('fuera');
-    clearTimeout(pintar.t);
-    pintar.t = setTimeout(()=>$('#franja').classList.add('fuera'), 12000);
-  }
-});
-
-addEventListener('keydown', e => {
-  if(e.key === 'f' || e.key === 'F'){
-    if(document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen().catch(()=>{});
-  }
-});
-
-leer('api/estado.php').then(e => pintar(e, true)).catch(()=>{}).then(escuchar);
 </script>
+
+<!-- El orden importa: ajustes crea las constantes, escenas necesita la
+     tabla de js/estados.js, y servidor arranca cuando ya existe todo. -->
+<script src="js/proyector/ajustes.js"></script>
+<script src="js/proyector/reproductor.js"></script>
+<script src="js/proyector/audio.js"></script>
+<script src="js/proyector/carteles.js"></script>
+<script src="js/proyector/escenas.js"></script>
+<script src="js/proyector/servidor.js"></script>
 </body>
 </html>

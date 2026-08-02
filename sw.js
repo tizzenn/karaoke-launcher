@@ -1,13 +1,17 @@
 /* Service worker: la interfaz carga aunque la red vaya mal.
    Los vídeos NO se cachean (los descargados ya están en disco). */
-/* v3 añade los módulos de js/. Sin ellos en la caché, la aplicación
-   abierta sin red se quedaba en blanco: el HTML estaba, pero el código
-   que lo hace funcionar no. Al cambiar el nombre de la caché, el
-   navegador se trae la lista nueva y tira la vieja. */
-const CACHE = 'karaoke-v3';
+/* v4: la aplicación se ha partido en css/ y js/, y los iconos son un
+   sprite SVG local. Si alguno se queda fuera de esta lista, la noche que
+   falle el router la interfaz sale sin estilos o sin iconos. Al cambiar
+   el nombre de la caché, el navegador se trae la lista nueva y tira la
+   vieja. */
+const CACHE = 'karaoke-v4';
 const BASE = [
   './', './index.html', './pedir.php', './proyector.php',
-  './js/nucleo.js', './js/almacen-servidor.js',
+  './css/base.css', './css/operador.css', './css/interpretacion.css',
+  './js/simbolos.js', './js/qr.js', './js/estados.js', './js/nucleo.js', './js/almacen-servidor.js', './js/interfaz.js',
+  './js/busqueda.js', './js/cola.js', './js/reproductor.js',
+  './js/evento.js', './js/atajos.js', './js/app.js',
   './manifest.webmanifest', './iconos/icono.svg'
 ];
 

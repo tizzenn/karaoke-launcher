@@ -49,6 +49,25 @@ KL.unesc = s => String(s ?? '')
 
 KL.miniatura = id => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
 
+/* Un icono del sprite local, listo para meter en una plantilla.
+   Nunca se enlazan iconos de un CDN: la aplicación tiene que verse con
+   el router caído, que es justo la noche en que más falta hace. */
+KL.icono = (id, clase) =>
+  `<svg class="ic${clase ? ' ' + clase : ''}" aria-hidden="true"><use href="#ic-${id}"></use></svg>`;
+
+/* ---- Estados del evento ---------------------------------------------
+   La aplicación no cambia de pantallas: cambia de estado, y cada
+   superficie —el monitor del PC y la tele— decide qué pinta a partir de
+   él. Ver js/evento.js.                                                */
+
+KL.EV = {
+  ESPERA:         'ESPERA',          // nadie cantando, el operador manda
+  PREPARADA:      'PREPARADA',       // pista cargada, esperando el Play
+  LLAMADA:        'LLAMADA',         // cuenta atrás: que al cantante le dé tiempo
+  INTERPRETACION: 'INTERPRETACION',  // sonando
+  FIN_ACTUACION:  'FIN_ACTUACION'    // los segundos entre canción y canción
+};
+
 /* ---- Estado en memoria ----------------------------------------------
    Lo que la interfaz está enseñando ahora mismo. Quién lo guarda en
    disco es cosa del almacén: este objeto no sabe si detrás hay un
@@ -59,18 +78,74 @@ KL.estado = {
   openVideo: true, alsoStar: false,
   quality: 'medium', antiCut: true, view: 'full', libCol: true,
   avisoSig: 'der',        // esquina del aviso «después canta»: der, izq o no
+  modo: 'karaoke',        // karaoke | dj | mc — solo cambia color y filtro
+  /* Un sufijo por modo, editable. DJ vacío a propósito: buscar tal cual.
+     Se guardan los tres, no solo el del modo activo, para que cambiar de
+     modo y volver no obligue a reescribirlo. */
+  sufijos: { karaoke:'karaoke', dj:'', freestyle:'instrumental' },
+  /* Los aplausos duraban 15 segundos y sobraban: la siguiente queda
+     PREPARADA y ahí se espera al operador, así que ese rato no lo decide
+     el reloj, lo decide él. Cinco bastan para el aplauso. */
+  segFin: 5,
+  /* La cuenta atrás va APAGADA por defecto, y es un cambio de criterio.
+     Un 3-2-1 en la pantalla le dice al cantante «tienes que empezar a
+     cantar CUANDO ESTO LLEGUE A CERO», y casi nadie está listo: todavía
+     está cogiendo el micro, saludando, o esperando a que la gente se
+     calle. Ese agobio no lo pone la canción, lo pone el contador.
+
+     El estado PREPARADA ya hace ese trabajo sin prisa. El operador mira,
+     ve que la persona está lista, y pulsa Empezar. Quien la quiera puede
+     volver a activarla en los ajustes. */
+  segLlamada: 0,
+  retirar: true,          // ¿sale de la cola la canción ya cantada?
+  calentamiento: 0,       // el rato de antes de empezar: encendido o no
+  descargas: {},          // vídeos bajándose ahora mismo: {videoId:{pct}}
+  cortes: 0,              // veces que el antiparones ha tenido que actuar
+  avisoRedHasta: 0,       // hasta cuándo no se vuelve a insistir
+  paneles: null,          // cartelones activos en la tele; null = todos
+  panelFijo: null,        // uno fijo, sin rotar
+  sonidoEn: 'pc',         // 'pc' o 'tele': por dónde salen los altavoces
+  desfaseTele: 0.7,       // segundos que la pantalla pública va por detrás
+  efecto: 'halo',         // halo | borde | barras | ninguno
+  efectoCancion: 1,       // cuánto se nota mientras suena una canción
+  efectoCalent: 2.2,      // cuánto se nota en el calentamiento
   library: [], seeded: false,
   queue: [],
-  curId: null,            // pista de la cola en reproducción
+  historial: [],
   autoNext: true,
   filterLib: '',
-  results: [], sel: null
+  results: [], sel: null,
+  edicion: '',            // «A Veiga Edition» y similares; vacío en la pública
+  evento: { estado: 'ESPERA', pistaId: null, recien: null, desde: 0 }
 };
 
 /* ---- Preferencias del aparato ---------------------------------------
    Estas NO se comparten: la calidad de vídeo o la vista que prefieres
    son tuyas, no de la fiesta. Por eso van en localStorage y no en el
-   estado compartido.                                                   */
+   estado compartido.
+
+   El estado del evento sí es compartido, y por eso NO está aquí: vive
+   en data/estado.json y lo ve también la tele.                        */
+
+/* ---- «Qué se está cantando» tiene UN dueño --------------------------
+   Aquí había un campo `curId` que se escribía a mano en cinco sitios, y
+   el servidor guardaba además un `sonando` con el mismo dato. Tres copias
+   de la misma verdad, y la prueba de que eso no sale gratis fue un fallo
+   real: al volver del vídeo al operador había que escribir `sonando` y
+   `evento` por separado, la primera respuesta llegaba con el evento viejo
+   y pisaba el nuevo.
+
+   Ahora no es un campo: es una pregunta con una sola respuesta posible.
+   No se puede asignar, así que no puede desincronizarse. El dueño es el
+   evento, y solo la máquina de estados lo cambia.
+
+   Se mantiene el nombre `curId` a propósito: renombrarlo en veintitrés
+   sitios a la vez no aporta nada y esconde el cambio de verdad, que es
+   este. */
+Object.defineProperty(KL.estado, 'curId', {
+  enumerable: true,
+  get() { return (this.evento && this.evento.pistaId) || null; }
+});
 
 KL.prefs = (function () {
   const CLAVE = 'karaoke_launcher_v1';
@@ -86,7 +161,23 @@ KL.prefs = (function () {
       S.view      = d.view || 'full';
       S.libCol    = d.libCol !== false;
       S.autoNext  = d.autoNext !== false;
+      S.retirar   = d.retirar !== false;
       if (['der', 'izq', 'no'].includes(d.avisoSig)) S.avisoSig = d.avisoSig;
+      if (['karaoke', 'dj', 'mc'].includes(d.modo))  S.modo = d.modo;
+      if (d.sufijos && typeof d.sufijos === 'object') {
+        for (const k of ['karaoke', 'dj', 'mc']) {
+          if (typeof d.sufijos[k] === 'string') S.sufijos[k] = d.sufijos[k];
+        }
+      }
+      if (['pc', 'tele'].includes(d.sonidoEn)) S.sonidoEn = d.sonidoEn;
+      if (Number.isFinite(+d.desfaseTele)) S.desfaseTele = Math.min(5, Math.max(-5, +d.desfaseTele));
+      if (['halo','borde','barras','ninguno'].includes(d.efecto)) S.efecto = d.efecto;
+      if (Number.isFinite(+d.efectoCancion)) S.efectoCancion = Math.min(4, Math.max(0, +d.efectoCancion));
+      if (Number.isFinite(+d.efectoCalent))  S.efectoCalent  = Math.min(4, Math.max(0, +d.efectoCalent));
+      /* Menos de 3 segundos no da tiempo ni a levantarse; más de 120 es
+         una fiesta parada. Se recorta en vez de rechazarlo. */
+      if (Number.isFinite(+d.segFin)) S.segFin = Math.min(120, Math.max(3, +d.segFin));
+      if (Number.isFinite(+d.segLlamada)) S.segLlamada = Math.min(15, Math.max(0, +d.segLlamada));
     } catch (e) { /* navegador sin localStorage: se usan los valores por defecto */ }
   }
 
@@ -95,7 +186,9 @@ KL.prefs = (function () {
       localStorage.setItem(CLAVE, JSON.stringify({
         quality: S.quality, antiCut: S.antiCut, openVideo: S.openVideo,
         view: S.view, autoNext: S.autoNext, libCol: S.libCol,
-        avisoSig: S.avisoSig
+        avisoSig: S.avisoSig, modo: S.modo, sufijos: S.sufijos, segFin: S.segFin, segLlamada: S.segLlamada, retirar: S.retirar,
+        sonidoEn: S.sonidoEn, desfaseTele: S.desfaseTele,
+        efecto: S.efecto, efectoCancion: S.efectoCancion, efectoCalent: S.efectoCalent
       }));
     } catch (e) { /* modo privado: no se recuerdan, pero se puede usar igual */ }
   }

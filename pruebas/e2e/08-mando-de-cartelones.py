@@ -1,0 +1,31 @@
+from playwright.sync_api import sync_playwright
+errs=[]
+with sync_playwright() as pw:
+    b=pw.chromium.launch(); ctx=b.new_context(viewport={'width':1400,'height':820})
+    op=ctx.new_page(); tv=ctx.new_page()
+    for p in (op,tv): p.on("pageerror", lambda e: errs.append(str(e)))
+    op.goto("http://localhost:8123/index.html"); op.wait_for_timeout(2000)
+    op.evaluate("""()=>fetch('api/estado.php',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({accion:'anadir_cola',video:{videoId:'dQw4w9WgXcQ',title:'Cicatrices · Natos y Waor',channel:'Kantar',thumb:'',duration:212}})})""")
+    op.wait_for_timeout(1800)
+    op.evaluate("()=>document.querySelector('#bCal').click()"); op.wait_for_timeout(2200)
+    print("menú visible:", op.evaluate("()=>getComputedStyle(document.querySelector('#menuPaneles')).display"))
+    print("filas:", op.evaluate("()=>document.querySelectorAll('#listaPaneles .fila').length"))
+    print("pie:", (op.text_content("#pieRotacion") or "").strip())
+    op.screenshot(path="/home/claude/menu.png")
+    tv.goto("http://localhost:8123/proyector.php"); tv.wait_for_timeout(1000)
+    tv.evaluate("()=>document.querySelector('#empezar').click()"); tv.wait_for_timeout(1200)
+    print("tele, panel visible:", tv.evaluate("()=>[...document.querySelectorAll('#calent .panel')].filter(p=>p.classList.contains('on')).map(p=>p.dataset.k)"))
+    # apagamos dos y fijamos uno
+    op.evaluate("()=>{document.querySelector('#cp_cola').click();}"); op.wait_for_timeout(1500)
+    op.evaluate("()=>{document.querySelector('#cp_datos').click();}"); op.wait_for_timeout(2200)
+    print("activos tras apagar 2:", op.evaluate("()=>KL.estado.paneles"))
+    tv.wait_for_timeout(1800)
+    print("tele, puntos:", tv.evaluate("()=>document.querySelectorAll('#puntos i').length"))
+    op.evaluate("()=>document.querySelector('#listaPaneles .ver[data-k=funciona]').click()"); op.wait_for_timeout(2500)
+    print("fijo:", op.evaluate("()=>KL.estado.panelFijo"), "| pie:", (op.text_content("#pieRotacion") or "").strip())
+    tv.wait_for_timeout(1500)
+    print("tele, panel fijo:", tv.evaluate("()=>[...document.querySelectorAll('#calent .panel')].filter(p=>p.classList.contains('on')).map(p=>p.dataset.k)"))
+    tv.screenshot(path="/home/claude/tv_fijo.png")
+    b.close()
+print("errores:", errs or "ninguno")

@@ -26,23 +26,36 @@ KL.almacen = (function () {
   let aplicar = () => {};
   let aviso   = () => {};
 
+  /* `aplicar` sigue siendo uno solo: repintar la interfaz entera es un
+     trabajo con dueño, y dos dueños repintando lo mismo es un parpadeo.
+     Los AVISOS sí se reparten —«se ha caído el servidor» le interesa al
+     que enseña el mensaje y a cualquiera que quiera reaccionar— y por
+     eso salen también por `KL.senales`. */
   function iniciar(cb) {
     aplicar = cb.aplicar || aplicar;
-    aviso   = cb.aviso   || aviso;
+    if (cb.aviso) KL.senales.oir('almacen:aviso', cb.aviso);
+    aviso = (...d) => KL.senales.avisar('almacen:aviso', ...d);
   }
 
   function vacio() {
-    return { biblioteca: [], cola: [], sonando: null, version: 0 };
+    return {
+      biblioteca: [], cola: [], historial: [],
+      evento: { estado: 'ESPERA', pistaId: null, recien: null, desde: 0 },
+      version: 0
+    };
   }
 
   function leer() {
     try {
       const d = JSON.parse(localStorage.getItem(CLAVE) || 'null');
       if (!d || typeof d !== 'object') return vacio();
+      /* Un archivo guardado con una versión anterior no trae `evento` ni
+         `historial`: se rellenan en vez de rechazarlo. */
       return {
         biblioteca: d.biblioteca || [],
         cola:       d.cola || [],
-        sonando:    d.sonando ?? null,
+        historial:  d.historial || [],
+        evento:     d.evento || vacio().evento,
         version:    d.version || 0
       };
     } catch (e) { return vacio(); }
@@ -67,7 +80,13 @@ KL.almacen = (function () {
     return {
       ok: true,
       biblioteca: e.biblioteca, cola: e.cola,
-      sonando: e.sonando, version: e.version,
+      /* Deducido, igual que en api/estado.php: «qué se está cantando» es
+         `evento.pistaId` y no un campo aparte que pueda contradecirlo. */
+      sonando: (e.evento || {}).estado === 'INTERPRETACION'
+               ? ((e.evento || {}).pistaId ?? null) : null,
+      historial: e.historial, evento: e.evento,
+      paneles: e.paneles ?? null, panelFijo: e.panelFijo ?? null,
+      version: e.version,
       peticiones: false,                       // sin servidor no hay QR
       con_clave: KL.estado.apiKey !== ''
     };
@@ -100,7 +119,6 @@ KL.almacen = (function () {
 
     quitar_cola(e, d) {
       e.cola = e.cola.filter(t => t.id !== d.id);
-      if (e.sonando === d.id) e.sonando = null;
     },
 
     ordenar_cola(e, d) {
@@ -115,11 +133,46 @@ KL.almacen = (function () {
     },
 
     vaciar_cola(e) {
-      e.cola = []; e.sonando = null;
+      e.cola = [];
     },
 
-    sonando(e, d) {
-      e.sonando = d.id ?? null;
+    /* Ya no guarda nada: se acepta para no responder «acción desconocida»
+       a una pestaña abierta desde antes del cambio. */
+    sonando() {},
+
+    /* El motor de estados. Mismas acciones que api/estado.php: si añades
+       una allí, añádela aquí. La interfaz llama a las dos por igual. */
+    evento(e, d) {
+      const ev = d.evento || {};
+      if (!['ESPERA','PREPARADA','LLAMADA','INTERPRETACION','FIN_ACTUACION'].includes(ev.estado)) {
+        throw new Error('estado de evento no válido');
+      }
+      e.evento = {
+        estado:  ev.estado,
+        pistaId: ev.pistaId ?? null,
+        recien:  ev.recien  ?? null,
+        desde:    Math.floor(Date.now() / 1000),
+        segundos: Math.max(0, Math.min(15, ev.segundos || 0)),
+        n:        ev.n || 0
+      };
+    },
+
+    fin_actuacion(e, d) {
+      const cantada = e.cola.find(t => t.id === d.id) || null;
+      if (cantada) {
+        e.historial.unshift({ ...cantada, cantada_en: Math.floor(Date.now() / 1000) });
+        e.historial = e.historial.slice(0, 100);
+      }
+      if (d.retirar && d.id) e.cola = e.cola.filter(t => t.id !== d.id);
+    },
+
+    paneles(e, d) {
+      e.paneles   = Array.isArray(d.paneles) ? d.paneles.map(String) : null;
+      e.panelFijo = d.fijo ? String(d.fijo) : null;
+    },
+
+    vaciar_historial(e) {
+      e.historial = [];
     },
 
     anadir_biblioteca(e, d) {

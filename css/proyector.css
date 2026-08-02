@@ -1,0 +1,231 @@
+/* ===================================================================
+   proyector.css — la pantalla del público
+
+   Todo en unidades de viewport: esta pantalla se ve desde el fondo de
+   la sala y tiene que leerse igual en un proyector de 100 pulgadas que
+   en una tele de 32. Ni un tamaño en píxeles.
+
+   La paleta viene de css/base.css. Aquí solo está lo que de verdad es
+   distinto en una tele, y el motivo escrito al lado.
+   =================================================================== */
+
+/* Lo único que esta pantalla cambia de la paleta común, y por un motivo:
+   un proyector en una sala a oscuras necesita negro de verdad, no el gris
+   muy oscuro del monitor. Todo lo demás —los acentos, los tres modos— sale
+   de base.css. Cuando estaba repetido aquí, cambiar de modo en el operador
+   no se notaba en la tele. */
+:root{
+  --bg:#000;
+  --bg2:#0d0f14;
+  --pulso:0;                 /* 0…1, lo mueve el sonido de la sala */
+  --ganancia:1;              /* cuánto se nota: más en el calentamiento */
+}
+html[data-modo="dj"]{--ac:#8b5cf6;--ac2:#6d3ff0;--ac-rgb:139,92,246;--ac-txt:#f6f2ff}
+html[data-modo="mc"]{--ac:#ff9f43;--ac2:#f08a24;--ac-rgb:255,159,67;--ac-txt:#2b1500}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);
+ font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif}
+body.quieto{cursor:none}
+.oculto{display:none!important}
+.ic{width:1em;height:1em;fill:currentColor;display:inline-block;vertical-align:-.125em}
+
+/* ---- El vídeo ocupa la pantalla entera; lo demás flota encima ---- */
+#escena{position:fixed;inset:0;background:#000}
+#yt,#vlocal{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+#vlocal{object-fit:contain}
+
+/* ---- Halo que respira con el ruido de la sala -----------------------
+   El audio de un iframe de YouTube es de otro origen y la Web Audio API
+   no puede tocarlo: no hay forma de analizar lo que suena en el vídeo.
+   Lo que sí se puede es escuchar la sala con el micrófono del propio PC
+   —esta página se abre en localhost, que cuenta como contexto seguro—,
+   y eso además recoge a la gente gritando, que visualmente es mucho
+   mejor material que el audio limpio.
+   En el calentamiento la ganancia sube: ahí el objetivo es justamente
+   que el público note que la pantalla les responde.                  */
+#halo{position:fixed;inset:0;pointer-events:none;z-index:30;transition:box-shadow .07s linear}
+#halo.no{display:none}
+
+/* Halo: resplandor difuso hacia dentro. El de por defecto. */
+body[data-efecto="halo"] #halo{
+ box-shadow:inset 0 0 calc(2vh + 14vh * var(--pulso) * var(--ganancia))
+   rgba(var(--ac-rgb), calc(.10 + .55 * var(--pulso) * var(--ganancia)))}
+
+/* Borde: un marco nítido que engorda. Se ve mejor de lejos que el halo,
+   y molesta menos encima de un vídeo claro. */
+body[data-efecto="borde"] #halo{
+ border:solid rgba(var(--ac-rgb), calc(.35 + .6 * var(--pulso) * var(--ganancia)));
+ border-width:calc(.3vh + 1.6vh * var(--pulso) * var(--ganancia));
+ transition:border-width .07s linear,border-color .07s linear}
+
+/* Barras: un ecualizador al pie, por bandas de frecuencia. Es el más
+   descarado; en el calentamiento funciona muy bien. */
+#barras{position:fixed;left:0;right:0;bottom:0;height:16vh;z-index:29;
+ display:none;align-items:flex-end;gap:.35vw;padding:0 1vw;pointer-events:none}
+body[data-efecto="barras"] #barras{display:flex}
+#barras i{flex:1;height:2%;border-radius:.4vh .4vh 0 0;
+ background:linear-gradient(to top,rgba(var(--ac-rgb),.85),rgba(var(--ac-rgb),.15));
+ transition:height .07s linear}
+
+body[data-efecto="ninguno"] #halo,body[data-efecto="ninguno"] #barras{display:none}
+
+/* ---- Marco común de las escenas de texto ---- */
+.escena{position:fixed;inset:0;z-index:10;background:var(--bg2);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:3vh;padding:5vh 5vw;text-align:center;
+ animation:entra .5s ease-out}
+@keyframes entra{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+.escena h1{font-size:5.2vw;font-weight:900;letter-spacing:-.2vw;line-height:1}
+.escena h1 .ac{color:var(--ac)}
+.escena .sub{font-size:2.1vw;color:var(--txt2);max-width:66vw;line-height:1.5}
+
+/* ---- Franja de abajo durante la canción ---- */
+#franja{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:4.4vh 4vw 3.2vh;
+ background:linear-gradient(to top,rgba(0,0,0,.93) 55%,rgba(0,0,0,0));
+ transition:opacity .5s;pointer-events:none}
+#franja.fuera{opacity:0}
+#franja .et{font-size:1.4vw;letter-spacing:.34vw;text-transform:uppercase;
+ color:var(--ac);font-weight:800;margin-bottom:.7vh}
+#franja .canta{font-size:4.6vw;font-weight:800;line-height:1.02;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ text-shadow:0 .3vh 2vh rgba(0,0,0,.9)}
+#franja .tema{font-size:1.9vw;color:var(--txt2);margin-top:.8vh;font-weight:600;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- Las próximas tres, discretas y recolocables ----
+   Recolocables porque en cada casa la tele tiene delante una lámpara, un
+   sofá o la cabeza de alguien en un sitio distinto. */
+#proximas{position:fixed;z-index:20;
+ background:rgba(6,8,12,.72);border:.1vh solid rgba(255,255,255,.12);
+ border-radius:1.2vh;padding:1.2vh 1.6vw;backdrop-filter:blur(8px);
+ max-width:26vw;transition:opacity .4s}
+#proximas .cab{font-size:1vw;letter-spacing:.22vw;text-transform:uppercase;
+ color:var(--ac);font-weight:800;margin-bottom:.8vh}
+#proximas .f{display:flex;gap:.8vw;align-items:baseline;padding:.5vh 0;font-size:1.25vw;
+ max-width:24vw}
+#proximas .f .n{color:var(--txt3);font-weight:800;flex-shrink:0}
+#proximas .f .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Arriba a la derecha por defecto: en el centro derecho tapa la parte del
+   vídeo donde suele ir la letra, y la letra es justo lo que nadie puede
+   perderse. Sigue siendo recolocable con L. */
+body[data-lado="der"]   #proximas{right:2vw;top:2vh}
+body[data-lado="dercen"]#proximas{right:2vw;top:50%;transform:translateY(-50%)}
+body[data-lado="izq"]   #proximas{left:2vw;top:50%;transform:translateY(-50%)}
+body[data-lado="arriba"]#proximas{top:2vh;left:50%;transform:translateX(-50%);max-width:60vw}
+body[data-lado="abajo"] #proximas{bottom:14vh;left:50%;transform:translateX(-50%);max-width:60vw}
+body[data-lado="arriba"] #proximas .f,
+body[data-lado="abajo"]  #proximas .f{max-width:56vw}
+
+/* ---- Esquina de los QR ---- */
+#esquina{position:fixed;right:2vw;bottom:2vh;z-index:20;display:flex;gap:1.2vw;align-items:flex-end}
+.qrcaja{background:#fff;padding:.7vh;border-radius:.9vh;width:8vw;min-width:92px}
+.qrcaja .pie{font-size:.85vw;color:#111;font-weight:800;text-align:center;
+ margin-top:.4vh;line-height:1.2}
+#sinred{display:flex;align-items:center;gap:.6vw;color:#ffc4ca;
+ background:rgba(40,10,14,.86);border:.1vh solid #5c2a31;border-radius:.9vh;
+ padding:.9vh 1.2vw;font-size:1.1vw;font-weight:700;max-width:22vw;line-height:1.3}
+#sinred .ic{width:1.8vw;height:1.8vw;flex-shrink:0}
+
+/* ═══════════ CALENTAMIENTO ═══════════
+   Cuatro paneles que se turnan. La idea no es solo explicar cómo pedir:
+   es que se vea la máquina funcionando —la cola llenándose, el operador
+   trabajando— porque eso es lo que anima a participar. */
+#calent{gap:2.4vh}
+#calent .reloj{position:absolute;top:3vh;right:3vw;font-size:1.6vw;color:var(--txt3);
+ font-weight:700;font-variant-numeric:tabular-nums}
+#calent .reloj b{color:var(--ac);font-size:2.2vw}
+#calent .marca{position:absolute;top:3vh;left:3vw;display:flex;align-items:center;gap:.8vw;
+ font-size:1.6vw;font-weight:800;color:var(--txt2)}
+#calent .marca .ic{width:2.2vw;height:2.2vw;color:var(--ac)}
+.panel{display:none;flex-direction:column;align-items:center;gap:2.4vh;width:100%}
+.panel.on{display:flex;animation:entra .5s ease-out}
+
+/* Los tres pasos, en pictogramas: se entienden de lejos y sin leer. */
+.pasos{display:flex;gap:2.4vw;align-items:stretch;justify-content:center;width:92vw}
+.paso{flex:1;background:var(--bg3);border:.15vh solid var(--line);border-radius:1.6vh;
+ padding:2.4vh 1.6vw;display:flex;flex-direction:column;align-items:center;gap:1.4vh;
+ position:relative;max-width:26vw}
+.paso .num{position:absolute;top:-1.6vh;left:50%;transform:translateX(-50%);
+ width:3.4vh;height:3.4vh;border-radius:50%;background:var(--ac);color:var(--ac-txt);
+ font-weight:900;font-size:1.7vh;display:grid;place-items:center}
+.paso .pic{width:7vw;height:7vw;min-width:76px;min-height:76px;display:grid;place-items:center;
+ background:var(--bg4);border-radius:1.4vh}
+.paso .pic .ic{width:4.4vw;height:4.4vw;color:var(--ac)}
+.paso .pic .qrcaja{width:100%;padding:.5vh;min-width:0}
+.paso .tit{font-size:1.7vw;font-weight:800;line-height:1.15}
+.paso .txt{font-size:1.15vw;color:var(--txt2);line-height:1.45}
+.flecha{display:flex;align-items:center;color:var(--txt3);font-size:3vw;font-weight:300}
+
+/* El esquema de cómo funciona: cuatro cajas y flechas. */
+.circuito{display:flex;align-items:center;justify-content:center;gap:1.4vw;flex-wrap:wrap;width:92vw}
+.nodo{background:var(--bg3);border:.15vh solid var(--line);border-radius:1.4vh;
+ padding:1.8vh 1.6vw;min-width:13vw;display:flex;flex-direction:column;align-items:center;gap:.8vh}
+.nodo.vivo{border-color:var(--ac);background:rgba(var(--ac-rgb),.10)}
+.nodo .ic{width:3vw;height:3vw;color:var(--ac)}
+.nodo .q{font-size:1.35vw;font-weight:800}
+.nodo .d{font-size:1vw;color:var(--txt3)}
+
+/* La cola, en grande, para que se vea crecer. */
+.cola{width:74vw;max-height:52vh;overflow:hidden}
+.cola .f{display:flex;gap:1.4vw;align-items:center;padding:1.1vh 1.4vw;
+ border-bottom:.1vh solid var(--line);font-size:1.8vw;text-align:left}
+.cola .f:last-child{border-bottom:0}
+.cola .f .n{color:var(--ac);font-weight:900;width:3vw;flex-shrink:0;text-align:right}
+.cola .f .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cola .f .d{color:var(--txt3);font-size:1.4vw;font-variant-numeric:tabular-nums}
+.cola .vacia{color:var(--txt3);font-size:1.9vw;padding:6vh 0}
+
+.datos{display:flex;gap:2vw;justify-content:center;flex-wrap:wrap;width:88vw}
+.dato{background:var(--bg3);border:.15vh solid var(--line);border-radius:1.4vh;
+ padding:2vh 2vw;min-width:16vw}
+.dato .g{font-size:3.6vw;font-weight:900;color:var(--ac);line-height:1}
+.dato .p{font-size:1.2vw;color:var(--txt2);margin-top:.6vh}
+.consejo{font-size:1.5vw;color:var(--txt2);max-width:64vw;line-height:1.5}
+.consejo b{color:var(--txt)}
+
+.puntos{display:flex;gap:.8vw;position:absolute;bottom:3vh;left:50%;transform:translateX(-50%)}
+.puntos i{width:1vh;height:1vh;border-radius:50%;background:var(--txt3);opacity:.4;transition:.3s}
+.puntos i.on{opacity:1;background:var(--ac);width:3vh;border-radius:1vh}
+
+/* ---- Llamada: la cuenta atrás antes de la primera nota ----
+   El número grande de verdad. Se ve desde el fondo de la sala, que es
+   donde suele estar el que tiene que subir a cantar. */
+#llamada{background:radial-gradient(circle at 50% 45%,rgba(var(--ac-rgb),.16),var(--bg) 62%);gap:1.4vh}
+#llamada .et{font-size:1.6vw;letter-spacing:.5vw;text-transform:uppercase;
+ color:var(--ac);font-weight:800}
+#llamada .quien{font-size:6vw;font-weight:900;line-height:1;max-width:88vw}
+#llamada .quien:empty{display:none}
+#llamada .tit{font-size:2.6vw;color:var(--txt2);font-weight:700;max-width:80vw;line-height:1.25}
+#llamada .num{font-size:34vh;font-weight:900;line-height:.95;color:var(--ac);
+ font-variant-numeric:tabular-nums;text-shadow:0 0 10vh rgba(var(--ac-rgb),.5);
+ animation:latido 1s ease-out infinite}
+@keyframes latido{0%{transform:scale(1.14);opacity:.7}35%,100%{transform:scale(1);opacity:1}}
+
+/* ---- Arranque: sin un clic el navegador no deja sonar nada ---- */
+#arranque{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.94);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:2.6vh;text-align:center;padding:6vw}
+#arranque .b{background:var(--ac);color:var(--ac-txt);border:0;border-radius:2vh;
+ padding:2.4vh 5vw;font-size:3vw;font-weight:900;font-family:inherit;cursor:pointer}
+#arranque .p{font-size:1.7vw;color:var(--txt2);max-width:56vw;line-height:1.6}
+#arranque .p b{color:var(--txt)}
+#arranque label{display:flex;align-items:center;gap:1vw;font-size:1.5vw;color:var(--txt2);cursor:pointer}
+#arranque input{width:2.2vh;height:2.2vh;accent-color:var(--ac)}
+
+#mensaje{position:fixed;top:3vh;left:50%;transform:translateX(-50%);z-index:40;
+ background:rgba(0,0,0,.9);border:.2vh solid var(--line);border-radius:1.4vh;
+ padding:1.4vh 2.6vw;font-size:1.7vw;font-weight:700;max-width:80vw;text-align:center}
+#mensaje.mal{border-color:var(--dang);color:#ffc4ca}
+
+/* En un monitor pequeño el vw se queda enano: subimos los mínimos. */
+@media (max-width:900px){
+  .escena h1{font-size:11vw}.escena .sub{font-size:3.6vw}
+  #franja .canta{font-size:8vw}#franja .tema{font-size:3.4vw}#franja .et{font-size:2.6vw}
+  #proximas .cab{font-size:2.4vw}#proximas .f{font-size:3vw;max-width:44vw}
+  .paso .tit{font-size:3.4vw}.paso .txt{font-size:2.4vw}
+  .nodo .q{font-size:2.6vw}.nodo .d{font-size:2vw}
+  .cola .f{font-size:3.4vw}.dato .g{font-size:7vw}.dato .p{font-size:2.4vw}
+  .consejo{font-size:3vw}#arranque .b{font-size:6vw}#arranque .p{font-size:3vw}
+}

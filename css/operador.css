@@ -1,0 +1,470 @@
+/* ═══════════════════════════════════════════════════════════════════
+   operador.css — el puesto de mando
+
+   Cabecera, biblioteca, cola, barra de reproducción y la ventanita de
+   vídeo. Es lo que ve quien dirige el karaoke, y solo él: la pantalla
+   del público nunca muestra nada de este archivo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+#app{display:flex;flex-direction:column;height:100dvh}
+
+/* ---------- cabecera ---------- */
+header{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 18px;
+  background:linear-gradient(180deg,#171c26,var(--bg2));
+  border-bottom:1px solid var(--line);flex-shrink:0;
+  box-shadow:var(--sh1);
+}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;white-space:nowrap}
+.logo .m{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--ac),var(--ac-oscuro));color:var(--ac-txt)
+}
+.logo .m .ic{width:19px;height:19px}
+.logo small{display:block;font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.5px}
+
+/* ---- Edición: solo se ve si data/ajustes.json trae `edicion` ---------
+   Es la única diferencia visible entre la versión pública y la de casa.
+   El código es el mismo en las dos; lo que cambia es un ajuste.        */
+.logo .edicion{display:none}
+body[data-edicion] .logo .titulo{display:none}
+body[data-edicion] .logo .edicion{
+  display:block;font-size:19px;font-weight:900;letter-spacing:-.5px;
+  font-style:italic;transform:rotate(-2.5deg);
+  color:var(--ac-claro);
+  text-shadow:0 0 1px var(--ac),0 0 6px rgba(var(--ac-rgb),.7),
+              0 0 18px rgba(var(--ac-rgb),.35),1px 2px 0 rgba(0,0,0,.5);
+  padding:0 4px
+}
+
+.sbox{position:relative;flex:1;max-width:620px;margin:0 auto}
+.sbox .mg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--txt3);pointer-events:none}
+#q{
+  width:100%;padding:13px 15px 13px 44px;background:var(--bg3);
+  border:1px solid var(--line);border-radius:999px;font-size:15px;outline:none;transition:.18s
+}
+#q:focus{border-color:var(--ac);background:var(--bg4)}
+#q::placeholder{color:var(--txt3)}
+
+/* ---------- paneles ---------- */
+#tabs{display:none;gap:6px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--line)}
+#tabs button{
+  flex:1;padding:11px;background:var(--bg3);border:1px solid var(--line);
+  border-radius:9px;font-weight:700;font-size:13.5px;color:var(--txt2);
+  display:flex;align-items:center;justify-content:center;gap:7px
+}
+#tabs button.on{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
+
+main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;min-width:0}
+.pane+.pane{border-left:1px solid var(--line)}
+.ph{display:flex;align-items:center;gap:10px;padding:14px 18px 10px;flex-shrink:0}
+.ph h2{margin:0;font-size:15.5px;font-weight:750;letter-spacing:-.2px;
+  display:flex;align-items:center;gap:8px}
+/* El contador en pastilla: se lee como dato, no como parte del título.
+   Y empuja los botones a la derecha, que es donde se esperan. */
+.ph .n{font-size:11px;color:var(--txt2);font-weight:700;
+  background:var(--bg3);border:1px solid var(--line);border-radius:999px;
+  padding:2px 8px;font-variant-numeric:tabular-nums;margin-right:auto}
+.ph .lnk{background:none;border:none;color:var(--txt3);font-size:12px;font-weight:700;
+  padding:5px 8px;border-radius:6px;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.ph .lnk:hover{background:var(--bg3);color:var(--txt)}
+.ph .lnk.d:hover{color:var(--dang)}
+.fbox{padding:0 18px 8px;flex-shrink:0}
+.fbox input{
+  width:100%;padding:9px 13px;background:var(--bg3);border:1px solid var(--line);
+  border-radius:9px;font-size:13.5px;outline:none
+}
+.fbox input:focus{border-color:var(--ac)}
+.scroll{flex:1;overflow-y:auto;padding:0 12px 16px;min-height:0}
+
+/* ---------- fila ---------- */
+.it{
+  display:grid;grid-template-columns:auto 76px 1fr auto;align-items:center;gap:12px;
+  padding:8px 10px;border-radius:11px;cursor:pointer;transition:background .12s;
+  border:1px solid transparent
+}
+.it:hover{background:var(--bg3);border-color:var(--line)}
+/* La que suena se marca con una barra a la izquierda y un tinte muy
+   flojo. El bloque de color entero cansaba y competía con el vídeo. */
+.it.play{background:rgba(var(--ac-rgb),.07);border-color:rgba(var(--ac-rgb),.22);
+  box-shadow:inset 3px 0 0 var(--ac)}
+.it.play .t{color:var(--ac)}
+/* La preparada, la que arranca al pulsar Play, se marca en hueco: aún no
+   suena, pero ya no es una de tantas. */
+.it.lista{border-color:rgba(var(--ac-rgb),.35);border-style:dashed}
+.it.drag{opacity:.3}
+.it.over{box-shadow:inset 0 3px 0 var(--ac)}
+.it .idx{width:26px;display:grid;place-items:center;color:var(--txt3);font-size:13px;
+  font-variant-numeric:tabular-nums}
+.it .idx .ic{width:16px;height:16px}
+.it .th{width:76px;height:44px;border-radius:7px;object-fit:cover;background:var(--bg4);display:block;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06),var(--sh1)}
+.it .meta{min-width:0}
+.it .t{font-size:14px;font-weight:650;line-height:1.3;margin-bottom:2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.it .c{font-size:11.5px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .acts{display:flex;align-items:center;gap:1px}
+.it .acts .ib{width:32px;height:32px;font-size:15px}
+.it .dur{font-size:12px;color:var(--txt3);font-variant-numeric:tabular-nums;padding:0 4px}
+
+.eq{display:none;gap:2px;height:15px;align-items:flex-end;justify-content:center}
+.it.play .eq{display:flex}
+.it.play .idx .num{display:none}
+.eq i{width:3px;background:var(--ac);border-radius:1px;animation:eq .9s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:.3s}
+.eq i:nth-child(3){animation-delay:.6s}
+@keyframes eq{0%,100%{height:4px}50%{height:15px}}
+.grip{cursor:grab;color:var(--txt3);padding:0 2px;touch-action:none;
+  display:grid;place-items:center;width:32px;height:32px}
+
+/* ---------- barra de reproducción ---------- */
+#pl{
+  display:flex;align-items:center;gap:16px;padding:10px 18px;
+  background:var(--bg2);border-top:1px solid var(--line);flex-shrink:0;min-height:78px
+}
+#np{display:flex;align-items:center;gap:11px;width:280px;min-width:0}
+#np img{width:50px;height:50px;border-radius:9px;object-fit:cover;background:var(--bg4);flex-shrink:0}
+#np .t{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#np .c{font-size:11.5px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ct{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.crow{display:flex;align-items:center;gap:14px}
+.cb{background:none;border:none;color:var(--txt2);width:36px;height:36px;
+  border-radius:50%;display:grid;place-items:center;transition:.15s}
+.cb .ic{width:20px;height:20px}
+.cb:hover{color:var(--txt);background:var(--bg3)}
+.cb.on{color:var(--ac)}
+.cb.big{background:var(--txt);color:var(--bg);width:44px;height:44px}
+.cb.big .ic{width:22px;height:22px}
+.cb.big:hover{background:#fff;transform:scale(1.06)}
+.brow{display:flex;align-items:center;gap:10px;width:100%;max-width:480px}
+.brow span{font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums;width:38px;flex-shrink:0}
+.brow span:last-child{text-align:right}
+#sk{flex:1;height:5px;background:var(--bg4);border-radius:3px;cursor:pointer;position:relative}
+#skf{height:100%;width:0;background:var(--txt2);border-radius:3px;transition:width .3s linear}
+#sk:hover #skf{background:var(--ac)}
+#rc{width:280px;display:flex;justify-content:flex-end;align-items:center;gap:6px}
+
+/* ---------- ventana de vídeo ---------- */
+#vb{
+  position:fixed;right:18px;bottom:92px;width:360px;max-width:calc(100vw - 36px);
+  background:#000;border:1px solid var(--line2);border-radius:12px;overflow:hidden;
+  box-shadow:var(--sh);z-index:50
+}
+#vb.hide{display:none}
+#vb .vh{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:var(--bg2);font-size:11.5px;color:var(--txt3)}
+#vb .vh b{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vb .vh .ib{width:26px;height:26px}
+#vb .vh .ib .ic{width:15px;height:15px}
+#yt{width:100%;aspect-ratio:16/9;display:block}
+
+/* ---------- Quién canta después -------------------------------------
+   Va encima del vídeo, en una esquina, para que el siguiente se vaya
+   preparando sin tener que mirar el portátil.
+   Ojo: si se pone a pantalla completa el iframe de YouTube en vez de
+   esta ventana, el aviso desaparece — YouTube ocupa la pantalla él solo
+   y nada nuestro puede pintarse encima.                              */
+#vzona{position:relative}
+#vnext{
+  position:absolute;top:10px;z-index:3;max-width:min(58%,340px);
+  background:rgba(6,8,12,.82);border:1px solid rgba(255,255,255,.14);
+  border-left:3px solid var(--ac);border-radius:9px;
+  padding:7px 12px;pointer-events:none;
+  backdrop-filter:blur(6px);
+  opacity:0;transition:opacity .35s
+}
+#vb.nx-der #vnext{right:10px}
+#vb.nx-izq #vnext{left:10px}
+#vb.nx-no  #vnext{display:none}
+#vnext.on{opacity:1}
+#vnext .e{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--ac);font-weight:800;line-height:1}
+#vnext .q{font-size:14px;font-weight:800;margin-top:3px;line-height:1.15;
+  color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vnext .t{font-size:11px;color:#c9d1e0;margin-top:2px;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* La ventanita a pantalla completa por su cuenta (botón ⛶). El modo
+   Interpretación, que es lo normal, está en interpretacion.css. */
+#vb:fullscreen{width:100vw;max-width:none;border:0;border-radius:0}
+#vb:fullscreen .vh{display:none}
+#vb:fullscreen #yt,#vb:fullscreen #vlocal{height:100vh;aspect-ratio:auto}
+#vb:fullscreen #vnext{top:3vh;max-width:42vw;padding:1.4vh 2vw;border-radius:1.2vh}
+#vb:fullscreen #vnext .e{font-size:1.3vh;letter-spacing:.35vw}
+#vb:fullscreen #vnext .q{font-size:3.4vh}
+#vb:fullscreen #vnext .t{font-size:1.9vh}
+#vb:fullscreen.nx-der #vnext{right:2.5vw}
+#vb:fullscreen.nx-izq #vnext{left:2.5vw}
+
+/* ---------- resultados de búsqueda ----------
+   3 resultados visibles exactos, después scroll. Con uno no se compara;
+   con diez hay que leer. Tres es lo que se abarca de un vistazo. */
+#res{max-height:calc(3 * 90px);overflow-y:auto;padding-right:6px}
+.rs{display:grid;grid-template-columns:132px 1fr auto;gap:14px;align-items:center;
+  height:90px;padding:9px;border-radius:11px;cursor:pointer;border:1px solid transparent;transition:.12s}
+.rs:hover{background:var(--bg3);border-color:var(--line)}
+.rs.sel{background:rgba(var(--ac-rgb),.11);border-color:var(--ac)}
+.rs img{width:132px;height:72px;border-radius:8px;object-fit:cover;background:var(--bg4)}
+.rs .t{font-size:14px;font-weight:650;line-height:1.32;margin-bottom:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rs .c{font-size:11.5px;color:var(--txt3)}
+.rs .ba{display:flex;flex-direction:column;gap:5px}
+.rs .ba button{
+  border-radius:999px;padding:7px 13px;font-size:11.5px;font-weight:800;white-space:nowrap;
+  background:var(--bg4);border:1px solid var(--line);color:var(--txt2);transition:.13s;
+  display:flex;align-items:center;gap:6px
+}
+.rs .ba .aq:hover{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
+.rs .ba .al:hover{background:var(--star);color:#3a2c00;border-color:var(--star)}
+
+/* ---------- MODO FIESTA: vistas discretas ----------
+   completo → compacto (solo la cola) → mini (barra flotante) */
+body.compact #pLib{display:none}
+body.compact main{grid-template-columns:1fr}
+body.compact #tabs{display:none}
+
+body.mini #app{
+  position:fixed;left:auto;right:14px;bottom:14px;top:auto;
+  width:min(430px,calc(100vw - 28px));height:auto;
+  border:1px solid var(--line2);border-radius:16px;overflow:hidden;
+  box-shadow:var(--sh);background:var(--bg2)
+}
+body.mini main,body.mini #tabs,body.mini .sbox,body.mini .badge{display:none}
+body.mini header{padding:9px 12px;gap:8px}
+body.mini .logo{font-size:13px}
+body.mini .logo .m{width:24px;height:24px}
+body.mini #pl{flex-direction:column;align-items:stretch;gap:6px;padding:8px 12px 10px;min-height:0}
+body.mini #np{width:auto}
+body.mini #np img{width:38px;height:38px}
+body.mini #rc{width:auto;justify-content:center}
+body.mini #ct{width:100%}
+/* La ventana del vídeo, en mini, se apoya JUSTO ENCIMA de la barra y
+   alineada con ella. Antes se iba a `top:14px` —arriba del todo— y ahí
+   se comía la cabecera del operador: el botón de empezar quedaba debajo
+   y no se podía pulsar. Cambiar de vista no puede esconder el botón más
+   importante de la aplicación.
+
+   El 14 de abajo es el mismo margen que usa `#app`, y el ancho se ata al
+   suyo para que las dos cajas queden a plomo. */
+body.mini #vb{
+  right:14px; top:auto; bottom:calc(14px + var(--alto-mini,150px) + 10px);
+  width:min(430px,calc(100vw - 28px));
+}
+body.mini #app{ z-index:60 }   /* la barra manda: el vídeo nunca la tapa */
+body.mini{background:transparent}
+
+/* ---------- Biblioteca colapsable a una estrellita ---------- */
+body.libcol main{grid-template-columns:54px 1fr}
+body.libcol #pLib .fbox,
+body.libcol #pLib .scroll,
+body.libcol #pLib .ph h2,
+body.libcol #pLib .ph .n,
+body.libcol #pLib .ph .lnk{display:none}
+body.libcol #pLib{align-items:center;background:var(--bg2)}
+body.libcol #pLib .ph{padding:14px 0;flex-direction:column;gap:8px}
+#bLibCol{
+  background:none;border:none;width:38px;height:38px;border-radius:10px;
+  display:grid;place-items:center;color:var(--star);
+  transition:.15s;flex-shrink:0;cursor:pointer
+}
+#bLibCol .ic{width:20px;height:20px}
+#bLibCol:hover{background:var(--bg4);transform:scale(1.08)}
+body.libcol #bLibCol .ic{width:24px;height:24px}
+#libCount{
+  display:none;font-size:10.5px;font-weight:800;color:var(--txt3);
+  background:var(--bg4);border-radius:999px;padding:2px 7px
+}
+body.libcol #libCount{display:block}
+body.compact #pLib,body.mini #pLib{display:none}
+
+/* Con la biblioteca plegada, el foco es el buscador. */
+body.libcol .sbox{max-width:780px}
+body.libcol #q{padding:16px 18px 16px 48px;font-size:16.5px}
+body.libcol .sbox .mg{left:18px}
+body.libcol #pLib{border-right:1px solid var(--line)}
+body.libcol #bLibCol{opacity:.45}
+body.libcol #bLibCol:hover{opacity:1}
+
+/* ---------- aviso de red al pie ---------------------------------------
+   Discreto, siempre visible, y solo llamativo cuando algo va mal: lo que
+   rompe las peticiones desde el móvil no se descubre hasta que alguien
+   lo intenta, y entonces ya es tarde.                                  */
+#redbar{
+  display:flex;align-items:center;gap:8px;justify-content:center;
+  padding:5px 12px;font-size:11.5px;color:var(--txt3);
+  background:var(--bg2);border-top:1px solid var(--line);flex-shrink:0
+}
+#redbar .ic{width:14px;height:14px}
+#redbar.mal{color:#ffc4ca;background:#2a1418;border-top-color:#5c2a31}
+body.mini #redbar{display:none}
+
+/* ---------- responsive ---------- */
+@media(max-width:1100px){#np,#rc{width:200px}}
+@media(max-width:900px){
+  header{flex-wrap:wrap;padding:10px 12px;gap:8px}
+  .logo small{display:none}
+  .sbox{order:3;flex:1 0 100%;max-width:none}
+  #tabs{display:flex}
+  main{grid-template-columns:1fr}
+  .pane{display:none}
+  .pane.act{display:flex}
+  .pane+.pane{border-left:none}
+  #np{width:auto;flex:1}
+  #np .c{display:none}
+  #rc{width:auto}
+  #ct{flex:0 0 auto;order:-1;width:100%}
+  #pl{flex-wrap:wrap;gap:10px;padding:8px 12px 10px}
+  .brow{max-width:none}
+  #vb{right:10px;left:10px;width:auto;bottom:150px}
+  .rs{grid-template-columns:104px 1fr;height:auto;padding:10px}
+  .rs img{width:104px;height:60px}
+  .rs .ba{flex-direction:row;grid-column:1/-1}
+  .rs .ba button{flex:1;padding:10px;justify-content:center}
+  #res{max-height:none}
+  .it{grid-template-columns:auto 60px 1fr auto}
+  .it .th{width:60px;height:36px}
+}
+@media(max-width:520px){
+  .it .dur{display:none}
+  .mf .hi{display:none}
+}
+#bCal.act{color:var(--ac);background:var(--ac-d)}
+
+/* Quién pidió la canción desde el móvil. Solo en el puesto de mando: en la
+   pantalla del público no aparece ningún nombre. */
+.it .c .pide{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(var(--ac-rgb),.14);color:var(--ac);
+  border-radius:999px;padding:1px 7px 1px 5px;margin-right:7px;
+  font-weight:800;font-size:10.5px;vertical-align:1px
+}
+.it .c .pide .ic{width:11px;height:11px}
+
+/* Si el PC está mudo y encima es quien tiene que sonar, eso no es un
+   detalle escondido en la ventanita del vídeo: es la fiesta en silencio. */
+#avisoMudo{
+  display:none;align-items:center;justify-content:center;gap:10px;
+  padding:9px 14px;font-size:13px;font-weight:700;
+  background:#3a1f0c;color:#ffcf9a;border-top:1px solid #7a4515;flex-shrink:0
+}
+#avisoMudo.on{display:flex}
+#avisoMudo .btn{padding:6px 14px;font-size:12px}
+
+/* ---- Mando de los cartelones de la tele -------------------------------
+   Flotante y solo durante el calentamiento. El operador no tiene la tele
+   delante: si un cartelón estorba —el de la cola cuando está vacía— tiene
+   que poder apagarlo sin recargar nada ni tocar el segundo monitor. */
+#menuPaneles{
+  position:fixed;right:18px;bottom:96px;z-index:55;width:290px;
+  display:none;flex-direction:column;
+  background:var(--bg2);border:1px solid var(--line2);border-radius:14px;
+  box-shadow:var(--sh);overflow:hidden
+}
+body.calentando #menuPaneles{display:flex}
+body.calentando.paneles-ocultos #menuPaneles{display:none}
+#menuPaneles .cab{
+  display:flex;align-items:center;gap:8px;padding:10px 8px 10px 13px;
+  background:var(--ac-d);border-bottom:1px solid var(--line);
+  font-size:12.5px;color:var(--txt)}
+#menuPaneles .cab b{flex:1;font-weight:800}
+#menuPaneles .cab .ic{color:var(--ac)}
+#menuPaneles .fila{
+  display:flex;align-items:center;gap:9px;padding:9px 13px;
+  border-bottom:1px solid var(--line);font-size:13px}
+#menuPaneles .fila:last-child{border-bottom:0}
+#menuPaneles .fila input{width:16px;height:16px;accent-color:var(--ac);flex-shrink:0}
+#menuPaneles .fila label{flex:1;cursor:pointer;min-width:0}
+#menuPaneles .fila small{display:block;color:var(--txt3);font-size:11px;margin-top:1px}
+#menuPaneles .fila .ver{
+  background:none;border:1px solid var(--line);color:var(--txt3);
+  border-radius:999px;padding:3px 9px;font-size:10.5px;font-weight:800;flex-shrink:0}
+#menuPaneles .fila .ver:hover{border-color:var(--ac);color:var(--ac)}
+#menuPaneles .fila .ver.act{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
+#menuPaneles .pie{
+  display:flex;align-items:center;gap:9px;padding:9px 13px;
+  border-top:1px solid var(--line);font-size:11.5px;color:var(--txt3)}
+#menuPaneles .pie span{flex:1}
+#menuPaneles .pie .btn{padding:6px 12px;font-size:11.5px}
+body.mini #menuPaneles{display:none}
+
+/* El porcentaje mientras baja una canción. Una descarga en marcha sin
+   ningún indicio se confunde con una que ha fallado. */
+.it .acts .ib.pct{
+  color:var(--info);font-size:10.5px;font-weight:800;
+  font-variant-numeric:tabular-nums;letter-spacing:-.3px;
+  background:rgba(77,163,255,.12);border-radius:999px;width:auto;padding:0 7px;min-width:34px}
+
+/* Aviso de conexión floja, con el botón de descargar ya hecho. Aparece
+   una vez y se calla un cuarto de hora si se descarta: un aviso que
+   vuelve cada dos minutos se aprende a ignorar. */
+#avisoRed{
+  display:none;align-items:center;gap:10px;
+  padding:9px 14px;font-size:13px;flex-shrink:0;
+  background:#2b2415;color:#ffcf9a;border-top:1px solid #584a22}
+#avisoRed.on{display:flex}
+#avisoRed .ic{width:17px;height:17px;color:#ffb648;flex-shrink:0}
+#avisoRed span{flex:1;min-width:0}
+#avisoRed b{color:#fff}
+#avisoRed .btn{padding:6px 14px;font-size:12px}
+body.mini #avisoRed{display:none}
+
+/* ---- En qué espacio estoy ----------------------------------------------
+   Va en la cabecera, siempre visible, y no se puede confundir con nada
+   más. El color sigue estando —es el reconocimiento rápido cuando ya
+   conoces la aplicación— pero ya no es la única pista. */
+#espacios{ display:flex; gap:4px; background:var(--bg3); padding:3px;
+  border-radius:999px; border:1px solid var(--line); flex-shrink:0 }
+#espacios .esp{ display:flex; align-items:center; gap:6px; border:0;
+  background:transparent; color:var(--txt3); font:700 12.5px inherit;
+  padding:6px 13px; border-radius:999px; cursor:pointer; white-space:nowrap }
+#espacios .esp .ic{ width:16px; height:16px; fill:currentColor }
+#espacios .esp:hover{ color:var(--txt2) }
+#espacios .esp.on{ background:var(--ac); color:var(--ac-txt) }
+
+/* El rótulo grande: el nombre del espacio y, debajo, qué se hace en él.
+   Una frase corta ahorra más preguntas que cualquier icono. */
+#espacio{ display:flex; align-items:center; min-width:0; overflow:hidden }
+#espacio .lema{ color:var(--txt3); font-weight:500; font-size:12px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+/* Los dos atajos de Freestyle. Fuera de la caja de búsqueda: dentro le
+   comían la mitad del ancho justo en el espacio donde más falta hace
+   escribir cosas largas. */
+#freestyle{ display:none; gap:5px; flex-shrink:0 }
+#freestyle.on{ display:flex }
+#freestyle .fbtn{ border:1px solid var(--line2,var(--line));
+  background:var(--bg3); color:var(--txt2); font:700 11.5px inherit;
+  padding:5px 11px; border-radius:999px; cursor:pointer }
+#freestyle .fbtn:hover{ color:var(--txt); border-color:var(--ac) }
+#freestyle .fbtn.on{ background:var(--ac); color:var(--ac-txt); border-color:var(--ac) }
+
+/* Cuando no cabe todo, lo primero que sobra es la frase: es una ayuda
+   para el primer día, no algo que haga falta a las tres de la mañana. */
+@media (max-width:1340px){ #espacio{ display:none } }
+@media (max-width:1120px){ #espacios .esp{ padding:6px 9px; font-size:0 }
+  #espacios .esp .ic{ width:18px; height:18px } }
+
+/* El buscador no se encoge por debajo de esto. Con los atajos de Freestyle
+   al lado se quedaba en un círculo con la lupa dentro y no se podía
+   escribir: el elemento más importante de la cabecera desaparecía por una
+   regla de reparto de espacio. */
+header .sbox{ flex:1 1 320px; min-width:240px }
+
+/* ---- Empezar ------------------------------------------------------------
+   El botón más importante, y el único con texto en toda la barra. Antes
+   era un triángulo igual que los demás y competía con el de siguiente y
+   el de anterior por la mirada, siendo el que se pulsa veinte veces más. */
+#bPlay{ display:inline-flex; flex-direction:row; align-items:center;
+  width:auto; padding:0 22px 0 18px; gap:9px; border-radius:999px;
+  background:var(--ac); color:var(--ac-txt); font:800 14px inherit;
+  line-height:1 }
+#bPlay .ic{ fill:currentColor }
+#bPlay span{ letter-spacing:.2px }
+#bPlay:hover{ background:var(--ac-claro) }
+
+/* Mientras se canta no hay nada que pulsar. Se apaga, no se esconde: si
+   desaparece, toda la fila salta de sitio en el peor momento. */
+#bPlay.cantando{ background:var(--bg3); color:var(--txt3); cursor:not-allowed }
+#bPlay.cantando:hover{ background:var(--bg3) }
+@media (max-width:900px){ #bPlay span{ display:none } #bPlay{ padding:0; width:52px } }

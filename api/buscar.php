@@ -58,7 +58,15 @@ if ($clave === '' || $clave === 'PON_AQUI_TU_CLAVE') {
   error_json('No hay clave de API configurada. Ponla en api/config.php.', 503);
 }
 
-$consulta = trim($q . ' ' . (string)$cfg['sufijo']);
+/* El sufijo lo manda el cliente, porque depende del modo en uso —karaoke
+   añade «karaoke», MC añade «instrumental», DJ no añade nada— y el modo
+   es una preferencia del aparato, no del servidor. Si no viene ninguno,
+   manda el de la configuración, que es como funcionaba antes.
+
+   `sufijo=` vacío en la dirección NO es lo mismo que no mandarlo: es el
+   modo DJ diciendo «busca tal cual». Por eso se mira con isset. */
+$sufijo = isset($_GET['sufijo']) ? trim((string)$_GET['sufijo']) : (string)$cfg['sufijo'];
+$consulta = trim($q . ' ' . $sufijo);
 
 $url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video'
      . '&videoEmbeddable=true&maxResults=20&q=' . rawurlencode($consulta)

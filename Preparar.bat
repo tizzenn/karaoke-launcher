@@ -1,11 +1,29 @@
 @echo off
+rem ===================================================================
+rem  ESTE ARCHIVO TIENE QUE SER ASCII PURO. Sin tildes, sin enes, sin
+rem  signos de apertura. Ni siquiera dentro de un rem.
+rem
+rem  cmd.exe lee los .bat byte a byte. Con `chcp 65001` y un caracter
+rem  UTF-8 de dos bytes en cualquier linea, el analizador pierde la
+rem  cuenta y se come el primer caracter de las lineas siguientes:
+rem  `echo` pasa a ser `cho`, `set` a `et`, `for` a `or`. La ventana se
+rem  llena de "no se reconoce como un comando interno o externo" y no
+rem  hay forma de adivinar de donde sale.
+rem
+rem  Paso de verdad, con las tildes de "Comprueba que falta" y "Voy a
+rem  comprobar que tienes". Karaoke.bat no lo sufria porque su texto ya
+rem  estaba sin acentos, por casualidad.
+rem
+rem  Antes de guardar cambios aqui: comprueba que no queda ni un byte
+rem  por encima de 127.
+rem ===================================================================
 setlocal enabledelayedexpansion
 title Preparar Karaoke Launcher
 cd /d "%~dp0"
 chcp 65001 >nul 2>&1
 
 rem ============================================================
-rem  Comprueba qué falta y ofrece descargarlo.
+rem  Comprueba que falta y ofrece descargarlo.
 rem  Todo se instala DENTRO de esta carpeta, en modo portable:
 rem  no toca el PATH, no toca el registro, no instala nada en
 rem  el sistema. Para desinstalar, borras la carpeta.
@@ -27,7 +45,7 @@ echo   ================================================================
 echo               P R E P A R A R   E L   K A R A O K E
 echo   ================================================================
 echo.
-echo    Voy a comprobar qué tienes y qué falta.
+echo    Voy a comprobar que tienes y que falta.
 echo    Nada se instala en el sistema: todo va dentro de esta carpeta.
 echo.
 echo   ----------------------------------------------------------------
@@ -92,14 +110,14 @@ if %FALTA_PHP%==1     echo      PHP      https://windows.php.net/downloads/relea
 if %FALTA_YTDLP%==1   echo      yt-dlp   https://github.com/yt-dlp/yt-dlp/releases/
 if %FALTA_FFMPEG%==1  echo      ffmpeg   https://github.com/yt-dlp/FFmpeg-Builds/releases/
 echo.
-echo    Según lo que falte: PHP unos 35 MB, yt-dlp 18 MB y ffmpeg 162 MB.
-echo    Los tres juntos pasan de 200 MB, así que hazlo con tiempo.
+echo    Segun lo que falte: PHP unos 35 MB, yt-dlp 18 MB y ffmpeg 162 MB.
+echo    Los tres juntos pasan de 200 MB, asi que hazlo con tiempo.
 echo.
-set /p SI=   ¿Descargo lo que falta? (S/N):
+set /p SI=   Descargo lo que falta? (S/N):
 if /i not "!SI!"=="S" (
   echo.
   echo    De acuerdo, no descargo nada.
-  echo    Puedes instalarlo tú a mano; mira LEEME.md
+  echo    Puedes instalarlo tu a mano; mira LEEME.md
   echo.
   pause
   exit /b 0
@@ -140,9 +158,9 @@ if %FALTA_PHP%==1 (
     "  if($t -notmatch '(?m)^openssl\.cafile'){ $t=$t+[Environment]::NewLine+'openssl.cafile = '+[char]34+$ca+[char]34 };" ^
     "  [IO.File]::WriteAllText((Resolve-Path $ini).Path, $t, (New-Object Text.UTF8Encoding $false)) }"
   if errorlevel 1 (
-    echo    [X] No he podido instalar PHP automáticamente.
-    echo        Bájalo a mano de https://windows.php.net/download/
-    echo        version "Thread Safe" x64, y descomprímelo en una carpeta
+    echo    [X] No he podido instalar PHP automaticamente.
+    echo        Bajalo a mano de https://windows.php.net/download/
+    echo        version "Thread Safe" x64, y descomprimelo en una carpeta
     echo        llamada  php  dentro de esta misma carpeta.
     echo.
     pause
@@ -160,8 +178,8 @@ if %FALTA_YTDLP%==1 (
     "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;" ^
     "Invoke-WebRequest -UseBasicParsing 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' -OutFile 'yt-dlp.exe'"
   if errorlevel 1 (
-    echo    [!] No he podido descargar yt-dlp. Seguimos sin él:
-    echo        solo significa que no podrás cantar sin internet.
+    echo    [!] No he podido descargar yt-dlp. Seguimos sin el:
+    echo        solo significa que no podras cantar sin internet.
   ) else (
     echo    [OK] yt-dlp.exe descargado
   )
@@ -170,7 +188,7 @@ if %FALTA_YTDLP%==1 (
 
 rem ================= ffmpeg =================
 if %FALTA_FFMPEG%==1 (
-  echo    Descargando ffmpeg... (es el más pesado, paciencia)
+  echo    Descargando ffmpeg... (es el mas pesado, paciencia)
   powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$ErrorActionPreference='Stop';" ^
     "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;" ^
@@ -180,8 +198,8 @@ if %FALTA_FFMPEG%==1 (
     "Get-ChildItem 'ff_tmp' -Recurse -Include 'ffmpeg.exe','ffprobe.exe' | ForEach-Object { Copy-Item $_.FullName '.' -Force };" ^
     "Remove-Item 'ff.zip','ff_tmp' -Recurse -Force"
   if errorlevel 1 (
-    echo    [!] No he podido descargar ffmpeg. Sin él yt-dlp descarga
-    echo        el vídeo pero no puede juntarlo con el audio.
+    echo    [!] No he podido descargar ffmpeg. Sin el yt-dlp descarga
+    echo        el video pero no puede juntarlo con el audio.
   ) else (
     echo    [OK] ffmpeg.exe descargado
   )

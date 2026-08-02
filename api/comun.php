@@ -145,3 +145,58 @@ function video_local(string $id): ?string {
   }
   return null;
 }
+
+/* ---- La dirección de este PC en la red local -------------------------
+   Hace falta para el QR y para el aviso del operador, y NO se puede
+   deducir de la URL del navegador: `Karaoke.bat` abre la aplicación en
+   `localhost` a propósito —es lo que siempre funciona en el propio PC—,
+   así que mirar `location.hostname` decía «no hay red» aunque la hubiera
+   y los móviles llegaran perfectamente. El servidor escucha en 0.0.0.0;
+   lo que hay que averiguar es con qué dirección se le ve desde fuera.
+
+   Se prueba primero por nombre de equipo, que no necesita ejecutar nada,
+   y solo si eso falla se recurre a ipconfig. Se descartan la de bucle y
+   las 169.254.x, que son las que asigna Windows cuando NO hay red: dar
+   una de esas sería peor que no dar ninguna. */
+function ip_local(): ?string {
+  static $ip = false;
+  if ($ip !== false) return $ip;
+
+  $vale = function (?string $d): bool {
+    if (!$d || !filter_var($d, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) return false;
+    if (str_starts_with($d, '127.') || str_starts_with($d, '169.254.')) return false;
+    return $d !== '0.0.0.0';
+  };
+
+  $candidatas = [];
+
+  $host = @gethostname();
+  if ($host) {
+    $d = @gethostbyname($host);
+    if ($vale($d)) $candidatas[] = $d;
+  }
+
+  if (!$candidatas && function_exists('shell_exec')) {
+    $cmd = stripos(PHP_OS_FAMILY, 'Windows') !== false
+      ? 'ipconfig'
+      : 'ip -4 -o addr 2>/dev/null || hostname -I 2>/dev/null || ifconfig 2>/dev/null';
+    $salida = @shell_exec($cmd);
+    if ($salida && preg_match_all('/\b(\d{1,3}(?:\.\d{1,3}){3})\b/', $salida, $m)) {
+      foreach ($m[1] as $d) if ($vale($d)) $candidatas[] = $d;
+    }
+  }
+
+  /* Entre varias tarjetas —wifi, cable, VirtualBox, WSL— gana una de red
+     doméstica de verdad. Las 192.168.x son las de casi cualquier router. */
+  usort($candidatas, function ($a, $b) {
+    $peso = function ($d) {
+      if (str_starts_with($d, '192.168.')) return 0;
+      if (str_starts_with($d, '10.'))      return 1;
+      if (preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $d)) return 2;
+      return 3;
+    };
+    return $peso($a) <=> $peso($b);
+  });
+
+  return $ip = ($candidatas[0] ?? null);
+}

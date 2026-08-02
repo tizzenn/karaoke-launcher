@@ -23,7 +23,12 @@ window.KL = KL;
 
 KL.almacen = (function () {
 
-  const RUTA = 'api/estado.php';
+  /* Las pruebas abren la aplicación con `?bd=pruebas` y todo el almacén
+     trabaja sobre un archivo aparte. Sin esto, ejecutar la suite borraría
+     la biblioteca de la fiesta. */
+  const BD = (new URLSearchParams(location.search).get('bd') || '').match(/^[a-z_]{1,20}$/);
+  const RUTA = 'api/estado.php' + (BD ? '?bd=' + BD[0] : '');
+  const SEP  = BD ? '&' : '?';
 
   /* Cada vuelta del sondeo deja respirar al servidor: php -S atiende
      una petición cada vez, y en la fiesta hay varios aparatos. */
@@ -34,9 +39,15 @@ KL.almacen = (function () {
   let aplicar = () => {};
   let aviso   = () => {};
 
+  /* `aplicar` sigue siendo uno solo: repintar la interfaz entera es un
+     trabajo con dueño, y dos dueños repintando lo mismo es un parpadeo.
+     Los AVISOS sí se reparten —«se ha caído el servidor» le interesa al
+     que enseña el mensaje y a cualquiera que quiera reaccionar— y por
+     eso salen también por `KL.senales`. */
   function iniciar(cb) {
     aplicar = cb.aplicar || aplicar;
-    aviso   = cb.aviso   || aviso;
+    if (cb.aviso) KL.senales.oir('almacen:aviso', cb.aviso);
+    aviso = (...d) => KL.senales.avisar('almacen:aviso', ...d);
   }
 
   /* Si fetch falla del todo —«NetworkError», «Failed to fetch»— es que
@@ -90,7 +101,7 @@ KL.almacen = (function () {
   async function escuchar() {
     for (;;) {
       try {
-        const e = await peticion(RUTA + '?desde=' + version);
+        const e = await peticion(RUTA + SEP + 'desde=' + version);
         if ((e.version ?? 0) > version) aplicar(anotarVersion(e));
         await new Promise(r => setTimeout(r, ESPERA_SONDEO));
       } catch (err) {

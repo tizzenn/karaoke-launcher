@@ -57,7 +57,8 @@ de que llegue la gente. Cada dependencia es una forma más de que eso falle.
 
     Preparar.bat             Instala PHP, yt-dlp y ffmpeg en modo portable
     Karaoke.bat              Arranca PHP en 0.0.0.0:8123 y abre el navegador
-    index.html               La aplicación entera: interfaz, estilos y lógica
+    index.html               La pantalla del operador: solo marcado y el orden
+                             de los <script>. La lógica está en js/.
     pedir.php                Página ligera para los invitados
     proyector.php            La pantalla del televisor, en otra ventana
     ajustes.php              Configuración desde el navegador
@@ -65,6 +66,34 @@ de que llegue la gente. Cada dependencia es una forma más de que eso falle.
     sw.js                    Service worker: la interfaz carga sin red
     LEEME.md                 Instrucciones para el usuario final
     PROJECT.md               Este documento
+    Empaquetar-para-revision.bat   Genera el zip para revisiones externas
+
+    js/simbolos.js           Los 35 iconos, como <symbol> incrustados
+    js/qr.js                 Generador de QR local, sin servicios externos
+    js/estados.js            LA TABLA DE ESCENAS. Cinco estados, cinco
+                             columnas. Todo lo que se ve sale de aquí.
+    js/nucleo.js             KL, el estado en memoria y las utilidades
+    js/senales.js            El reparto de avisos entre módulos
+    js/almacen-servidor.js   Los datos viven en el servidor
+    js/almacen-local.js      (versión Lite) los datos viven en el navegador
+    js/comandos.js           LA LISTA de todo lo que se le puede pedir al
+                             estado compartido. Nadie más monta el mensaje.
+    js/interfaz.js           El pegamento: S, toast(), draw()
+    js/busqueda.js           Encontrar el vídeo correcto a la primera
+    js/cola.js               La cola, la biblioteca y las descargas
+    js/reproductor.js        Dos capas: fuentes (youtube, archivo) y el
+                             mediador que elige entre ellas
+    js/evento.js             La máquina de estados de la actuación
+    js/atajos.js             El teclado
+    js/app.js                Cableado y arranque
+
+    css/base.css             Variables de color y los tres modos
+    css/operador.css         La pantalla del operador
+    css/interpretacion.css   Lo que se ve mientras se canta
+
+    pruebas/pruebas.php      La suite: se abre en el navegador y ya está
+    pruebas/LEEME.md         Cómo se prueba y qué encontró cada prueba
+    pruebas/e2e/             Guiones de Playwright, opcionales
 
     api/config.php           Valores por defecto + lo guardado en ajustes
     api/comun.php            Utilidades compartidas por toda la API
@@ -77,6 +106,40 @@ de que llegue la gente. Cada dependencia es una forma más de que eso falle.
     data/videos/             Vídeos descargados (NO van a GitHub)
 
     iconos/                  Icono en SVG y en PNG a dos tamaños
+
+### Las cuatro piezas que sostienen el resto
+
+Si solo hay tiempo de entender cuatro archivos, son estos. El resto es
+interfaz.
+
+**`js/estados.js` — la tabla de escenas.** Cinco estados —ESPERA,
+PREPARADA, LLAMADA, INTERPRETACION, FIN_ACTUACION— y, para cada uno, qué
+enseña el PC, qué enseña la tele, qué barra sale abajo, si debe estar
+sonando algo y si el calentamiento puede taparlo. **Ninguna pantalla
+decide por su cuenta lo que enseña: lo consulta aquí.** Antes de existir
+esta tabla, añadir el estado LLAMADA obligaba a acordarse de tocar el
+proyector, y no me acordé: la pantalla de calentamiento se quedaba encima
+de la cuenta atrás.
+
+**`js/evento.js` — la máquina de estados.** Las transiciones permitidas
+están en una tabla, no repartidas en `if`. Y aquí vive **la regla que no
+se rompe nunca: una canción no arranca sola.** Al terminar una, la
+siguiente queda PREPARADA, y ahí se queda hasta que el operador lo diga.
+No es una preferencia: es que la gente no está mirando la pantalla, y una
+canción que empieza sola pilla a alguien desprevenido delante de todos.
+
+**`js/comandos.js` — lo que se le puede pedir al estado.** Dieciséis
+funciones con nombre. Nadie fuera de ese archivo escribe `accion:`
+seguido de un nombre suelto; hay una prueba que lo vigila. Antes eran
+diecisiete sitios montando el mensaje a mano, y una errata no daba error:
+la canción simplemente no aparecía.
+
+**`js/senales.js` — el reparto de avisos.** Quien avisa no sabe quién
+escucha, y pueden escuchar varios. Mientras solo cabía un suscriptor, ese
+suscriptor tenía que saberlo todo, y ese alguien era `app.js`: por eso
+creció hasta donde creció. Un oyente que revienta no deja sin avisar a
+los demás — sin eso, un fallo pintando un botón dejaría al motor sin
+enterarse de que la canción terminó, y se quedaría sonando para siempre.
 
 ### Flujo de una búsqueda
 
@@ -287,6 +350,37 @@ había fallado. Por eso el nombre de salida va fijo y se fuerza mp4 con
 **`cmd` no encuentra un ejecutable relativo entre comillas.** `"yt-dlp.exe"`
 le llega con las comillas dobladas y responde que no lo reconoce, aunque esté
 al lado. Por eso `descargar.php` resuelve la ruta completa antes de llamarlo.
+
+**Chromium no resuelve `<use href="iconos.svg#id">`.** Un sprite SVG en un
+archivo aparte, referenciado desde fuera, no da error: simplemente no dibuja
+nada. La caja mide 20×20 y está vacía. Por eso los iconos viven dentro de
+`js/simbolos.js` y se inyectan al principio del `<body>`.
+
+**Los identificadores del sprite chocan con los de la página.** `$('#aviso')`
+encontraba el `<symbol id="aviso">` en vez del `<div>`, y asignarle
+`className` a un elemento SVG revienta. Por eso los 35 llevan prefijo `ic-`.
+
+**Los `.bat` tienen que ser ASCII puro.** Con `chcp 65001`, un solo carácter
+multibyte desincroniza el intérprete de `cmd`, que es orientado a bytes, y se
+come la primera letra de las líneas siguientes: `echo` llega como `cho`. Un
+`¿` en un comentario tumbó `Preparar.bat` entero.
+
+**El audio de un iframe de YouTube no se puede analizar.** Es otro origen; la
+Web Audio API no lo alcanza. Los efectos que reaccionan al sonido usan el
+micrófono vía `getUserMedia`, que funciona porque la página está en
+`localhost` y eso cuenta como contexto seguro.
+
+**Un `findstr` que busca una clave dentro de una copia que se incluye a sí
+mismo.** `Empaquetar-para-revision.bat` comprueba que no se cuele ninguna
+clave de API buscando el prefijo dentro de la copia temporal — y `robocopy`
+copia también ese `.bat`, que contiene el prefijo escrito. Se encontraba a sí
+mismo y se negaba a generar el zip, siempre. La marca va partida en dos a
+propósito: no la juntes.
+
+**Limpiar el servidor no limpia el navegador.** Sondea cada segundo y medio.
+Cualquier código que borre el estado y siga trabajando de inmediato está en
+una carrera. Y el evento lleva un contador que **solo sube**: mandar uno con
+un `n` más bajo es mandarlo a la basura, en silencio, por diseño.
 
 **`php.ini-development` mete los avisos dentro del JSON.** Con
 `display_errors = On`, cualquier aviso de PHP se imprime antes de la

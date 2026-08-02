@@ -86,7 +86,7 @@ $v = fn(string $k, $d = '') => htmlspecialchars((string)($cfg[$k] ?? $d), ENT_QU
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ajustes · Karaoke Launcher</title>
+<title>⚙️ Ajustes · Karaoke Launcher</title>
 <style>
 :root{--bg:#0d0f14;--bg2:#141821;--bg3:#1b2029;--bg4:#252b38;--line:#2b323f;
 --txt:#eaedf3;--txt2:#98a1b2;--txt3:#6a7383;--ac:#22d97a}

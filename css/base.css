@@ -1,0 +1,163 @@
+/* ═══════════════════════════════════════════════════════════════════
+   base.css — variables, reset, tipografía y piezas comunes
+
+   Todo color vive aquí, en variables. Ninguna regla de este proyecto
+   escribe un color literal: si lo hiciera, los modos DJ y MC no
+   podrían cambiarlo.
+
+   El orden de carga es base → operador → interpretacion.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root{
+  --bg:#0d0f14; --bg2:#141821; --bg3:#1b2029; --bg4:#252b38;
+  --line:#2b323f; --line2:#39424f;
+  --txt:#eaedf3; --txt2:#98a1b2; --txt3:#6a7383;
+  --star:#ffc94d; --dang:#ff5d6c; --info:#4da3ff;
+  --r:12px; --sh:0 20px 60px rgba(0,0,0,.6);
+  /* Sombra corta para relieves pequeños, y el aro del foco de teclado. */
+  --sh1:0 1px 2px rgba(0,0,0,.4);
+  --sh2:0 6px 20px rgba(0,0,0,.35);
+}
+
+/* ---- Modos: karaoke, DJ y MC -----------------------------------------
+   Lo único que cambia entre ellos es el color principal y la palabra que
+   se añade a las búsquedas. El color va aquí; la palabra, en los ajustes
+   del servidor. Un modo NO es una aplicación distinta: si algún día lo
+   fuera, esto habría dejado de servir y habría que replantearlo.
+
+   El acento se reserva para lo que suena y para la acción principal. Si
+   lo lleva todo, deja de significar nada.                              */
+
+:root,
+html[data-modo="karaoke"]{
+  --ac-claro:#2ee888; --ac:#22d97a; --ac2:#18b464; --ac-oscuro:#0a8a4b;
+  --ac-d:#0d3d24; --ac-txt:#052b16; --ac-rgb:34,217,122;
+}
+html[data-modo="dj"]{
+  --ac-claro:#a78bfa; --ac:#8b5cf6; --ac2:#6d3ff0; --ac-oscuro:#4c1fbf;
+  --ac-d:#241640; --ac-txt:#f6f2ff; --ac-rgb:139,92,246;
+}
+html[data-modo="mc"],
+html[data-modo="freestyle"]{
+  --ac-claro:#ffb56b; --ac:#ff9f43; --ac2:#f08a24; --ac-oscuro:#b35f0a;
+  --ac-d:#3d2a10; --ac-txt:#2b1500; --ac-rgb:255,159,67;
+}
+:root{ --aro:0 0 0 3px rgba(var(--ac-rgb),.32) }
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  font-size:15px;overflow:hidden;
+}
+button,input,select{font-family:inherit;color:inherit}
+button{cursor:pointer}
+/* Solo con teclado: quien usa el ratón no ve aros, quien navega con
+   Tab sabe siempre dónde está. */
+:focus-visible{outline:none;box-shadow:var(--aro)}
+.it:focus-visible,button:focus-visible,input:focus-visible{border-radius:9px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3a4250;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#4d5768;background-clip:content-box}
+
+/* ---- Iconos ----------------------------------------------------------
+   Un sprite SVG local (iconos/simbolos.svg), no la fuente de Google: la
+   aplicación tiene que verse con el router caído. `currentColor` hace que
+   cada icono herede el color de su botón, y así el estado de descarga se
+   dice solo con una clase de color.                                     */
+.ic{width:1.25em;height:1.25em;fill:currentColor;display:block;flex-shrink:0;
+  pointer-events:none}
+.ic.sm{width:1em;height:1em}
+.ic.lg{width:1.6em;height:1.6em}
+
+/* ---- Botones ---------------------------------------------------------- */
+.btn{
+  background:linear-gradient(180deg,var(--ac-claro),var(--ac));color:var(--ac-txt);
+  border:none;padding:12px 22px;border-radius:999px;font-weight:800;font-size:14px;
+  white-space:nowrap;transition:.15s;box-shadow:var(--sh1);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px
+}
+.btn:hover{background:linear-gradient(180deg,var(--ac),var(--ac2))}
+.btn:active{transform:scale(.97)}
+.btn.g{background:var(--bg3);color:var(--txt2);border:1px solid var(--line);font-weight:600}
+.btn.g:hover{background:var(--bg4);color:var(--txt)}
+.ib{
+  background:none;border:none;color:var(--txt3);width:34px;height:34px;border-radius:8px;
+  display:grid;place-items:center;font-size:16px;transition:.15s;flex-shrink:0
+}
+.ib:hover{background:var(--bg4);color:var(--txt)}
+.badge{
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;
+  padding:4px 9px;border-radius:6px;background:var(--bg4);color:var(--txt3);
+  border:1px solid var(--line);white-space:nowrap
+}
+.badge.demo{color:#ffcb5c;background:#2b2415;border-color:#584a22}
+.badge.live{color:var(--ac);background:var(--ac-d);border-color:var(--ac2)}
+
+/* ---- Colores de estado, para los iconos ------------------------------
+   El estado de una descarga se lee por color y no por forma: gris = no
+   puedo, azul = puedo, verde = hecho. Tres estados y un vistazo.       */
+.est-no{color:var(--txt3)!important;opacity:.45;cursor:help}
+.est-si{color:var(--info)!important}
+.est-ok{color:var(--ac)!important;cursor:help}
+.warn{color:#ffb648!important;cursor:help}
+.starred{color:var(--star)!important}
+
+/* ---- Modales ---------------------------------------------------------- */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:70;padding:16px}
+.ov.on{display:flex}
+.md{background:var(--bg2);border:1px solid var(--line);border-radius:16px;
+  width:min(760px,100%);max-height:88dvh;display:flex;flex-direction:column;box-shadow:var(--sh);
+  animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.mh{display:flex;align-items:center;gap:12px;padding:16px 20px 13px;border-bottom:1px solid var(--line);flex-shrink:0}
+.mh h3{margin:0;font-size:17px;flex:1}
+.mh .hi{font-size:12px;color:var(--txt3)}
+.mb{padding:10px 12px 12px;overflow-y:auto}
+.mf{display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--line);flex-shrink:0}
+.mf .sp{flex:1}
+.mf .hi{font-size:11.5px;color:var(--txt3)}
+
+/* ---- Formularios ------------------------------------------------------ */
+.fld{margin-bottom:16px}
+.fld label{display:block;font-size:12.5px;font-weight:700;color:var(--txt2);margin-bottom:6px}
+.fld input[type=text],.fld input[type=password],.fld input[type=number],.fld select{
+  width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--line);
+  border-radius:9px;font-size:14px;outline:none}
+.fld input:focus,.fld select:focus{border-color:var(--ac)}
+.fld .h{font-size:11.5px;color:var(--txt3);margin-top:7px;line-height:1.6}
+.sw{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--txt2);cursor:pointer;margin-bottom:10px}
+.sw input{width:17px;height:17px;accent-color:var(--ac)}
+.grupo{border-top:1px solid var(--line);margin:18px 0 14px;padding-top:14px}
+.grupo:first-child{border-top:0;margin-top:0;padding-top:0}
+.grupo h4{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--txt3)}
+
+/* ---- Piezas sueltas --------------------------------------------------- */
+.empty{text-align:center;padding:56px 22px;color:var(--txt3)}
+.empty .b{display:flex;justify-content:center;margin-bottom:12px;opacity:.4}
+.empty .b .ic{width:44px;height:44px}
+.empty p{margin:5px 0;font-size:13.5px;line-height:1.55}
+
+.load{padding:56px 20px;text-align:center;color:var(--txt3);font-size:13.5px}
+.sp{width:28px;height:28px;border:3px solid var(--bg4);border-top-color:var(--ac);
+  border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#toast{position:fixed;left:50%;bottom:98px;transform:translateX(-50%) translateY(18px);
+  background:var(--bg4);border:1px solid var(--line2);padding:12px 22px;border-radius:999px;
+  font-size:13.5px;font-weight:700;box-shadow:var(--sh);opacity:0;pointer-events:none;
+  transition:.22s;z-index:90;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+#buf{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:rgba(10,12,17,.94);border:1px solid var(--line2);border-radius:14px;
+  padding:22px 30px;text-align:center;box-shadow:var(--sh);z-index:85;display:none
+}
+#buf.on{display:block}
+#buf .sp{margin-bottom:12px}
+#buf b{display:block;font-size:14px;margin-bottom:4px}
+#buf span{font-size:12px;color:var(--txt3)}

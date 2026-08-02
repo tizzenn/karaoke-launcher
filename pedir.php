@@ -8,7 +8,7 @@ $pideClave = trim((string)$cfg['clave_fiesta']) !== '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d0f14">
-<title>Pedir canción</title>
+<title>📱 Pedir una canción</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{--bg:#0d0f14;--bg2:#141821;--bg3:#1b2029;--bg4:#252b38;--line:#2b323f;
