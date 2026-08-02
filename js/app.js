@@ -1,14 +1,29 @@
 /* ═══════════════════════════════════════════════════════════════════
    app.js — cableado y arranque
 
-   Último archivo que se carga. Todo lo que hay aquí da por hecho que el
-   resto de módulos ya existe: conecta los botones, arranca el almacén y
-   pone la aplicación en marcha.
+   Último archivo que se carga. Conecta los botones, arranca el almacén y
+   pone la aplicación en marcha. Todo lo de aquí da por hecho que el resto
+   de módulos ya existe.
+
+   ── Por qué está entero dentro de una función ────────────────────────
+   Porque **nadie debe poder llamar a nada de aquí**. Este archivo es el
+   final de la cadena, no una biblioteca. Mientras sus veinte funciones
+   estuvieron sueltas en el ámbito global, otros módulos empezaron a
+   usarlas —`api()`, el cronómetro— y eso ataba media aplicación al
+   archivo que se carga el último: para probar el motor de estados había
+   que cargar también los botones.
+
+   Ahora esas dos se han mudado a su sitio (`KL.api`, `KL.cronometro`) y
+   lo que queda no sale de aquí. Lo único que se publica es
+   `KL.panelesDeCalentamiento`, y se publica porque la interfaz tiene que
+   repintar los cartelones cuando llegan datos nuevos del servidor.
 
    Si algo no funciona al abrir, mira primero el orden de las etiquetas
    <script> en index.html.
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
+
+(function () {
 
 /* ---- El almacén: de dónde vienen y adónde van los datos --------------- */
 KL.almacen.iniciar({ aplicar, aviso: m => toast(m) });
@@ -24,19 +39,8 @@ const escuchar = () => KL.almacen.escuchar();
 /* Buscar y descargar hablan con el mismo servidor que el almacén. */
 const api = (url, cuerpo) => KL.almacen.peticion(url, cuerpo);
 
-/* ---- Cronómetro y barra de progreso ---------------------------------- */
-let cron = null;
-
-function arrancarCronometro(){
-  clearInterval(cron);
-  cron = setInterval(() => {
-    const d = KL.reproductor.duracion(), c = KL.reproductor.posicion();
-    $('#tt').textContent = fmt(d);
-    $('#tc').textContent = fmt(c);
-    $('#skf').style.width = d ? (c / d * 100) + '%' : '0';
-  }, 500);
-}
-function pararCronometro(){ clearInterval(cron); cron = null; }
+/* El cronómetro se mudó a js/cronometro.js: era el último hilo que ataba
+   el motor de estados a este archivo. */
 
 /* ---- «La conexión va justa: descarga las siguientes» -------------------
    El antiparones detecta que la red flojea varios segundos antes de que
@@ -87,7 +91,7 @@ function proponerDescargas(){
   if(bajar) bajar.addEventListener('click', () => {
     caja.classList.remove('on');
     S.avisoRedHasta = Date.now() + 15 * 60 * 1000;
-    siguientes.forEach(descargar);
+    siguientes.forEach(KL.cola.descargar);
   });
   const aj = $('#bRedAjustes');
   if(aj) aj.addEventListener('click', () => { caja.classList.remove('on'); $('#bCfg').click(); });
@@ -113,8 +117,6 @@ function showBuf(on, txt, sub){
    archivo para parar el cronómetro de la barra. Ninguno de los dos sabe
    del otro. */
 KL.reproductor.iniciar({
-
-  onFin: () => pararCronometro(),
 
   onSonando: si => {
     /* Sonando = no hay nada que pulsar aquí. El botón se apaga en vez de
@@ -173,23 +175,23 @@ $$('#freestyle .fbtn').forEach(b =>
     S.sufijos.freestyle = b.dataset.suf;
     aplicarModo('freestyle');
     $$('#freestyle .fbtn').forEach(o => o.classList.toggle('on', o === b));
-    if($('#q').value.trim()) doSearch();
+    if($('#q').value.trim()) KL.busqueda.buscar();
   }));
 
 /* ---- Búsqueda --------------------------------------------------------- */
-$('#q').addEventListener('keydown', e => { if(e.key === 'Enter') doSearch(); });
+$('#q').addEventListener('keydown', e => { if(e.key === 'Enter') KL.busqueda.buscar(); });
 $('#bAddSel').addEventListener('click', () => {
   if(S.sel === null){ toast('Selecciona antes un vídeo'); return; }
-  addQueue(S.results[S.sel]); close('#ovRes');
+  KL.cola.anadir(S.results[S.sel]); close('#ovRes');
 });
 
 /* ---- Biblioteca ------------------------------------------------------- */
-$('#fLib').addEventListener('input', e => { S.filterLib = e.target.value; drawLib(); });
-$('#bFix').addEventListener('click', () => { toast('Pidiendo títulos a YouTube…'); resolveAll(true); });
+$('#fLib').addEventListener('input', e => { S.filterLib = e.target.value; KL.cola.pintarBiblioteca(); });
+$('#bFix').addEventListener('click', () => { toast('Pidiendo títulos a YouTube…'); KL.busqueda.titulos(true); });
 $('#bAddAll').addEventListener('click', () => {
-  const a = libItems();
+  const a = KL.cola.items();
   if(!a.length){ toast('No hay nada que añadir'); return; }
-  a.forEach(t => addQueue(t, true));
+  a.forEach(t => KL.cola.anadir(t, true));
   toast(`${a.length} canciones a la cola`);
 });
 $('#bLibCol').addEventListener('click', () => setLibCol(!S.libCol));
@@ -209,7 +211,7 @@ $('#bShuffleQ').addEventListener('click', () => {
   KL.comandos.ordenarLaCola(S.queue.map(x => x.id));
   toast('Cola mezclada');
 });
-$('#bDelAll').addEventListener('click', borrarTodasLasDescargas);
+$('#bDelAll').addEventListener('click', KL.cola.borrarTodas);
 
 /* ---- Transporte ------------------------------------------------------- */
 /* El botón grande es EMPEZAR, y mientras se canta no hace nada.
@@ -617,4 +619,11 @@ draw();
 if(window.innerWidth > 900) setTimeout(() => $('#q').focus(), 120);
 
 /* El estado viene del servidor, y a partir de ahí escuchamos cambios. */
-cargar().then(() => { dibujarRed(); comprobarDescargas(); }).then(escuchar);
+cargar().then(() => { dibujarRed(); KL.cola.comprobarDescargas(); }).then(escuchar);
+
+/* Lo ÚNICO que sale de este archivo. La interfaz repinta los cartelones
+   cuando el servidor dice que han cambiado —los puede tocar otro
+   aparato— y necesita esta puerta. */
+KL.panelesDeCalentamiento = pintarPaneles;
+
+})();

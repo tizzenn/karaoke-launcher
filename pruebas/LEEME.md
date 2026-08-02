@@ -32,7 +32,7 @@ mismo almacén y el mismo servidor PHP que usa la fiesta.
 
 ## Qué cubren
 
-27 pruebas repartidas en nueve grupos, más los invariantes:
+38 pruebas repartidas en once grupos, más los invariantes:
 
 **El ciclo de una actuación** — que preparar no arranca, que la cuenta
 atrás lleva a la reproducción, que Esc la cancela, que la canción cantada
@@ -66,6 +66,15 @@ doscientas canciones que entra, se reordena y sale sin perder ni duplicar
 ninguna. El azar lleva semilla: si falla, el mensaje trae el número y el
 camino exacto para repetirlo. Un fallo que no se puede repetir no se
 arregla.
+
+**Módulos encapsulados** — que ninguna función interna se queda suelta en
+el ámbito global, y que cada módulo publica su puerta. La primera falla si
+alguien vuelve a dejar una función global: no porque ensucie, sino porque
+una función global la acaba llamando alguien, y entonces ya no se puede
+cambiar sin romper a un desconocido.
+
+**Canción y actuación** — que una actuación nunca guarde su posición ni su
+estado, y que los atajos devuelvan lo mismo que el acceso directo.
 
 **Códigos QR** — estructura de la matriz, escapado de la cadena de wifi, y
 que un texto demasiado largo da error en vez de un QR silenciosamente

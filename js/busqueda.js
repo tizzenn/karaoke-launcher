@@ -11,6 +11,11 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
+/* Encapsulado en el paso 6. De las seis funciones que había sueltas solo
+   dos las llama alguien de fuera; las otras cuatro eran ámbito global por
+   inercia, no por necesidad. */
+(function () {
+
 /* Extrae el ID de youtube.com/watch?v=, youtu.be/, /embed/, /shorts/ o
    de un ID pegado tal cual. Devuelve null si no es ninguna de esas. */
 function parseYT(s){
@@ -40,7 +45,7 @@ async function resolveAll(force){
   const pend = S.library.filter(t => force || !t.title || /^Cargando|^Vídeo /.test(t.title));
   for(const t of pend){
     try{
-      const j = await api('api/buscar.php?id=' + encodeURIComponent(t.videoId));
+      const j = await KL.api('api/buscar.php?id=' + encodeURIComponent(t.videoId));
       const v = j.items[0];
       await KL.comandos.actualizarPista(t.videoId,
               { title:v.title, channel:v.channel, thumb:v.thumb });
@@ -53,7 +58,7 @@ async function search(text){
   /* El sufijo viaja en la dirección: depende del modo, que es una
      preferencia de este aparato y no del servidor. Vacío es una respuesta
      válida —el modo DJ busca tal cual— y por eso se manda siempre. */
-  const j = await api('api/buscar.php?q=' + encodeURIComponent(text)
+  const j = await KL.api('api/buscar.php?q=' + encodeURIComponent(text)
                     + '&sufijo=' + encodeURIComponent(S.suffix || ''));
   return j.items || [];
 }
@@ -118,11 +123,18 @@ function drawResults(){
     const i = +el.dataset.i, v = r[i];
     el.addEventListener('click', ev => {
       const b = ev.target.closest('button');
-      if(b && b.classList.contains('aq')){ addQueue(v); close('#ovRes'); return; }
-      if(b && b.classList.contains('al')){ toggleLib(v); drawResults(); return; }
+      if(b && b.classList.contains('aq')){ KL.cola.anadir(v); close('#ovRes'); return; }
+      if(b && b.classList.contains('al')){ KL.cola.alternarBiblioteca(v); drawResults(); return; }
       box.querySelectorAll('.rs').forEach(n => n.classList.remove('sel'));
       el.classList.add('sel'); S.sel = i;
     });
-    el.addEventListener('dblclick', () => { addQueue(v); close('#ovRes'); });
+    el.addEventListener('dblclick', () => { KL.cola.anadir(v); close('#ovRes'); });
   });
 }
+
+/* Lo que se usa desde fuera, y nada más:
+     buscar()   lo llama el botón de la lupa y la tecla Intro
+     titulos()  reconstruye los títulos contra YouTube desde los ajustes */
+KL.busqueda = { buscar: doSearch, titulos: resolveAll };
+
+})();

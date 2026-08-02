@@ -22,6 +22,10 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
+/* Cerrado: nadie llama a nada de aquí. Los atajos se enganchan al
+   documento y ahí se acaban. */
+(function () {
+
 function escribiendo(){
   const a = document.activeElement;
   return !!a && (['INPUT','TEXTAREA','SELECT'].includes(a.tagName) || a.isContentEditable);
@@ -74,3 +78,5 @@ document.addEventListener('keydown', ev => {
 
   if(ev.key === 'v' || ev.key === 'V'){ $('#bView').click(); }
 });
+
+})();

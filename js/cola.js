@@ -7,6 +7,12 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
+/* Encapsulado en el paso 6. De las catorce funciones sueltas que había,
+   siete las usa alguien de fuera y siete eran globales por inercia:
+   pintar una fila o leer el porcentaje de una descarga no es asunto de
+   nadie más. */
+(function () {
+
 /* ---- Acciones -------------------------------------------------------- */
 
 function addQueue(v, quiet){
@@ -202,7 +208,7 @@ function bindQueue(){
 
 async function comprobarDescargas(){
   try{
-    const j = await api('api/descargar.php?comprobar=1');
+    const j = await KL.api('api/descargar.php?comprobar=1');
     S.puedeDescargar = !!j.disponible;
     S.ytdlp = j;
   }catch(e){ S.puedeDescargar = false; }
@@ -228,7 +234,7 @@ async function descargar(t){
   S.descargas[t.videoId] = { pct:0, titulo:KL.Cancion.titulo(t) };
   drawLib(); drawQue();
   try{
-    const j = await api('api/descargar.php', { videoId:t.videoId });
+    const j = await KL.api('api/descargar.php', { videoId:t.videoId });
     if(j.estado === 'hecho'){
       delete S.descargas[t.videoId];
       await KL.comandos.actualizarPista(t.videoId, { local:j.local });
@@ -252,7 +258,7 @@ function vigilarDescargas(){
 
     for(const vid of ids){
       let j;
-      try{ j = await api('api/descargar.php?progreso=' + encodeURIComponent(vid)); }
+      try{ j = await KL.api('api/descargar.php?progreso=' + encodeURIComponent(vid)); }
       catch(e){ continue; }
 
       if(j.estado === 'hecho'){
@@ -275,7 +281,7 @@ function vigilarDescargas(){
 async function borrarDescarga(t){
   if(!confirm('¿Borrar el archivo descargado de «' + KL.Cancion.titulo(t) + '»?\n\nLa canción sigue en la lista; volverá a sonar desde YouTube.')) return;
   try{
-    await api('api/descargar.php?borrar=' + encodeURIComponent(t.videoId), { borrar:1 });
+    await KL.api('api/descargar.php?borrar=' + encodeURIComponent(t.videoId), { borrar:1 });
     await KL.comandos.actualizarPista(t.videoId, { local:null });
     toast('Descarga borrada');
   }catch(e){ toast('⚠ ' + e.message); }
@@ -284,8 +290,27 @@ async function borrarDescarga(t){
 async function borrarTodasLasDescargas(){
   if(!confirm('¿Borrar TODOS los vídeos descargados?\n\nLas canciones no se pierden: volverán a sonar desde YouTube.')) return;
   try{
-    const j = await api('api/descargar.php?borrar_todo=1', { borrar:1 });
+    const j = await KL.api('api/descargar.php?borrar_todo=1', { borrar:1 });
     await cargar();
     toast(j.borrados + ' archivos borrados');
   }catch(e){ toast('⚠ ' + e.message); }
 }
+
+/* La puerta, y solo esto:
+     anadir / alternarBiblioteca   los usan el buscador y los botones
+     items                         «añadir toda la biblioteca»
+     pintarBiblioteca / pintarCola las llama la interfaz al llegar datos
+     comprobarDescargas            al arrancar, para el semáforo
+     descargar / borrarTodas       los botones de descarga */
+KL.cola = {
+  anadir: addQueue,
+  alternarBiblioteca: toggleLib,
+  items: libItems,
+  pintarBiblioteca: drawLib,
+  pintarCola: drawQue,
+  comprobarDescargas,
+  descargar,
+  borrarTodas: borrarTodasLasDescargas
+};
+
+})();

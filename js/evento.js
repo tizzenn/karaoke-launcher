@@ -245,7 +245,7 @@ KL.evento = (function () {
        de otras cosas, pero ya no está tapando esto. */
     pasarA(EV.INTERPRETACION, { pistaId:t.id });
     pedirPantallaCompleta();
-    arrancarCronometro();
+    KL.cronometro.arrancar();
     draw();
     const fila = KL.$(`#que .it[data-id="${t.id}"]`);
     if(fila) fila.scrollIntoView({ block:'nearest', behavior:'smooth' });

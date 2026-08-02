@@ -506,6 +506,65 @@ prueba('Nadie fuera de comandos.js escribe el mensaje a mano', async () => {
    5 · LOS CÓDIGOS QR
    Se generan aquí desde que se dejó de depender de un servicio externo.
    ═══════════════════════════════════════════════════════════════════ */
+grupo('Módulos encapsulados');
+
+prueba('Los módulos no dejan sueltas sus funciones internas', () => {
+  /* El paso 6. Cada archivo publica lo que hace falta y nada más. Si algo
+     vuelve al ámbito global, esta prueba lo dice: no porque ensucie, sino
+     porque una función global la acaba llamando alguien, y entonces ya no
+     se puede cambiar sin romper a un desconocido. */
+  const w = app();
+  const filtradas = ['addQueue','toggleLib','libItems','drawLib','drawQue',
+                     'doSearch','resolveAll','drawResults','parseYT',
+                     'arrancarCronometro','pararCronometro','api',
+                     'descargar','borrarTodasLasDescargas','comprobarDescargas',
+                     'pintarPaneles','proponerDescargas','showBuf','mostrarFallo'];
+  const sueltas = filtradas.filter(n => typeof w[n] === 'function');
+  igual(sueltas, [], 'funciones que siguen sueltas en el ámbito global');
+});
+
+prueba('Cada módulo publica su puerta y responde', () => {
+  const KLm = KL();
+  const puertas = {
+    'KL.api': 'function', 'KL.cola': 'object', 'KL.busqueda': 'object',
+    'KL.cronometro': 'object', 'KL.comandos': 'object', 'KL.senales': 'object',
+    'KL.Cancion': 'object', 'KL.Actuacion': 'object', 'KL.evento': 'object',
+    'KL.reproductor': 'object', 'KL.almacen': 'object'
+  };
+  const faltan = Object.keys(puertas)
+    .filter(k => typeof KLm[k.slice(3)] !== puertas[k]);
+  igual(faltan, [], 'módulos que no publican su puerta');
+});
+
+prueba('El vocabulario de la interfaz está cerrado', () => {
+  /* `S`, `toast` y compañía siguen siendo globales A PROPÓSITO: son el
+     idioma que habla todo el proyecto, como `$` en las páginas con
+     jQuery. Escribir `KL.interfaz.toast(...)` doscientas cuarenta veces
+     no desacoplaría nada; solo haría el texto más largo.
+
+     Lo que sí importa es que la lista esté CERRADA. Antes eran treinta y
+     nadie sabía cuáles hacían falta; ahora están enumeradas en el final
+     de interfaz.js y esta prueba falla si aparece la número diecisiete
+     sin que nadie lo haya decidido. Un global sin permiso es el que hace
+     daño; uno declarado y contado, no. */
+  const PERMITIDOS = new Set([
+    '$','$$','uid','fmt','iso','esc','unesc','icono','EV',
+    'S','toast','qGet','inLib','pistaTrasId','siguientePista',
+    'draw','drawNP','dibujarRed','dibujarSiguiente','open','close',
+    'load','guardarPrefs','setView','setLibCol','aplicarModo','aplicarEdicion',
+    'VIEWS','VNAME','ESPACIOS','urlPedir','modo','aplicar'
+  ]);
+  /* Nombres que la propia página del navegador ya trae y que no son
+     nuestros: `open` y `close` existen en cualquier ventana. */
+  const w = app();
+  const sospechosos = ['tT','save','medirBarraMini','tituloPestana','ESPACIO_VIEJO',
+                       'CARTELONES','pintarPaneles','mandarPaneles','activosAhora',
+                       'quietoT','cron','sondeoDesc','bindQueue','iconoDescarga',
+                       'quienPide','resolveTitle','parseYT','escribiendo'];
+  const colados = sospechosos.filter(n => w[n] !== undefined && !PERMITIDOS.has(n));
+  igual(colados, [], 'nombres internos que se han escapado al ámbito global');
+});
+
 grupo('La pantalla del público');
 
 prueba('Todo lo que proyector.php pide existe de verdad', async () => {

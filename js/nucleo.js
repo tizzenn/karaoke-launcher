@@ -127,6 +127,16 @@ KL.estado = {
    El estado del evento sí es compartido, y por eso NO está aquí: vive
    en data/estado.json y lo ve también la tele.                        */
 
+/* ---- Hablar con el servidor -----------------------------------------
+   Buscar y descargar usan el mismo canal que el almacén: mismo manejo de
+   errores, mismo mensaje cuando no hay nadie escuchando.
+
+   Vivía suelta en `app.js` y por eso `busqueda.js` y `cola.js` dependían
+   del último archivo que se carga, que es justo el que no debería tener
+   nada que nadie necesite. Se resuelve tarde —dentro de la función— para
+   no obligar a que el almacén esté montado al leer este archivo. */
+KL.api = (url, cuerpo) => KL.almacen.peticion(url, cuerpo);
+
 /* ---- «Qué se está cantando» tiene UN dueño --------------------------
    Aquí había un campo `curId` que se escribía a mano en cinco sitios, y
    el servidor guardaba además un `sonando` con el mismo dato. Tres copias

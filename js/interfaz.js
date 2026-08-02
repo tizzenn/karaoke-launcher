@@ -1,16 +1,39 @@
 /* ═══════════════════════════════════════════════════════════════════
-   interfaz.js — el pegamento
+   interfaz.js — el vocabulario de la aplicación
 
-   Enlaces al núcleo, avisos, modales y las funciones de dibujo que usa
-   todo el mundo. Se carga después del almacén y antes que el resto:
-   busqueda.js, cola.js, reproductor.js y evento.js dan por hecho que
-   `S`, `toast()` y `KL.comandos` existen.
+   Aquí terminó el paso 6, y no como empezó.
 
-   Son scripts clásicos, no módulos ES: lo que se declara aquí arriba lo
-   ven todos los demás. Ese es el motivo de que el orden de las etiquetas
-   <script> en index.html esté escrito y no sea casualidad.
+   El plan decía «encapsular módulos» y este archivo iba a ser el último.
+   Al medirlo salió esto: `S` se usa 186 veces fuera de aquí, `toast` 38,
+   `qGet` 18. Encapsularlo de verdad significa escribir
+   `KL.interfaz.toast(...)` doscientas cuarenta veces.
+
+   Y eso sería **peor código**. `S` y `toast` no son globales por
+   descuido: son el vocabulario del proyecto, como `$` lo es en las
+   páginas que usan jQuery. Un vocabulario compartido no es acoplamiento,
+   es un idioma; obligar a decir el apellido completo cada vez no
+   desacopla nada, solo hace el texto más largo y más difícil de leer.
+
+   Así que la decisión es la contraria, y a conciencia:
+
+     · Este archivo va dentro de una función, como los demás.
+     · Y publica **a propósito** una lista corta y cerrada de nombres,
+       que está escrita abajo del todo y en ningún otro sitio.
+
+   La diferencia con antes no es cuántos nombres hay sueltos. Es que
+   antes eran treinta y nadie sabía cuáles hacían falta, y ahora son
+   dieciséis, están enumerados, y hay una prueba que falla si aparece el
+   diecisiete. Un global sin permiso es el que hace daño; uno declarado y
+   contado, no.
+
+   Se carga después del almacén y antes que el resto: busqueda.js,
+   cola.js, reproductor.js y evento.js dan por hecho que este vocabulario
+   existe. Ese es el motivo de que el orden de las etiquetas <script> en
+   index.html esté escrito y no sea casualidad.
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
+
+(function () {
 
 const S = KL.estado;
 const { $, $$, uid, fmt, iso, esc, unesc, icono, EV } = KL;
@@ -63,7 +86,9 @@ function aplicar(e){
   }
   if(e.paneles   !== undefined) S.paneles   = e.paneles;
   if(e.panelFijo !== undefined) S.panelFijo = e.panelFijo;
-  if(typeof pintarPaneles === 'function') pintarPaneles();
+  /* Los cartelones los puede cambiar el operador desde su menú flotante,
+     y este repintado es para cuando el cambio viene de fuera. */
+  if(KL.panelesDeCalentamiento) KL.panelesDeCalentamiento();
   if(e.ip_local !== undefined) S.ipLocal = e.ip_local;
   if(e.puerto   !== undefined) S.puerto  = e.puerto;
   dibujarRed();
@@ -77,8 +102,8 @@ function aplicar(e){
 }
 
 function draw(){
-  drawLib();
-  drawQue();
+  KL.cola.pintarBiblioteca();
+  KL.cola.pintarCola();
   drawNP();
   dibujarSiguiente();
 }
@@ -302,5 +327,45 @@ function drawNP(){
   $('#npC').textContent = t ? KL.Actuacion.canal(t) : 'Busca una canción para empezar';
   $('#npImg').src = t ? KL.Actuacion.caratula(t) : '';
   $('#npImg').style.visibility = t ? 'visible' : 'hidden';
-  if(!t){ $('#skf').style.width='0'; $('#tc').textContent='0:00'; $('#tt').textContent='0:00'; }
+  if(!t) KL.cronometro.limpiar();
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   EL VOCABULARIO — la lista completa de lo que sale de este archivo
+
+   Añadir un nombre aquí es una decisión, no un descuido: significa que
+   pasa a formar parte del idioma que habla todo el proyecto. La prueba
+   «El vocabulario de la interfaz está cerrado» falla si aparece uno que
+   no esté en esta lista.
+   ═══════════════════════════════════════════════════════════════════ */
+Object.assign(window, {
+  /* Los atajos del núcleo. No son de este archivo —viven en KL— pero se
+     reparten desde aquí porque aquí es donde se abre el idioma. Cuando
+     este archivo pasó a estar dentro de una función se llevó los atajos
+     con él y la aplicación entera dejó de arrancar con un escueto «$$ is
+     not defined». Un recordatorio de que encapsular no es gratis: hay que
+     decir qué sale. */
+  $, $$, uid, fmt, iso, esc, unesc, icono, EV,
+
+  /* El estado en memoria y los avisos: esto es el idioma. */
+  S, toast,
+
+  /* Preguntas sobre el estado que se hacen en todas partes. */
+  qGet, inLib, pistaTrasId, siguientePista,
+
+  /* Pintar. */
+  draw, drawNP, dibujarRed, dibujarSiguiente,
+
+  /* Modales. */
+  open, close,
+
+  /* Preferencias de este aparato y cómo se ven. */
+  load, guardarPrefs, setView, setLibCol, aplicarModo, aplicarEdicion,
+  VIEWS, VNAME, ESPACIOS, urlPedir, modo,
+
+  /* Lo que el almacén llama cuando llegan datos nuevos. */
+  aplicar
+});
+
+})();
