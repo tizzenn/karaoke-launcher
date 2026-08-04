@@ -22,11 +22,21 @@ Esto lo convierte en cuatro pasos: **buscar, elegir, añadir, cantar.**
 
 ## Cómo se usa
 
-1. Ejecuta `Preparar.bat`. Descarga PHP, yt-dlp y ffmpeg **dentro de la
+**Portable**, sin instalar nada ni pedir permisos:
+
+1. Descarga este repositorio y descomprímelo donde quieras.
+2. Ejecuta `Preparar.bat`. Descarga PHP, yt-dlp y ffmpeg **dentro de la
    carpeta**: no toca el sistema ni el registro. Para desinstalar, borras la
    carpeta.
-2. Ejecuta `Karaoke.bat`.
-3. Abre Ajustes y pon tu clave de la YouTube Data API v3.
+3. Ejecuta `Karaoke.bat`.
+4. Abre Ajustes y pon tu clave de la YouTube Data API v3.
+
+**Instalador de Windows**, si prefieres un acceso directo en el escritorio y
+que el cortafuegos quede configurado solo: [descarga el instalador
+más reciente](https://github.com/tizzenn/karaoke-launcher/releases/latest) y
+ejecútalo. Pide administrador solo para esa regla del cortafuegos —
+por lo demás hace exactamente lo mismo que el portable, con
+`Preparar.bat` al final para bajar PHP y lo que hayas marcado.
 
 Sin clave también funciona: puedes pegar enlaces de YouTube.
 

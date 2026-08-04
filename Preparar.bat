@@ -79,8 +79,12 @@ if exist "yt-dlp.exe" set YTDLP=yt-dlp.exe
 if "!YTDLP!"=="" ( where yt-dlp >nul 2>&1 && set YTDLP=yt-dlp )
 
 if "!YTDLP!"=="" (
-  echo    [  FALTA  ]  yt-dlp       - opcional, para cantar sin internet
-  set FALTA_YTDLP=1
+  if "%KARAOKE_SIN_EXTRAS%"=="1" (
+    echo    [ OMITIDO ]  yt-dlp       - no se pidio en el instalador
+  ) else (
+    echo    [  FALTA  ]  yt-dlp       - opcional, para cantar sin internet
+    set FALTA_YTDLP=1
+  )
 ) else (
   echo    [    OK   ]  yt-dlp
 )
@@ -91,8 +95,12 @@ if exist "ffmpeg.exe" set FFMPEG=ffmpeg.exe
 if "!FFMPEG!"=="" ( where ffmpeg >nul 2>&1 && set FFMPEG=ffmpeg )
 
 if "!FFMPEG!"=="" (
-  echo    [  FALTA  ]  ffmpeg       - opcional, yt-dlp lo necesita
-  set FALTA_FFMPEG=1
+  if "%KARAOKE_SIN_EXTRAS%"=="1" (
+    echo    [ OMITIDO ]  ffmpeg       - no se pidio en el instalador
+  ) else (
+    echo    [  FALTA  ]  ffmpeg       - opcional, yt-dlp lo necesita
+    set FALTA_FFMPEG=1
+  )
 ) else (
   echo    [    OK   ]  ffmpeg
 )

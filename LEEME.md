@@ -19,6 +19,12 @@ Descarga tres cosas, de sus webs oficiales:
 Son unos 60 MB en total. Si ya tienes alguno instalado, lo detecta y no lo
 descarga.
 
+**Alternativa:** si prefieres un instalador de verdad (acceso directo en el
+escritorio, cortafuegos configurado solo), hay uno en
+[los Releases del repositorio](https://github.com/tizzenn/karaoke-launcher/releases/latest).
+Pide administrador solo para esa regla del cortafuegos; por lo demás hace lo
+mismo que `Preparar.bat`.
+
 **A partir de ahí**, doble clic en **`Karaoke.bat`** y se abre el navegador
 solo. Si te falta PHP, el propio `Karaoke.bat` te ofrece abrir el preparador.
 
