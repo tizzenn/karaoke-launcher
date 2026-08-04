@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Karaoke Launcher
+Comment=Lanza videos de karaoke de YouTube en una fiesta
+Exec=karaoke-launcher
+Icon=karaoke-launcher
+Terminal=true
+Categories=AudioVideo;Party;

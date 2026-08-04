@@ -1,0 +1,58 @@
+# Maintainer: tizzenn
+pkgname=karaoke-launcher-git
+pkgver=r1.0000000
+pkgrel=1
+pkgdesc="Lanza vídeos de karaoke de YouTube en una fiesta: buscar, elegir, añadir, cantar. Sin frameworks."
+arch=('any')
+url="https://github.com/tizzenn/karaoke-launcher"
+license=('GPL3')
+depends=('php')
+optdepends=(
+  'yt-dlp: descargar canciones para cantar sin depender de la wifi'
+  'ffmpeg: yt-dlp lo necesita para juntar vídeo y audio'
+  'rsync: sincroniza más rápido la copia de trabajo en cada arranque'
+  'xdg-utils: abre el navegador solo al arrancar'
+)
+provides=('karaoke-launcher')
+conflicts=('karaoke-launcher')
+source=("$pkgname::git+https://github.com/tizzenn/karaoke-launcher.git#branch=desarrollo"
+        "karaoke-launcher"
+        "karaoke-launcher.desktop")
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP')
+
+pkgver() {
+  cd "$pkgname"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  # El código de la app, de solo lectura: pacman lo gestiona y lo
+  # actualiza. Cada usuario trabaja sobre su propia copia en
+  # ~/.local/share/karaoke-launcher — ver el lanzador, que la
+  # sincroniza sin tocar la carpeta data/ de cada uno.
+  #
+  # Mismas exclusiones que publico/Empaquetar-para-revision.bat y el
+  # instalador de Windows, y por los mismos motivos: nada de datos de
+  # una máquina en concreto, nada de pruebas, nada de binarios que cada
+  # plataforma resuelve por su cuenta (aquí, con pacman).
+  install -d "$pkgdir/usr/share/karaoke-launcher"
+  cd "$srcdir/$pkgname"
+  find . -mindepth 1 \
+    \( -path './.git*' -o -path './e2e' -o -path './pruebas/e2e*' \
+       -o -path './php' -o -path './instalador*' -o -path './dist*' \
+       -o -name 'data' -o -name '*.zip' -o -name 'yt-dlp.exe' \
+       -o -name 'ffmpeg.exe' -o -name 'ffprobe.exe' -o -name '*.bat' \) -prune \
+    -o -type f -print0 | \
+    xargs -0 cp --parents -t "$pkgdir/usr/share/karaoke-launcher/"
+  install -d "$pkgdir/usr/share/karaoke-launcher/data/videos"
+  install -d "$pkgdir/usr/share/karaoke-launcher/data/cache"
+  install -d "$pkgdir/usr/share/karaoke-launcher/data/descargas"
+
+  cd "$srcdir"
+  install -Dm755 karaoke-launcher "$pkgdir/usr/bin/karaoke-launcher"
+  install -Dm644 karaoke-launcher.desktop "$pkgdir/usr/share/applications/karaoke-launcher.desktop"
+  install -Dm644 "$pkgname/iconos/icono-512.png" "$pkgdir/usr/share/icons/hicolor/512x512/apps/karaoke-launcher.png"
+  install -Dm644 "$pkgname/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

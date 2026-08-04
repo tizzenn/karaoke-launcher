@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# karaoke-launcher — equivalente en Linux de Karaoke.bat.
+#
+# El código de la app resuelve data/ como una ruta relativa a SU PROPIA
+# carpeta (DIR_DATOS = __DIR__ . '/../data' en api/comun.php), no al
+# directorio de trabajo. Eso es correcto para el portable de Windows
+# —una carpeta que el usuario ya controla entera— pero /usr/share es de
+# solo lectura para un usuario normal. Por eso este lanzador mantiene
+# una copia de trabajo en ~/.local/share/karaoke-launcher: el paquete
+# de Arch trae el código en /usr/share (de solo lectura, lo que
+# actualiza pacman), y cada usuario tiene su propia copia con permiso
+# de escritura para su data/, sincronizada con el código instalado en
+# cada arranque sin tocar lo que ya haya en su data/.
+set -euo pipefail
+
+ORIGEN="/usr/share/karaoke-launcher"
+DESTINO="${XDG_DATA_HOME:-$HOME/.local/share}/karaoke-launcher"
+PUERTO=8123
+
+mkdir -p "$DESTINO"
+
+if command -v rsync &>/dev/null; then
+  rsync -a --exclude 'data' "$ORIGEN"/ "$DESTINO"/
+else
+  find "$ORIGEN" -mindepth 1 -maxdepth 1 ! -name data -exec cp -r -t "$DESTINO" {} +
+fi
+
+mkdir -p "$DESTINO"/data/videos "$DESTINO"/data/cache "$DESTINO"/data/descargas
+cd "$DESTINO"
+
+IP=$(ip -4 addr show scope global 2>/dev/null | awk '/inet/ {print $2}' | cut -d/ -f1 | head -n1)
+IP=${IP:-localhost}
+
+echo
+echo "  ================================================================"
+echo "                   K A R A O K E   L A U N C H E R"
+echo "  ================================================================"
+echo
+echo "    En este PC        http://localhost:$PUERTO/"
+echo "    Desde los moviles http://$IP:$PUERTO/pedir.php"
+echo
+echo "    Pulsa el boton del movil en la aplicacion para ver el QR."
+echo "    Todos tienen que estar en la misma wifi."
+echo
+echo "  ----------------------------------------------------------------"
+echo "    NO CIERRES ESTA VENTANA mientras dure la fiesta."
+echo "  ----------------------------------------------------------------"
+echo
+
+if [ ! -f data/ajustes.json ]; then
+  echo "    [!] Sin configurar. Abre Ajustes en la aplicacion y pon tu"
+  echo "        clave de YouTube. Mientras, funcionan los enlaces pegados."
+  echo
+fi
+
+if ! command -v yt-dlp &>/dev/null; then
+  echo "    [i] Sin yt-dlp: no podras descargar canciones para cantar"
+  echo "        sin internet. Instala el paquete yt-dlp si lo quieres."
+  echo
+fi
+
+(sleep 1; xdg-open "http://localhost:$PUERTO/" &>/dev/null || true) &
+
+exec php -S 0.0.0.0:"$PUERTO" -t "$DESTINO"
