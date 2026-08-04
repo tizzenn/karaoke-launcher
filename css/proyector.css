@@ -23,6 +23,15 @@
 html[data-modo="dj"]{--ac:#8b5cf6;--ac2:#6d3ff0;--ac-rgb:139,92,246;--ac-txt:#f6f2ff}
 html[data-modo="mc"]{--ac:#ff9f43;--ac2:#f08a24;--ac-rgb:255,159,67;--ac-txt:#2b1500}
 
+/* El blackout: negro puro, por encima de todo, opaco al instante y
+   transparente con fundido. Ver js/proyector/escenas.js:destelloBlackout(). */
+#blackout{position:fixed;inset:0;z-index:9999;background:#000;opacity:0;pointer-events:none}
+#blackout.on{opacity:1}
+#blackout.desvanece{opacity:0;transition:opacity .3s ease}
+@media (prefers-reduced-motion: reduce){
+  #blackout{display:none}
+}
+
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--txt);
@@ -32,6 +41,9 @@ body.quieto{cursor:none}
 .ic{width:1em;height:1em;fill:currentColor;display:inline-block;vertical-align:-.125em}
 
 /* ---- El vídeo ocupa la pantalla entera; lo demás flota encima ---- */
+/* Negro literal, y no es un descuido: detrás de un vídeo va negro en
+   cualquier tema. Un fondo crema asomando por las bandas de un vídeo 4:3
+   en una tele 16:9 se ve como un fallo, no como un tema claro. */
 #escena{position:fixed;inset:0;background:#000}
 #yt,#vlocal{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
 #vlocal{object-fit:contain}
@@ -120,11 +132,13 @@ body[data-lado="abajo"]  #proximas .f{max-width:56vw}
 
 /* ---- Esquina de los QR ---- */
 #esquina{position:fixed;right:2vw;bottom:2vh;z-index:20;display:flex;gap:1.2vw;align-items:flex-end}
+/* Blanco y negro literales: un QR tiene que tener ese contraste para que
+   una cámara lo lea. No es estilo, es que si no, no funciona. */
 .qrcaja{background:#fff;padding:.7vh;border-radius:.9vh;width:8vw;min-width:92px}
 .qrcaja .pie{font-size:.85vw;color:#111;font-weight:800;text-align:center;
  margin-top:.4vh;line-height:1.2}
-#sinred{display:flex;align-items:center;gap:.6vw;color:#ffc4ca;
- background:rgba(40,10,14,.86);border:.1vh solid #5c2a31;border-radius:.9vh;
+#sinred{display:flex;align-items:center;gap:.6vw;color:var(--dang-txt);
+ background:rgba(40,10,14,.86);border:.1vh solid var(--dang-line);border-radius:.9vh;
  padding:.9vh 1.2vw;font-size:1.1vw;font-weight:700;max-width:22vw;line-height:1.3}
 #sinred .ic{width:1.8vw;height:1.8vw;flex-shrink:0}
 
@@ -217,7 +231,7 @@ body[data-lado="abajo"]  #proximas .f{max-width:56vw}
 #mensaje{position:fixed;top:3vh;left:50%;transform:translateX(-50%);z-index:40;
  background:rgba(0,0,0,.9);border:.2vh solid var(--line);border-radius:1.4vh;
  padding:1.4vh 2.6vw;font-size:1.7vw;font-weight:700;max-width:80vw;text-align:center}
-#mensaje.mal{border-color:var(--dang);color:#ffc4ca}
+#mensaje.mal{border-color:var(--dang);color:var(--dang-txt)}
 
 /* En un monitor pequeño el vw se queda enano: subimos los mínimos. */
 @media (max-width:900px){
@@ -229,3 +243,170 @@ body[data-lado="abajo"]  #proximas .f{max-width:56vw}
   .cola .f{font-size:3.4vw}.dato .g{font-size:7vw}.dato .p{font-size:2.4vw}
   .consejo{font-size:3vw}#arranque .b{font-size:6vw}#arranque .p{font-size:3vw}
 }
+
+/* ---- Quién es esta ventana ---------------------------------------------
+   Con tres abiertas a la vez, la única duda de quien monta esto por
+   primera vez es cuál va a la tele. Se contesta antes de tocar nada, en
+   grande, y desaparece al encender: en la tele no puede quedarse un
+   cartel toda la noche. */
+#arranque .quien{ display:flex; flex-direction:column; align-items:center;
+  gap:1.4vh; margin-bottom:2vh }
+#arranque .quien .et{ font-size:1.5vw; letter-spacing:.35vw;
+  text-transform:uppercase; color:var(--txt3); font-weight:800 }
+#arranque .quien .nom{ display:flex; align-items:center; gap:1.4vw;
+  font-size:4.4vw; font-weight:900; color:var(--ac); line-height:1 }
+#arranque .quien .nom .ic{ width:4.4vw; height:4.4vw; fill:currentColor }
+#arranque .quien .don{ font-size:1.8vw; color:var(--txt2); max-width:60vw;
+  line-height:1.6 }
+#arranque .quien .don b{ color:var(--ac) }
+
+/* Y una marca discreta en la esquina durante los primeros segundos, por
+   si se encendió sin leer nada. Se va sola. */
+/* El fondo sale de una variable y no de un negro fijo: en Peques la tele
+   tiene fondo claro y una píldora negra encima quedaba como un parche.
+   Se pinta con `--bg2`, que en cada tema es «un escalón por encima del
+   fondo», que es justo lo que hace falta aquí. */
+#marcaVentana{ position:fixed; left:1.6vw; top:1.6vh; z-index:60;
+  display:flex; align-items:center; gap:.7vw;
+  background:var(--bg2); border:.1vh solid var(--line);
+  border-radius:999px; padding:.7vh 1.3vw; font-size:1.2vw; font-weight:800;
+  color:var(--txt2); letter-spacing:.05vw;
+  transition:opacity .8s; pointer-events:none }
+#marcaVentana .ic{ width:1.4vw; height:1.4vw; fill:var(--ac) }
+#marcaVentana.ida{ opacity:0 }
+
+/* ═══ La carta de reto (Modo Show) ═══
+   Una tira arriba, encima de cualquier escena. Ancha y con mucho aire:
+   se lee desde el otro lado del salón y de un vistazo, porque quien la
+   tiene que leer está a punto de salir a cantar y no va a pararse.
+
+   No usa `position:fixed` con `inset` porque tiene que dejar ver el
+   vídeo: ocupa solo lo que ocupa su texto. */
+#carta{
+  position:fixed; left:50%; top:3vh; transform:translateX(-50%);
+  z-index:60; max-width:80vw; text-align:center;
+  background:linear-gradient(180deg, var(--ac-claro), var(--ac2));
+  color:var(--ac-txt); border-radius:18px; padding:14px 30px 16px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55);
+}
+#carta.oculto{ display:none }
+#carta .et{
+  font-size:1.1vw; letter-spacing:3px; text-transform:uppercase;
+  opacity:.7; font-weight:800; margin-bottom:4px;
+}
+#carta .txt{ font-size:2.3vw; font-weight:800; line-height:1.15 }
+
+/* Entra bajando y con un rebote corto. Aparecer sin más no se ve cuando
+   hay un vídeo moviéndose debajo. */
+@keyframes cartaEntra{
+  0%  { transform:translateX(-50%) translateY(-140%) scale(.9); opacity:0 }
+  70% { transform:translateX(-50%) translateY(6%)    scale(1.03); opacity:1 }
+  100%{ transform:translateX(-50%) translateY(0)     scale(1) }
+}
+#carta.entra{ animation:cartaEntra .55s cubic-bezier(.2,.9,.3,1.2) both }
+
+/* Con el movimiento reducido activado, la carta aparece y ya. El aviso
+   sigue llegando; lo que se quita es el salto. */
+@media (prefers-reduced-motion: reduce){
+  #carta.entra{ animation:none }
+}
+
+/* ═══ Aplausos: transiciones más teatrales (2026-08-04) ═══
+   El cartel ya entra con `.escena{animation:entra}`; esto añade dos
+   toques encima, sin tocar el layout: el emoji rebota una vez al
+   aparecer, y confeti de verdad —piezas independientes, generadas en
+   `js/proyector/escenas.js:lanzarConfeti()`, no un patrón repetido—
+   cae por detrás del texto. Cada pieza se anima y desaparece sola; no
+   queda nada corriendo de fondo una vez ha caído, así que no cuesta
+   nada tener esta pantalla encendida toda la noche. */
+#aplausos h1{ animation:aplausoRebota .6s cubic-bezier(.3,1.6,.4,1) .1s both }
+@keyframes aplausoRebota{
+  0%{transform:scale(.4) rotate(-8deg);opacity:0}
+  60%{transform:scale(1.12) rotate(3deg);opacity:1}
+  100%{transform:scale(1) rotate(0)}
+}
+
+#confeti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
+.confeti-p{
+  position:absolute;top:-4vh;
+  width:var(--cw,.9vw);height:calc(var(--cw,.9vw) * 2.4);
+  background:var(--cc,var(--ac));
+  opacity:0;
+  border-radius:1px;
+  animation:confetiCae var(--cd,2.4s) cubic-bezier(.25,.1,.4,1) var(--ct,0s) 1 both;
+}
+/* Redondas en vez de rectas: variedad sin más marcado que un modificador. */
+.confeti-p.ronda{border-radius:50%}
+@keyframes confetiCae{
+  0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:0}
+  8%{opacity:1}
+  100%{
+    transform:translateY(112vh) translateX(var(--cx,0)) rotate(var(--cr,540deg));
+    opacity:0}
+}
+@media (prefers-reduced-motion: reduce){
+  #aplausos h1{ animation:none }
+  .confeti-p{ animation:none; display:none }
+}
+
+/* ═══ Termómetro de fiesta ═══
+   No es un indicador de la aplicación: es lo que la sala lee para saber
+   cómo va la noche. Por eso ocupa lo que ocupa —se ve desde el fondo— y
+   por eso no lleva ningún número. */
+#termometro{ width:56vw; margin-top:2vh }
+#termometro.oculto{ display:none }
+#termometro .tmTexto{ display:flex; align-items:center; justify-content:center;
+  gap:1.2vw; font-size:2.3vw; font-weight:800; margin-bottom:1.2vh }
+#termometro .tmIcono{ font-size:3.2vw; line-height:1 }
+#termometro .tmFrase{ color:var(--txt) }
+#termometro .tmBarra{ height:1.4vh; border-radius:999px; overflow:hidden;
+  background:var(--bg3); border:.1vh solid var(--line) }
+#termometro .tmEstado{ margin-top:1vh; font-size:1.4vw; font-weight:800;
+  letter-spacing:.2vw; text-transform:uppercase; opacity:.9 }
+#termometro .tmBarra i{ display:block; height:100%; background:var(--ac);
+  border-radius:999px; transition:width 1.2s cubic-bezier(.3,.9,.3,1) }
+
+/* El latido al entrar una petición. Nada de texto nuevo, nada de
+   confeti: la barra crece un instante y un brillo la recorre, como el
+   pequeño gesto de una sala cuando alguien se anima. 700ms y ya está —
+   con quince canciones entrando en dos minutos, más que esto cansaría. */
+#termometro.tmLatido .tmBarra{ animation:tmPulso .7s ease-out }
+#termometro.tmLatido .tmBarra i{ position:relative; overflow:hidden }
+#termometro.tmLatido .tmBarra i::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+  animation:tmBrillo .7s ease-out;
+}
+@keyframes tmPulso{
+  0%{ transform:scaleY(1) }
+  35%{ transform:scaleY(1.6) }
+  100%{ transform:scaleY(1) }
+}
+@keyframes tmBrillo{
+  from{ transform:translateX(-100%) }
+  to{ transform:translateX(100%) }
+}
+@media (prefers-reduced-motion: reduce){
+  #termometro.tmLatido .tmBarra,
+  #termometro.tmLatido .tmBarra i::after{ animation:none }
+}
+
+
+/* El color del momento. Ni semáforo ni alarma: son cinco ambientes.
+   Del verde claro de «hay sitio» al naranja cálido de «qué buen
+   ambiente», pasando por azul y morado. Ninguno es una advertencia. */
+#termometro[data-nivel="0"] .tmBarra i{ background:var(--tm-0) }
+#termometro[data-nivel="0"] .tmEstado{ color:var(--tm-0) }
+#termometro[data-nivel="1"] .tmBarra i{ background:var(--tm-1) }
+#termometro[data-nivel="1"] .tmEstado{ color:var(--tm-1) }
+#termometro[data-nivel="2"] .tmBarra i{ background:var(--tm-2) }
+#termometro[data-nivel="2"] .tmEstado{ color:var(--tm-2) }
+#termometro[data-nivel="3"] .tmBarra i{ background:var(--tm-3) }
+#termometro[data-nivel="3"] .tmEstado{ color:var(--tm-3) }
+#termometro[data-nivel="4"] .tmBarra i{ background:var(--tm-4) }
+#termometro[data-nivel="4"] .tmEstado{ color:var(--tm-4) }
+
+/* Con una carta de reto arriba, las escenas bajan: la tira ocupa el
+   tercio superior y el título se le metía por debajo. */
+body.conCarta .escena{ padding-top:24vh }
+#esperaSub.oculto{ display:none }

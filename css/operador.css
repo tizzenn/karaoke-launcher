@@ -12,13 +12,17 @@
 header{
   display:flex;align-items:center;gap:12px;
   padding:12px 18px;
-  background:linear-gradient(180deg,#171c26,var(--bg2));
+  /* Un color literal escondido en un degradado. Se saltaba la regla del
+     proyecto —«aquí no hay ni un color literal»— y no se notó hasta que
+     hubo un tema claro: la cabecera se quedaba azul oscura sobre un fondo
+     crema. Ahora es una variable más. */
+  background:linear-gradient(180deg,var(--bg-cab),var(--bg2));
   border-bottom:1px solid var(--line);flex-shrink:0;
   box-shadow:var(--sh1);
 }
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;white-space:nowrap}
 .logo .m{
-  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;
   background:linear-gradient(140deg,var(--ac),var(--ac-oscuro));color:var(--ac-txt)
 }
 .logo .m .ic{width:19px;height:19px}
@@ -42,7 +46,7 @@ body[data-edicion] .logo .edicion{
 .sbox .mg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--txt3);pointer-events:none}
 #q{
   width:100%;padding:13px 15px 13px 44px;background:var(--bg3);
-  border:1px solid var(--line);border-radius:999px;font-size:15px;outline:none;transition:.18s
+  border:1px solid var(--line);border-radius:var(--r-pill);font-size:15px;outline:none;transition:.18s
 }
 #q:focus{border-color:var(--ac);background:var(--bg4)}
 #q::placeholder{color:var(--txt3)}
@@ -51,7 +55,7 @@ body[data-edicion] .logo .edicion{
 #tabs{display:none;gap:6px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--line)}
 #tabs button{
   flex:1;padding:11px;background:var(--bg3);border:1px solid var(--line);
-  border-radius:9px;font-weight:700;font-size:13.5px;color:var(--txt2);
+  border-radius:var(--r-sm);font-weight:700;font-size:13.5px;color:var(--txt2);
   display:flex;align-items:center;justify-content:center;gap:7px
 }
 #tabs button.on{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
@@ -65,7 +69,7 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 /* El contador en pastilla: se lee como dato, no como parte del título.
    Y empuja los botones a la derecha, que es donde se esperan. */
 .ph .n{font-size:11px;color:var(--txt2);font-weight:700;
-  background:var(--bg3);border:1px solid var(--line);border-radius:999px;
+  background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-pill);
   padding:2px 8px;font-variant-numeric:tabular-nums;margin-right:auto}
 .ph .lnk{background:none;border:none;color:var(--txt3);font-size:12px;font-weight:700;
   padding:5px 8px;border-radius:6px;transition:.15s;display:inline-flex;align-items:center;gap:6px}
@@ -74,7 +78,7 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 .fbox{padding:0 18px 8px;flex-shrink:0}
 .fbox input{
   width:100%;padding:9px 13px;background:var(--bg3);border:1px solid var(--line);
-  border-radius:9px;font-size:13.5px;outline:none
+  border-radius:var(--r-sm);font-size:13.5px;outline:none
 }
 .fbox input:focus{border-color:var(--ac)}
 .scroll{flex:1;overflow-y:auto;padding:0 12px 16px;min-height:0}
@@ -96,6 +100,15 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 .it.lista{border-color:rgba(var(--ac-rgb),.35);border-style:dashed}
 .it.drag{opacity:.3}
 .it.over{box-shadow:inset 0 3px 0 var(--ac)}
+
+/* La escaleta: solo un rótulo entre grupos de filas, mismo elemento .it
+   de siempre debajo. "Ahora" en el color de acento porque es lo primero
+   que hay que leer; "Después" y "Luego" en gris, es contexto, no aviso. */
+.escaleta-h{
+  padding:10px 10px 4px;font-size:11px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--txt3)}
+.escaleta-h:first-child{padding-top:2px}
+.escaleta-h.ahora{color:var(--ac)}
 .it .idx{width:26px;display:grid;place-items:center;color:var(--txt3);font-size:13px;
   font-variant-numeric:tabular-nums}
 .it .idx .ic{width:16px;height:16px}
@@ -106,7 +119,12 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .it .c{font-size:11.5px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .it .acts{display:flex;align-items:center;gap:1px}
-.it .acts .ib{width:32px;height:32px;font-size:15px}
+/* 38px, no 32: es el mismo tamaño que el propio breakpoint estrecho ya
+   usaba "para que quepa el dedo" (más abajo, @media max-width:560px).
+   Aplicarlo siempre en vez de solo ahí cubre también un monitor táctil a
+   anchura completa. Cabe de sobra: la fila la marca la miniatura, de
+   44px de alto. */
+.it .acts .ib{width:38px;height:38px;font-size:15px}
 .it .dur{font-size:12px;color:var(--txt3);font-variant-numeric:tabular-nums;padding:0 4px}
 
 .eq{display:none;gap:2px;height:15px;align-items:flex-end;justify-content:center}
@@ -125,7 +143,7 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
   background:var(--bg2);border-top:1px solid var(--line);flex-shrink:0;min-height:78px
 }
 #np{display:flex;align-items:center;gap:11px;width:280px;min-width:0}
-#np img{width:50px;height:50px;border-radius:9px;object-fit:cover;background:var(--bg4);flex-shrink:0}
+#np img{width:50px;height:50px;border-radius:var(--r-sm);object-fit:cover;background:var(--bg4);flex-shrink:0}
 #np .t{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #np .c{font-size:11.5px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ct{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
@@ -135,9 +153,12 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 .cb .ic{width:20px;height:20px}
 .cb:hover{color:var(--txt);background:var(--bg3)}
 .cb.on{color:var(--ac)}
+.cb:disabled{opacity:.3;cursor:default;pointer-events:none}
 .cb.big{background:var(--txt);color:var(--bg);width:44px;height:44px}
 .cb.big .ic{width:22px;height:22px}
-.cb.big:hover{background:#fff;transform:scale(1.06)}
+/* Blanco fijo: sobraba desde que el botón grande es «Empezar» y tiene su
+   propio color, y en un tema claro dejaba un botón blanco sobre crema. */
+.cb.big:hover{transform:scale(1.06)}
 .brow{display:flex;align-items:center;gap:10px;width:100%;max-width:480px}
 .brow span{font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums;width:38px;flex-shrink:0}
 .brow span:last-child{text-align:right}
@@ -169,7 +190,7 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 #vnext{
   position:absolute;top:10px;z-index:3;max-width:min(58%,340px);
   background:rgba(6,8,12,.82);border:1px solid rgba(255,255,255,.14);
-  border-left:3px solid var(--ac);border-radius:9px;
+  border-left:3px solid var(--ac);border-radius:var(--r-sm);
   padding:7px 12px;pointer-events:none;
   backdrop-filter:blur(6px);
   opacity:0;transition:opacity .35s
@@ -180,6 +201,9 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 #vnext.on{opacity:1}
 #vnext .e{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;
   color:var(--ac);font-weight:800;line-height:1}
+/* Blanco y gris claro literales: este aviso va ENCIMA del vídeo, sobre
+   una imagen que puede ser de cualquier color. No sigue al tema porque no
+   está sobre el fondo del tema — está sobre lo que se esté cantando. */
 #vnext .q{font-size:14px;font-weight:800;margin-top:3px;line-height:1.15;
   color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #vnext .t{font-size:11px;color:#c9d1e0;margin-top:2px;line-height:1.25;
@@ -211,11 +235,13 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
 .rs .c{font-size:11.5px;color:var(--txt3)}
 .rs .ba{display:flex;flex-direction:column;gap:5px}
 .rs .ba button{
-  border-radius:999px;padding:7px 13px;font-size:11.5px;font-weight:800;white-space:nowrap;
+  border-radius:var(--r-pill);padding:7px 13px;font-size:11.5px;font-weight:800;white-space:nowrap;
   background:var(--bg4);border:1px solid var(--line);color:var(--txt2);transition:.13s;
   display:flex;align-items:center;gap:6px
 }
 .rs .ba .aq:hover{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
+/* Marrón oscuro sobre el amarillo de la estrella: el par tiene que
+   contrastar entre sí, no con el fondo del tema. */
 .rs .ba .al:hover{background:var(--star);color:#3a2c00;border-color:var(--star)}
 
 /* ---------- MODO FIESTA: vistas discretas ----------
@@ -252,7 +278,31 @@ body.mini #vb{
   width:min(430px,calc(100vw - 28px));
 }
 body.mini #app{ z-index:60 }   /* la barra manda: el vídeo nunca la tapa */
-body.mini{background:transparent}
+
+/* El fondo NO se pone transparente. Lo estaba, pensando en una ventana
+   flotante sin marco, y en un navegador normal eso es exactamente lo que
+   parece: **una pantalla en blanco** con una cajita en la esquina. Quien
+   entraba en la vista mini sin querer creía que la aplicación se había
+   roto. */
+body.mini{ background:var(--bg) }
+
+/* Y en mini NO se puede esconder el botón que saca de mini.
+   La cabecera se recorta para que quepa la barra, y en ese recorte se iba
+   justo la salida: el atajo V seguía funcionando, pero quien no lo sabe
+   se queda encerrado mirando una pantalla vacía. Lo que sobra en mini son
+   los espacios y el rótulo; el botón de vista y el de ajustes, no. */
+body.mini header{ overflow:visible; flex-wrap:nowrap }
+body.mini #espacios, body.mini #espacio, body.mini #filtroPie,
+body.mini .fbox,
+body.mini header .soy, body.mini .logo .titulo small{ display:none }
+body.mini #bView{ margin-left:auto }
+body.mini #bCal, body.mini #bQR, body.mini #bProy{ display:none }
+body.mini #bView, body.mini #bCfg{ display:inline-flex }
+
+/* Una salida más, por si acaso: en mini el rótulo dice cómo volver. */
+body.mini .logo .titulo::after{
+  content:'· vista mini, pulsa V para volver';
+  font-size:10.5px; font-weight:600; color:var(--txt3); margin-left:7px }
 
 /* ---------- Biblioteca colapsable a una estrellita ---------- */
 body.libcol main{grid-template-columns:54px 1fr}
@@ -273,7 +323,7 @@ body.libcol #pLib .ph{padding:14px 0;flex-direction:column;gap:8px}
 body.libcol #bLibCol .ic{width:24px;height:24px}
 #libCount{
   display:none;font-size:10.5px;font-weight:800;color:var(--txt3);
-  background:var(--bg4);border-radius:999px;padding:2px 7px
+  background:var(--bg4);border-radius:var(--r-pill);padding:2px 7px
 }
 body.libcol #libCount{display:block}
 body.compact #pLib,body.mini #pLib{display:none}
@@ -296,15 +346,37 @@ body.libcol #bLibCol:hover{opacity:1}
   background:var(--bg2);border-top:1px solid var(--line);flex-shrink:0
 }
 #redbar .ic{width:14px;height:14px}
-#redbar.mal{color:#ffc4ca;background:#2a1418;border-top-color:#5c2a31}
+#redbar.mal{color:var(--dang-txt);background:var(--dang-d);border-top-color:var(--dang-line)}
 body.mini #redbar{display:none}
 
 /* ---------- responsive ---------- */
 @media(max-width:1100px){#np,#rc{width:200px}}
 @media(max-width:900px){
-  header{flex-wrap:wrap;padding:10px 12px;gap:8px}
+  header{flex-wrap:wrap;padding:8px 12px;gap:7px}
   .logo small{display:none}
+  .logo{font-size:14px}
+  .logo .m{width:26px;height:26px}
   .sbox{order:3;flex:1 0 100%;max-width:none}
+
+  /* La biblioteca plegada a una franja de 54 px es un invento de pantalla
+     ancha: sirve para tener las dos columnas a la vez. En un móvil hay una
+     sola columna con pestañas, y ahí esa franja se come el ancho para no
+     enseñar nada. */
+  body.libcol main{ grid-template-columns:1fr }
+  body.libcol #pLib{ align-items:stretch }
+  body.libcol #pLib .fbox,
+  body.libcol #pLib .scroll,
+  body.libcol #pLib .ph h2,
+  body.libcol #pLib .ph .n,
+  body.libcol #pLib .ph .lnk{ display:flex }
+  body.libcol #pLib .ph{ padding:0 14px; flex-direction:row; gap:10px }
+  body.libcol #libCount, body.libcol #bLibCol{ display:none }
+
+  /* Sitio para el dedo. Una fila de 44 px se falla; una de 56, no. */
+  #tabs button{ padding:12px 14px; font-size:14px }
+  .it{ padding-top:10px; padding-bottom:10px }
+  .it .acts .ib{ width:38px; height:38px }
+  .cb{ width:46px; height:46px }
   #tabs{display:flex}
   main{grid-template-columns:1fr}
   .pane{display:none}
@@ -328,6 +400,11 @@ body.mini #redbar{display:none}
 @media(max-width:520px){
   .it .dur{display:none}
   .mf .hi{display:none}
+  /* En un móvil estrecho, los tres espacios solo con su icono: el nombre
+     está en el texto del buscador, justo debajo. */
+  #espacios .esp{ padding:7px 11px }
+  header{ gap:6px }
+  #bDelAll{ display:none }
 }
 #bCal.act{color:var(--ac);background:var(--ac-d)}
 
@@ -336,7 +413,7 @@ body.mini #redbar{display:none}
 .it .c .pide{
   display:inline-flex;align-items:center;gap:4px;
   background:rgba(var(--ac-rgb),.14);color:var(--ac);
-  border-radius:999px;padding:1px 7px 1px 5px;margin-right:7px;
+  border-radius:var(--r-pill);padding:1px 7px 1px 5px;margin-right:7px;
   font-weight:800;font-size:10.5px;vertical-align:1px
 }
 .it .c .pide .ic{width:11px;height:11px}
@@ -346,7 +423,7 @@ body.mini #redbar{display:none}
 #avisoMudo{
   display:none;align-items:center;justify-content:center;gap:10px;
   padding:9px 14px;font-size:13px;font-weight:700;
-  background:#3a1f0c;color:#ffcf9a;border-top:1px solid #7a4515;flex-shrink:0
+  background:var(--avi-d);color:var(--avi-txt);border-top:1px solid var(--avi-line);flex-shrink:0
 }
 #avisoMudo.on{display:flex}
 #avisoMudo .btn{padding:6px 14px;font-size:12px}
@@ -378,7 +455,7 @@ body.calentando.paneles-ocultos #menuPaneles{display:none}
 #menuPaneles .fila small{display:block;color:var(--txt3);font-size:11px;margin-top:1px}
 #menuPaneles .fila .ver{
   background:none;border:1px solid var(--line);color:var(--txt3);
-  border-radius:999px;padding:3px 9px;font-size:10.5px;font-weight:800;flex-shrink:0}
+  border-radius:var(--r-pill);padding:3px 9px;font-size:10.5px;font-weight:800;flex-shrink:0}
 #menuPaneles .fila .ver:hover{border-color:var(--ac);color:var(--ac)}
 #menuPaneles .fila .ver.act{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
 #menuPaneles .pie{
@@ -393,7 +470,7 @@ body.mini #menuPaneles{display:none}
 .it .acts .ib.pct{
   color:var(--info);font-size:10.5px;font-weight:800;
   font-variant-numeric:tabular-nums;letter-spacing:-.3px;
-  background:rgba(77,163,255,.12);border-radius:999px;width:auto;padding:0 7px;min-width:34px}
+  background:rgba(77,163,255,.12);border-radius:var(--r-pill);width:auto;padding:0 7px;min-width:34px}
 
 /* Aviso de conexión floja, con el botón de descargar ya hecho. Aparece
    una vez y se calla un cuarto de hora si se descarta: un aviso que
@@ -401,23 +478,38 @@ body.mini #menuPaneles{display:none}
 #avisoRed{
   display:none;align-items:center;gap:10px;
   padding:9px 14px;font-size:13px;flex-shrink:0;
-  background:#2b2415;color:#ffcf9a;border-top:1px solid #584a22}
+  background:var(--avi-d2);color:var(--avi-txt);border-top:1px solid var(--avi-line2)}
 #avisoRed.on{display:flex}
-#avisoRed .ic{width:17px;height:17px;color:#ffb648;flex-shrink:0}
+#avisoRed .ic{width:17px;height:17px;color:var(--avi);flex-shrink:0}
 #avisoRed span{flex:1;min-width:0}
+/* Blanco sobre la banda ámbar: el contraste es contra la banda, que es
+   del mismo color en todos los temas. */
 #avisoRed b{color:#fff}
 #avisoRed .btn{padding:6px 14px;font-size:12px}
 body.mini #avisoRed{display:none}
+
+/* El copiloto: mismo patrón que avisoRed, pero azul informativo en vez
+   de ámbar de aviso. No ha pasado nada malo, es solo una idea. */
+#avisoCopiloto{
+  display:none;align-items:center;gap:10px;
+  padding:9px 14px;font-size:13px;flex-shrink:0;
+  background:rgba(var(--info-rgb,77,163,255),.14);color:var(--txt);
+  border-top:1px solid rgba(var(--info-rgb,77,163,255),.3)}
+#avisoCopiloto.on{display:flex}
+#avisoCopiloto .ic{width:17px;height:17px;color:var(--info);flex-shrink:0}
+#avisoCopiloto span{flex:1;min-width:0}
+#avisoCopiloto .btn{padding:6px 14px;font-size:12px}
+body.mini #avisoCopiloto{display:none}
 
 /* ---- En qué espacio estoy ----------------------------------------------
    Va en la cabecera, siempre visible, y no se puede confundir con nada
    más. El color sigue estando —es el reconocimiento rápido cuando ya
    conoces la aplicación— pero ya no es la única pista. */
 #espacios{ display:flex; gap:4px; background:var(--bg3); padding:3px;
-  border-radius:999px; border:1px solid var(--line); flex-shrink:0 }
+  border-radius:var(--r-pill); border:1px solid var(--line); flex-shrink:0 }
 #espacios .esp{ display:flex; align-items:center; gap:6px; border:0;
   background:transparent; color:var(--txt3); font:700 12.5px inherit;
-  padding:6px 13px; border-radius:999px; cursor:pointer; white-space:nowrap }
+  padding:6px 13px; border-radius:var(--r-pill); cursor:pointer; white-space:nowrap }
 #espacios .esp .ic{ width:16px; height:16px; fill:currentColor }
 #espacios .esp:hover{ color:var(--txt2) }
 #espacios .esp.on{ background:var(--ac); color:var(--ac-txt) }
@@ -431,13 +523,64 @@ body.mini #avisoRed{display:none}
 /* Los dos atajos de Freestyle. Fuera de la caja de búsqueda: dentro le
    comían la mitad del ancho justo en el espacio donde más falta hace
    escribir cosas largas. */
-#freestyle{ display:none; gap:5px; flex-shrink:0 }
-#freestyle.on{ display:flex }
-#freestyle .fbtn{ border:1px solid var(--line2,var(--line));
-  background:var(--bg3); color:var(--txt2); font:700 11.5px inherit;
-  padding:5px 11px; border-radius:999px; cursor:pointer }
-#freestyle .fbtn:hover{ color:var(--txt); border-color:var(--ac) }
-#freestyle .fbtn.on{ background:var(--ac); color:var(--ac-txt); border-color:var(--ac) }
+/* ---- El buscador y su filtro -----------------------------------------
+   Dos campos apilados, no uno: son dos preguntas distintas. Arriba QUÉ
+   busco, abajo CÓMO lo acoto. El de abajo es más pequeño y más apagado
+   a propósito — se usa una vez por fiesta, no una vez por canción. */
+/* El buscador manda en la cabecera: es lo que más se usa y lo que peor
+   sienta que salga cortado. Con dos campos apilados necesita ancho de
+   verdad, así que crece antes que nadie y no baja de 340 px. */
+#buscador{ flex:3 1 380px; min-width:340px; display:flex;
+           flex-direction:column; gap:5px }
+/* Y el lema del espacio se aparta el primero: es un texto de ayuda, y un
+   texto de ayuda que le come sitio al buscador ayuda al revés. */
+#espacio{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis }
+@media (max-width:1200px){ #espacio{ display:none } }
+#buscador .sbox{ flex:none; width:100% }
+.fbox{ position:relative }
+.fbox input{ font-size:13px; padding-top:7px; padding-bottom:7px }
+/* El icono de la lupa vive en `.sbox .mg` con `left:15px` y mide 15px:
+   ocupa hasta x=30. El campo de filtro heredaba el padding-left:13px del
+   `.fbox input` genérico (pensado para la caja SIN icono de la
+   biblioteca) y el texto arrancaba debajo del propio icono. Solo se
+   corrige aquí, en el del buscador — la de la biblioteca no lleva
+   icono y no le hacía falta. */
+#buscador .fbox input{ padding-left:57px; padding-right:83px }
+/* El icono del embudo comparte `.sbox .mg{left:15px}` con la lupa del
+   buscador de arriba, pero pedido a ojo (2026-08-04): en esta caja
+   concreta el icono y el texto quedan mejor medio centímetro más a la
+   derecha, y la estrella medio centímetro más separada del borde. */
+#buscador .sbox.fbox .mg{ left:34px }
+/* La caja del filtro comparte la clase .fbox con la de la biblioteca
+   (`.fbox{padding:0 18px 8px}`, mas arriba), pensada para una caja SIN
+   icono. Aqui ese padding empuja el input 18px hacia dentro, pero el
+   icono -en absoluto, medido desde el borde de ESTA caja- se queda fuera:
+   el icono acababa pisando el borde redondeado del input, confirmado a
+   ojo en captura real. El propio input ya lleva su padding-left:38px de
+   arriba, asi que la caja no necesita ninguno. */
+#buscador .fbox{ padding:0 }
+.fbox .mg .ic{ width:15px; height:15px; opacity:.75 }
+.fbox .ib.mini{ position:absolute; top:50%; transform:translateY(-50%);
+                width:26px; height:26px; padding:0 }
+.fbox .ib.mini .ic{ width:14px; height:14px }
+/* Dos botones, dos sitios. Los dos vivían en `right:4px` — nada los
+   distinguía, así que con texto escrito (la X visible Y la estrella
+   siempre visible a la vez) quedaban uno encima del otro. Confirmado en
+   captura real (2026-08-04): se veía un solo icono raro donde debían
+   verse dos. La X va más al borde por ser la acción más inmediata
+   (borrar); guardar como perfil, un paso más adentro. */
+#bFiltroX{ right:4px }
+#bFiltroGuardar{ right:53px }
+/* Lo que de verdad se va a buscar. Pequeño y monoespaciado: es la
+   traduccion literal, no una frase. */
+#filtroPie{ font-size:11.5px; color:var(--txt3); min-height:14px;
+            font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+#filtroPie.mal{ color:var(--aviso) }
+/* La pista del campo vacio: en la fuente normal, que no es una
+   traduccion literal sino una frase. */
+#filtroPie .pista{ font-family:inherit; color:var(--txt3) }
+#filtroPie .pista a{ color:var(--ac) }
 
 /* Cuando no cabe todo, lo primero que sobra es la frase: es una ayuda
    para el primer día, no algo que haga falta a las tres de la mañana. */
@@ -455,10 +598,16 @@ header .sbox{ flex:1 1 320px; min-width:240px }
    El botón más importante, y el único con texto en toda la barra. Antes
    era un triángulo igual que los demás y competía con el de siguiente y
    el de anterior por la mirada, siendo el que se pulsa veinte veces más. */
+/* Más alto y con más letra que el resto de la barra, no solo con texto:
+   es el botón que se pulsa treinta veces en la noche y antes medía lo
+   mismo que una etiqueta secundaria (auditoría UX, 2026-08-03). El resto
+   de círculos se quedan en 44px porque se usan de refilón; este se nota
+   con la mirada, sin tener que leerlo. */
 #bPlay{ display:inline-flex; flex-direction:row; align-items:center;
-  width:auto; padding:0 22px 0 18px; gap:9px; border-radius:999px;
-  background:var(--ac); color:var(--ac-txt); font:800 14px inherit;
+  width:auto; height:52px; padding:0 26px 0 20px; gap:10px; border-radius:var(--r-pill);
+  background:var(--ac); color:var(--ac-txt); font:800 16px inherit;
   line-height:1 }
+#bPlay .ic{ width:24px; height:24px }
 #bPlay .ic{ fill:currentColor }
 #bPlay span{ letter-spacing:.2px }
 #bPlay:hover{ background:var(--ac-claro) }
@@ -467,4 +616,174 @@ header .sbox{ flex:1 1 320px; min-width:240px }
    desaparece, toda la fila salta de sitio en el peor momento. */
 #bPlay.cantando{ background:var(--bg3); color:var(--txt3); cursor:not-allowed }
 #bPlay.cantando:hover{ background:var(--bg3) }
-@media (max-width:900px){ #bPlay span{ display:none } #bPlay{ padding:0; width:52px } }
+/* El texto de «Empezar» se queda también en el móvil. Lo escondía una
+   regla pensada para que cupieran los demás botones, y en una pantalla de
+   390 px ese razonamiento está al revés: cuanto menos sitio hay, más
+   importa que la única acción de verdad se lea. Los que se esconden son
+   los otros. */
+@media (max-width:560px){
+  #bPrev, #bNext{ display:none }
+  #bPlay{ flex:1 }
+}
+
+/* ---- Cuál de las ventanas es esta --------------------------------------
+   El nombre de la pestaña ya lo dice, pero la pestaña se lee cuando se
+   busca, no cuando se necesita. Esto se lee sin buscarlo. */
+header .soy{ font-size:11px; font-weight:700; color:var(--txt3);
+  border-left:1px solid var(--line); padding-left:12px; white-space:nowrap }
+@media (max-width:1400px){ header .soy{ display:none } }
+
+/* La Cabina DJ, encendida. El resto de botones de esa fila son acciones;
+   este es un interruptor y tiene que decir en qué posición está sin
+   pasar el ratón por encima. */
+#bDJ.on{ color:var(--ac) }
+#bDJ.on .ic{ filter:drop-shadow(0 0 6px rgba(var(--ac-rgb),.55)) }
+#bDJ.apagado{ opacity:.35 }
+
+/* Cuántas esperan en cada espacio, sin tener que entrar. */
+#espacios .esp[data-cuantas]:not([data-cuantas=""])::after{
+  content:attr(data-cuantas); font-size:10px; font-weight:900;
+  background:var(--bg2); color:var(--txt2); border-radius:var(--r-pill);
+  padding:1px 6px; margin-left:1px }
+#espacios .esp.on[data-cuantas]:not([data-cuantas=""])::after{
+  background:rgba(0,0,0,.22); color:var(--ac-txt) }
+/* Sonando de verdad ≠ encendida. Encendida es «cuando toque»; sonando es
+   «ahora mismo sale música de este ordenador». */
+#bDJ.sonando .ic{ animation:djLate 2s ease-in-out infinite }
+@keyframes djLate{ 0%,100%{opacity:1} 50%{opacity:.45} }
+
+/* ═══ Elegir tema ═══ */
+.temaOp{
+  display:flex; align-items:center; gap:13px; text-align:left; width:100%;
+  padding:12px 14px; border-radius:12px; cursor:pointer;
+  background:var(--bg3); border:1px solid var(--line); color:var(--txt);
+}
+.temaOp:hover{ border-color:var(--line2); background:var(--bg4) }
+.temaOp.on{ border-color:var(--ac); box-shadow:0 0 0 1px var(--ac) inset }
+.temaOp .muestra{ display:flex; flex-shrink:0; border-radius:8px; overflow:hidden;
+  border:1px solid var(--line2) }
+.temaOp .muestra i{ display:block; width:16px; height:34px }
+.temaOp .txt{ flex:1; min-width:0; display:block }
+.temaOp .txt b{ display:block; font-size:14.5px }
+.temaOp .txt small{ display:block; color:var(--txt3); font-size:12.5px;
+  margin-top:2px; line-height:1.45 }
+.temaOp .ic{ color:var(--ac); flex-shrink:0 }
+
+/* ═══ Los dos QR ═══ */
+.qrFila{ display:flex; gap:16px; flex-wrap:wrap }
+.qrCaja{ flex:1; min-width:250px; text-align:center }
+.qrCaja h4{ margin:0 0 10px; font-size:13px; letter-spacing:.6px;
+  text-transform:uppercase; color:var(--txt3) }
+/* Blanco fijo: un QR se lee sobre blanco y solo sobre blanco. No es
+   color de marca, es el contraste que necesita la cámara del móvil, y
+   por eso no sale de ninguna variable ni cambia con el tema. */
+.qrPic{ background:#fff;
+  padding:12px; border-radius:14px; display:inline-block;
+  min-height:190px; min-width:190px }
+.qrPic svg{ width:180px; height:180px; display:block }
+/* Rojo oscuro fijo por el mismo motivo: esta caja ocupa el hueco del QR
+   y va sobre ese blanco, no sobre el fondo del tema. Con --dang, que en
+   Peques es un rojo claro, quedaría ilegible. */
+.qrNo{ display:flex; flex-direction:column; align-items:center; gap:8px;
+  justify-content:center; width:180px; height:180px; color:#8a1f28;
+  font-size:12.5px; line-height:1.5; padding:8px }
+.qrNo .ic{ width:30px; height:30px }
+.qrPie{ margin-top:12px; font-size:13px; color:var(--txt2); line-height:1.55 }
+.qrCaja code{ display:block; margin-top:10px; padding:9px;
+  background:var(--bg3); border:1px solid var(--line); border-radius:var(--r-sm);
+  font-size:12.5px; word-break:break-all }
+@media(max-width:640px){ .qrFila{ flex-direction:column } }
+
+/* ═══ Panel de diagnóstico ═══
+   Un semáforo arriba y los detalles debajo. Los tres colores salen de
+   variables para que un tema claro no los deje ilegibles — que es
+   exactamente lo que hacía la versión anterior con sus verdes fijos. */
+.dgResumen{ display:flex; align-items:center; gap:11px; padding:13px 15px;
+  border-radius:12px; border:1px solid var(--line); background:var(--bg3);
+  font-size:15px; margin-bottom:14px }
+.dgResumen .pt, .dgFila .pt{ width:11px; height:11px; border-radius:50%;
+  flex-shrink:0; background:var(--txt3) }
+.dgResumen.ok, .dgFila.ok .pt{ }
+.dgResumen.ok  .pt{ background:var(--ac) }
+.dgResumen.avi .pt{ background:var(--avi) }
+.dgResumen.mal .pt{ background:var(--dang) }
+.dgResumen.ok { border-color:var(--ac); color:var(--txt) }
+.dgResumen.avi{ border-color:var(--avi-line); background:var(--avi-d); color:var(--avi-txt) }
+.dgResumen.mal{ border-color:var(--dang-line); background:var(--dang-d); color:var(--dang-txt) }
+
+.dgGrupo{ margin-bottom:16px }
+.dgGrupo h5{ margin:0 0 8px; font-size:11px; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--txt3); display:flex;
+  align-items:center; gap:7px; font-weight:800 }
+.dgFila{ display:flex; gap:10px; align-items:flex-start; padding:9px 0;
+  border-top:1px solid var(--line); font-size:13.5px }
+.dgFila .pt{ margin-top:6px }
+.dgFila.ok  .pt{ background:var(--ac) }
+.dgFila.avi .pt{ background:var(--avi) }
+.dgFila.mal .pt{ background:var(--dang) }
+.dgFila .det{ color:var(--txt3); font-size:12.5px; margin-top:2px }
+.dgFila .arr{ display:flex; gap:7px; margin-top:7px; padding:8px 10px;
+  border-radius:var(--r-sm); background:var(--avi-d2); border:1px solid var(--avi-line2);
+  color:var(--txt2); font-size:12.5px; line-height:1.55 }
+.dgFila .arr .ic{ flex-shrink:0; margin-top:2px; fill:var(--avi) }
+
+/* ═══ Maestro de ceremonias ═══
+   Desplegable y cerrado por defecto: se usa entre canción y canción, no
+   todo el rato, y una fila de botones siempre a la vista le robaría
+   sitio a la cola. */
+#mc{ border-bottom:1px solid var(--line); background:var(--bg2) }
+#mc summary{ cursor:pointer; padding:9px 14px; font-size:12.5px;
+  font-weight:700; color:var(--txt3); display:flex; align-items:center; gap:8px;
+  letter-spacing:.4px; text-transform:uppercase }
+#mc summary::-webkit-details-marker{ display:none }
+#mc summary:hover{ color:var(--ac) }
+#mc[open] summary{ color:var(--txt2) }
+#panelMC{ display:flex; flex-wrap:wrap; gap:8px; padding:4px 14px 12px;
+  align-items:center }
+.mcBtn{ display:flex; align-items:center; gap:7px; padding:9px 14px;
+  border-radius:var(--r-pill); border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt); font-size:13px; font-weight:700; cursor:pointer }
+.mcBtn:hover{ border-color:var(--ac); color:var(--ac) }
+.mcBtn:active{ transform:translateY(1px) }
+/* Las frases se distinguen de los sonidos sin necesidad de leerlas: son
+   otra cosa —habla en vez de efecto— y comparten fila. */
+.mcBtn.voz{ background:transparent; border-style:dashed }
+.mcSep{ width:1px; align-self:stretch; background:var(--line2); margin:0 4px }
+.mcVacio{ font-size:12.5px; color:var(--txt3) }
+@media(max-width:640px){ .mcSep{ display:none } }
+
+/* ═══ Termómetro, versión pequeña ═══
+   El mismo componente que la tele, en una franja. Aquí sí puede convivir
+   con el número de la cabecera: el número es para trabajar y la frase es
+   para decidir si hay que animar a la gente. */
+#termometro.mini{ display:flex; align-items:center; gap:11px;
+  padding:8px 14px; border-bottom:1px solid var(--line); background:var(--bg2) }
+#termometro.mini.oculto{ display:none }
+#termometro.mini .tmTexto{ display:flex; align-items:center; gap:8px;
+  font-size:13px; font-weight:700; color:var(--txt2); white-space:nowrap }
+#termometro.mini .tmIcono{ font-size:17px; line-height:1 }
+#termometro.mini .tmEstado{ font-size:11px; font-weight:800; letter-spacing:.7px;
+  text-transform:uppercase; white-space:nowrap }
+#termometro.mini .tmBarra{ flex:1; height:6px; border-radius:var(--r-pill);
+  overflow:hidden; background:var(--bg3); border:1px solid var(--line) }
+#termometro.mini .tmBarra i{ display:block; height:100%; background:var(--ac);
+  border-radius:var(--r-pill); transition:width 1.2s cubic-bezier(.3,.9,.3,1) }
+
+
+/* El color del momento. Ni semáforo ni alarma: son cinco ambientes.
+   Del verde claro de «hay sitio» al naranja cálido de «qué buen
+   ambiente», pasando por azul y morado. Ninguno es una advertencia. */
+#termometro.mini[data-nivel="0"] .tmBarra i{ background:var(--tm-0) }
+#termometro.mini[data-nivel="0"] .tmEstado{ color:var(--tm-0) }
+#termometro.mini[data-nivel="1"] .tmBarra i{ background:var(--tm-1) }
+#termometro.mini[data-nivel="1"] .tmEstado{ color:var(--tm-1) }
+#termometro.mini[data-nivel="2"] .tmBarra i{ background:var(--tm-2) }
+#termometro.mini[data-nivel="2"] .tmEstado{ color:var(--tm-2) }
+#termometro.mini[data-nivel="3"] .tmBarra i{ background:var(--tm-3) }
+#termometro.mini[data-nivel="3"] .tmEstado{ color:var(--tm-3) }
+#termometro.mini[data-nivel="4"] .tmBarra i{ background:var(--tm-4) }
+#termometro.mini[data-nivel="4"] .tmEstado{ color:var(--tm-4) }
+
+/* La tarjeta «Ahora» vive en css/ahora.css: es una pieza entera, con su
+   propio concepto detras, y este archivo llego a las 800 lineas del
+   presupuesto justo al añadirla. La prueba salto e hizo su trabajo. */

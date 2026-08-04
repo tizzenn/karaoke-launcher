@@ -6,7 +6,7 @@ rem  primer caracter de cada linea. Ver la explicacion larga en
 rem  Preparar.bat.
 rem ===================================================================
 setlocal enabledelayedexpansion
-title Karaoke Launcher v1.0
+title OpenKaraoke Center v1.1
 cd /d "%~dp0"
 chcp 65001 >nul 2>&1
 

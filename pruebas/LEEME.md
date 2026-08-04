@@ -1,4 +1,4 @@
-# Pruebas de Karaoke Launcher
+# Pruebas de OpenKaraoke Center
 
 ## Lo único que necesitas saber
 
@@ -32,7 +32,23 @@ mismo almacén y el mismo servidor PHP que usa la fiesta.
 
 ## Qué cubren
 
-38 pruebas repartidas en once grupos, más los invariantes:
+87 pruebas repartidas en veintidós grupos, más los invariantes que se
+comprueban después de cada una.
+
+Y cada prueba lleva una **clase**, que es lo que hay que mirar primero
+cuando algo se pone en rojo — porque para la mitad de ellas «arreglar el
+código hasta que pase» es la reacción equivocada:
+
+| Clase | Qué protege | Si falla |
+|---|---|---|
+| **arquitectura** | quién sabe de quién, qué se deduce | Casi nunca se baja la exigencia: mira qué se ha metido donde no era |
+| **comportamiento** | lo que la aplicación hace | El caso normal: hay un fallo y se arregla |
+| **compatibilidad** | que lo guardado antes siga valiendo | Alguien acaba de romperle los datos a quien ya lo usaba |
+| **producto** | decisiones sobre qué aplicación queremos | El código puede estar bien. Es una conversación, no un fallo |
+| **rendimiento** | números, no impresiones | La respuesta casi nunca es subir el número |
+| **regresión** | un fallo concreto que ya pasó | Ha vuelto. Lee el comentario: dice cómo se manifestaba |
+
+La leyenda completa está desplegable en la propia página.
 
 **El ciclo de una actuación** — que preparar no arranca, que la cuenta
 atrás lleva a la reproducción, que Esc la cancela, que la canción cantada
@@ -113,16 +129,24 @@ nada.
 ## Qué NO cubren, y hay que probar a mano
 
 Dentro de un marco no se puede probar la pantalla completa, ni el foco
-entre ventanas, ni el sonido, ni una cámara escaneando un QR. Eso está en
-**`PRUEBAS.md`**, en la raíz del proyecto, y sigue siendo obligatorio
-antes de una fiesta.
+entre ventanas, ni el sonido, ni una cámara escaneando un QR, ni una
+persona delante de un micro. Eso está en **`PRUEBAS.md`**, en la raíz del
+proyecto: veinte minutos, y sigue siendo obligatorio antes de una fiesta.
 
 Lo más importante de esa lista, por orden:
 
-1. Escanear los dos QR con un móvil de verdad.
+1. Que las dos pantallas vayan **a la par**, y que la del público abierta
+   a mitad de canción salte a donde va.
 2. Dejar terminar una canción real y comprobar que la siguiente **no**
-   arranca sola.
-3. Que el sonido salga por donde dice el ajuste.
+   arranca sola — y que en la Cabina DJ **sí**.
+3. Escanear los dos QR con un móvil de verdad.
+4. Que el sonido salga por donde dice el ajuste, y que la música ambiente
+   se aparte sola.
+
+Y una regla para cuando algo de esa lista falle: **antes de arreglarlo,
+mira si la suite lo ve**. Si la suite está en verde y la fiesta en rojo,
+falta una prueba — y esa prueba vale más que el arreglo, porque el
+arreglo se hace una vez y la prueba protege para siempre.
 
 ---
 

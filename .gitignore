@@ -4,6 +4,19 @@ data/estado.json
 data/videos/*
 !data/videos/.gitkeep
 
+# Estado de runtime, generado solo, nunca a mano: pool de claves,
+# cuota del dia, quien esta conectado, registro de errores (lleva rutas
+# locales de este PC), cache de busquedas. Ninguno es codigo.
+data/claves_estado.json
+data/cuota.json
+data/presencia.json
+data/errores.log
+data/cache/
+data/pruebas.roto-*.json
+
+# Capturas que dejan los guiones E2E al correr: son salida, no entrada
+pruebas/e2e/*.png
+
 # Instalado por Preparar.bat
 php/
 yt-dlp.exe

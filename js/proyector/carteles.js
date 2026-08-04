@@ -6,7 +6,8 @@
    externo es un QR que un día sale en blanco.
 
    Los cuatro cartelones rotan solos, y el operador puede apagar
-   cualquiera o dejar uno fijo desde su menú, en directo.
+   cualquiera desde su menú, en directo. Con uno solo marcado, ese se
+   queda quieto: no hay un modo «fijo» aparte.
    =================================================================== */
 'use strict';
 
@@ -60,7 +61,7 @@ function pintarPasos(){
    es una elección legítima: deja la tele con el cartel limpio. Por eso se
    distingue una cosa de la otra. */
 const TODOS = ['pedir', 'cola', 'funciona', 'datos'];
-let activos = null, fijo = null;
+let activos = null;
 let panel = 0, panelT = null;
 
 const listaActiva = () =>
@@ -68,10 +69,12 @@ const listaActiva = () =>
 
 function girarPaneles(){
   clearInterval(panelT);
-  /* Con uno fijo, o con uno solo activo, no hay nada que rotar: dejar el
-     temporizador vivo solo serviría para repintar por gusto. */
+  /* Con uno solo activo no hay nada que rotar: dejar el temporizador
+     vivo solo serviría para repintar por gusto. Y ese es también el
+     mecanismo de «dejar uno fijo» — dejar marcado uno solo—, que antes
+     era un botón aparte y hacía exactamente esto mismo. */
   const lista = listaActiva();
-  if(!fijo && lista.length > 1){
+  if(lista.length > 1){
     panelT = setInterval(() => { panel++; pintarPanel(); }, 15000);
   }
   pintarPanel();
@@ -80,9 +83,7 @@ function pararPaneles(){ clearInterval(panelT); panelT = null; }
 
 function pintarPanel(){
   const lista = listaActiva();
-  const clave = fijo && lista.includes(fijo)
-    ? fijo
-    : (lista.length ? lista[panel % lista.length] : null);
+  const clave = lista.length ? lista[panel % lista.length] : null;
 
   document.querySelectorAll('#calent .panel').forEach(p =>
     p.classList.toggle('on', p.dataset.k === clave));
@@ -94,11 +95,10 @@ function pintarPanel(){
    cada vuelta del sondeo: solo cuando de verdad cambia algo. */
 let selAnterior = '';
 function aplicarSeleccion(e){
-  const nueva = JSON.stringify([e.paneles ?? null, e.panelFijo ?? null]);
+  const nueva = JSON.stringify([e.paneles ?? null]);
   if(nueva === selAnterior) return;
   selAnterior = nueva;
   activos = Array.isArray(e.paneles) ? e.paneles : null;
-  fijo    = e.panelFijo || null;
   panel   = 0;
   if(document.body.dataset.escena === 'calent') girarPaneles();
 }
@@ -111,7 +111,8 @@ const CONSEJOS = [
 ];
 
 function pintarCalentamiento(e){
-  const cola = e.cola || [];
+  const donde = e.espacio || 'karaoke';
+  const cola = (e.cola || []).filter(t => (t.espacio || 'karaoke') === donde);
   const total = cola.reduce((a, t) => a + KL.Actuacion.segundos(t), 0);
 
   /* Aquí había una cuenta atrás. Se quitó: nadie sabe a qué hora empieza

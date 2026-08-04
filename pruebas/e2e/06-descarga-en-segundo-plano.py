@@ -9,7 +9,9 @@ with sync_playwright() as pw:
       body:JSON.stringify({accion:'anadir_cola',video:{videoId:'dQw4w9WgXcQ',title:'Cicatrices · Natos y Waor',channel:'Kantar',thumb:'',duration:212}})})""")
     p.wait_for_timeout(2000)
     print("puedeDescargar:", p.evaluate("()=>KL.estado.puedeDescargar"))
-    p.evaluate("()=>descargar(KL.estado.queue[0])")
+    # descargar() dejo de ser global cuando cola.js se encapsulo ("paso 6",
+    # ver su cabecera): la puerta publica es KL.cola.descargar.
+    p.evaluate("()=>KL.cola.descargar(KL.estado.queue[0])")
     # ¿sigue respondiendo la aplicación mientras baja?
     t0=time.time()
     r = p.evaluate("()=>fetch('api/estado.php').then(r=>r.json()).then(j=>j.ok)")

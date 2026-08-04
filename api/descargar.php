@@ -32,9 +32,22 @@ $cfg = cfg();
 /* En Windows, cmd no encuentra un nombre suelto entre comillas: recibe
    ""yt-dlp.exe"" y responde que no lo reconoce, aunque esté al lado. Con la
    ruta completa sí. Si el archivo no está junto a la aplicación se deja el
-   nombre tal cual, para que lo busque en el PATH. */
+   nombre tal cual, para que lo busque en el PATH.
+
+   El valor por defecto de config.php es 'yt-dlp', sin extensión — así lo
+   escribe quien configura la clave a mano. Preparar.bat sí guarda
+   'yt-dlp.exe' en ajustes.json, así que en una instalación normal esto no
+   se nota. Pero comprobado a mano: is_file('yt-dlp') no encuentra
+   'yt-dlp.exe' aunque esté en la misma carpeta, y entonces se devolvía el
+   nombre suelto sin resolver — exactamente el caso que este bloque existe
+   para evitar. Por eso también se prueba con «.exe» puesto. */
 function ruta_bin(string $bin): string {
-  foreach ([$bin, dirname(__DIR__) . '/' . $bin] as $candidato) {
+  $candidatos = [$bin, dirname(__DIR__) . '/' . $bin];
+  if (PHP_OS_FAMILY === 'Windows' && !preg_match('/\.exe$/i', $bin)) {
+    $candidatos[] = $bin . '.exe';
+    $candidatos[] = dirname(__DIR__) . '/' . $bin . '.exe';
+  }
+  foreach ($candidatos as $candidato) {
     if (is_file($candidato) && ($r = realpath($candidato))) return $r;
   }
   return $bin;

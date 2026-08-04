@@ -22,8 +22,13 @@ with sync_playwright() as pw:
     print("activos tras apagar 2:", op.evaluate("()=>KL.estado.paneles"))
     tv.wait_for_timeout(1800)
     print("tele, puntos:", tv.evaluate("()=>document.querySelectorAll('#puntos i').length"))
-    op.evaluate("()=>document.querySelector('#listaPaneles .ver[data-k=funciona]').click()"); op.wait_for_timeout(2500)
-    print("fijo:", op.evaluate("()=>KL.estado.panelFijo"), "| pie:", (op.text_content("#pieRotacion") or "").strip())
+    # No hay boton "Solo este": se quito a proposito (ver el comentario en
+    # paneles.js) porque hacia lo mismo que desmarcar los demas a mano.
+    # "Fijar" el panel 'funciona' hoy es dejar solo esa casilla marcada.
+    op.evaluate("()=>document.querySelector('#cp_pedir').click();")
+    op.wait_for_timeout(2500)
+    print("activos (deberia quedar solo funciona):", op.evaluate("()=>KL.estado.paneles"),
+          "| pie:", (op.text_content("#pieRotacion") or "").strip())
     tv.wait_for_timeout(1500)
     print("tele, panel fijo:", tv.evaluate("()=>[...document.querySelectorAll('#calent .panel')].filter(p=>p.classList.contains('on')).map(p=>p.dataset.k)"))
     tv.screenshot(path="/home/claude/tv_fijo.png")

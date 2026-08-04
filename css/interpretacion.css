@@ -18,10 +18,35 @@ body[data-pantalla="interpretacion"] #pl,
 body[data-pantalla="interpretacion"] #redbar,
 body[data-pantalla="interpretacion"] #cuenta{display:none}
 
+/* Negro, en todos los temas: es el fondo de un vídeo a pantalla completa
+   delante de una sala. */
 body[data-pantalla="interpretacion"]{background:#000}
 body[data-pantalla="interpretacion"] #app{height:100dvh}
 
-body[data-pantalla="interpretacion"] #vb{
+/* ---- El Modo actuación manda sobre la vista --------------------------
+   «Completa», «compacta» y «mini» son tres maneras de enseñar el puesto
+   de mando. El Modo actuación no es una cuarta: es que el puesto de mando
+   deja de estar. Con la vista en mini, `body.mini #app` ponía el vídeo en
+   una barra flotante de 300 px y la actuación se quedaba en una esquina
+   con la letra ilegible — que es exactamente lo que se veía.
+
+   Se resuelve aquí y no en JS a propósito: guardar «qué vista tenía
+   antes» para restaurarla sería un segundo estado que puede discrepar del
+   primero. La vista no cambia; lo que cambia es que durante la actuación
+   no se mira. Al terminar, vuelve sola porque nunca se fue. */
+body[data-pantalla="interpretacion"].mini #app,
+body[data-pantalla="interpretacion"].compact #app{
+  position:static;width:auto;height:100dvh;border-radius:0;
+  box-shadow:none;border:0;z-index:auto
+}
+body[data-pantalla="interpretacion"].mini header,
+body[data-pantalla="interpretacion"].compact header,
+body[data-pantalla="interpretacion"].mini #pl,
+body[data-pantalla="interpretacion"].compact #pl{display:none}
+
+body[data-pantalla="interpretacion"] #vb,
+body[data-pantalla="interpretacion"].mini #vb,
+body[data-pantalla="interpretacion"].compact #vb{
   position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;
   border:0;border-radius:0;box-shadow:none;z-index:60;display:block
 }
@@ -53,18 +78,35 @@ body[data-pantalla="interpretacion"] #vb.nx-izq #vnext{left:2.5vw}
 
    Por eso ahora está fijo. Discreto —translúcido, en una esquina—, pero
    nunca invisible. Cuando algo falla no se puede depender de que el
-   usuario descubra un gesto.                                          */
+   usuario descubra un gesto.
+
+   Y «discreto» se pasó de frenada: estaba al 42 % de opacidad, gris sobre
+   negro, encima de un vídeo oscuro. Cumplía la letra de la regla —existe,
+   está fijo— y no la intención, que es que se pueda encontrar sin
+   buscarlo. Un botón de emergencia que hay que descubrir no es un botón
+   de emergencia.
+
+   Ahora se lee siempre: borde claro, texto blanco y un velo suficiente
+   para separarlo de cualquier fotograma. Sigue sin llamar la atención
+   —esquina, pequeño, sin color— pero ya no hay que adivinar dónde está. */
 #salirInterp{
   position:fixed;top:2vh;left:2vw;z-index:75;
   display:none;align-items:center;gap:9px;
-  background:rgba(6,8,12,.72);border:1px solid rgba(255,255,255,.22);
-  color:#fff;border-radius:999px;padding:11px 20px;
-  font-size:13.5px;font-weight:700;
+  /* Sobre el vídeo a pantalla completa: blanco sobre un velo oscuro, en
+     cualquier tema. Aquí no hay fondo del tema, hay una canción. */
+  background:rgba(6,8,12,.86);border:1.5px solid rgba(255,255,255,.55);
+  color:#fff;border-radius:999px;padding:12px 22px;
+  font-size:14.5px;font-weight:800;
+  /* Sobre un fotograma claro el velo no basta: la sombra lo despega. */
+  box-shadow:0 4px 18px rgba(0,0,0,.65);
+  text-shadow:0 1px 2px rgba(0,0,0,.8);
   backdrop-filter:blur(6px);
-  opacity:.42;transition:opacity .18s,transform .18s,background .18s
+  opacity:.92;transition:opacity .18s,transform .18s,background .18s
 }
 body[data-pantalla="interpretacion"] #salirInterp{display:flex}
 #salirInterp:hover,#salirInterp:focus-visible{
+  /* Rojo al pasar por encima: es el botón de salir de una actuación y
+     tiene que dar un poco de respeto. Mismo color en todos los temas. */
   opacity:1;transform:scale(1.04);background:rgba(120,14,24,.92);border-color:#ff8a94}
 #salirInterp .ic{width:16px;height:16px}
 /* El cursor sí se esconde: eso lo controla la ventana, no el iframe. */
@@ -80,7 +122,7 @@ body[data-pantalla="interpretacion"].quieto{cursor:none}
   background:rgba(6,8,12,.94);text-align:center;padding:6vh 6vw
 }
 body.fallo-video #falloVideo{display:flex}
-#falloVideo .ic{width:56px;height:56px;color:#ffb648}
+#falloVideo .ic{width:56px;height:56px;color:var(--avi)}
 #falloVideo h3{margin:0;font-size:26px;font-weight:800}
 #falloVideo p{margin:0;color:var(--txt2);font-size:15px;max-width:620px;line-height:1.6}
 #falloVideo .bots{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}

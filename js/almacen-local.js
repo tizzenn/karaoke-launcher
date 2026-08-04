@@ -85,7 +85,7 @@ KL.almacen = (function () {
       sonando: (e.evento || {}).estado === 'INTERPRETACION'
                ? ((e.evento || {}).pistaId ?? null) : null,
       historial: e.historial, evento: e.evento,
-      paneles: e.paneles ?? null, panelFijo: e.panelFijo ?? null,
+      paneles: e.paneles ?? null,
       version: e.version,
       peticiones: false,                       // sin servidor no hay QR
       con_clave: KL.estado.apiKey !== ''
@@ -168,7 +168,6 @@ KL.almacen = (function () {
 
     paneles(e, d) {
       e.paneles   = Array.isArray(d.paneles) ? d.paneles.map(String) : null;
-      e.panelFijo = d.fijo ? String(d.fijo) : null;
     },
 
     vaciar_historial(e) {
@@ -226,5 +225,19 @@ KL.almacen = (function () {
   /* Un solo aparato: no hay nadie que pueda cambiar nada por detrás. */
   async function escuchar() { /* nada que sondear */ }
 
-  return { tipo: 'local', iniciar, cargar, accion, escuchar };
+  /* La versión Lite no tiene servidor al que preguntar, pero `KL.api`
+     existe igual porque el buscador y las descargas lo llaman sin saber
+     qué almacén hay detrás. Si no estuviera, la búsqueda reventaría con
+     un «peticion is not a function» que no le dice nada a nadie.
+
+     Así falla con una frase que sí explica qué se puede hacer: pegar el
+     enlace funciona igual, porque el título se resuelve contra oEmbed y
+     eso no pasa por ningún servidor nuestro. */
+  function peticion() {
+    return Promise.reject(new Error(
+      'Sin servidor solo busco en tu biblioteca. Pega aquí el enlace de ' +
+      'YouTube y la añado con su título y su carátula.'));
+  }
+
+  return { tipo: 'local', iniciar, cargar, accion, escuchar, peticion };
 })();

@@ -51,9 +51,12 @@ KL.SIMBOLOS = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" styl
 
 <!-- ---------- navegación y acciones ---------- -->
 <symbol id="ic-buscar" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+<symbol id="ic-embudo" viewBox="0 0 24 24"><path d="M3 4h18l-7 8.2V21l-4-2.4v-6.4z"/></symbol>
 <symbol id="ic-cerrar" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
 <symbol id="ic-mas" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
 <symbol id="ic-comprobado" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+<symbol id="ic-plato" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 0 1 7.75 6h-4.2A4 4 0 0 0 12 8V4zm0 14a4 4 0 0 1-1.2-7.82l1.2 3.32A1.5 1.5 0 1 0 12 18zm0 2v-2a6 6 0 0 0 5.66-4h2.09A8 8 0 0 1 12 20z"/><circle cx="12" cy="12" r="1.6"/></symbol>
+<symbol id="ic-paleta" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.58-9 8 0 4.42 4.03 8 9 8 .83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-3.87-4.03-6-9-6zM6.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></symbol>
 <symbol id="ic-ajustes" viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></symbol>
 <symbol id="ic-papelera" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
 <symbol id="ic-borrar-todo" viewBox="0 0 24 24"><path d="M15 16h4v2h-4zm0-8h7v2h-7zm0 4h6v2h-6zM3 18c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V8H3v10zM14 5h-3l-1-1H6L5 5H2v2h12z"/></symbol>
@@ -105,7 +108,6 @@ KL.SIMBOLOS = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" styl
 
 <!-- Freestyle: un micro sobre ondas. No es karaoke —no hay letra— y no es
      la cabina —no es música de fondo—: es cantar o tocar encima de una base. -->
-<symbol id="ic-freestyle" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M4 10h1.5v3H4zM7 8h1.5v7H7zM15.5 8H17v7h-1.5zM19 10h1.5v3H19z" opacity=".55"/><path d="M11.25 16.9A6 6 0 0 1 6 11H4.5a7.5 7.5 0 0 0 6.75 7.46V21h1.5v-2.54A7.5 7.5 0 0 0 19.5 11H18a6 6 0 0 1-5.25 5.9z"/></symbol>
 
 <symbol id="ic-qr" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zM13 13h3v3h-3zM18 13h3v3h-3zM13 18h3v3h-3zM18 18h3v3h-3z"/></symbol>
 <symbol id="ic-pantalla-completa" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></symbol>

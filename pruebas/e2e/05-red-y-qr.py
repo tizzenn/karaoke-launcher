@@ -9,9 +9,14 @@ with sync_playwright() as pw:
     op.goto("http://localhost:8123/index.html"); op.wait_for_timeout(2500)
     print("barra de red:", (op.text_content("#redbar") or "").strip())
     print("clase 'mal':", op.evaluate("()=>document.querySelector('#redbar').classList.contains('mal')"))
+    # El panel se reescribio para enseñar dos QR (wifi + pedir) dentro de
+    # ".qrCaja", cada uno con el SVG en ".qrPic" y la URL en un <code>.
+    # No hay #qrurl ni #qrimg desde entonces -de ahi que este guion se
+    # quedara esperando algo que nunca aparece.
     op.evaluate("()=>document.querySelector('#bQR').click()"); op.wait_for_timeout(600)
-    print("url del QR  :", (op.text_content("#qrurl") or "").strip())
-    op.locator("#qrimg").screenshot(path="/tmp/qr.png")
+    cajaPedir = op.locator(".qrCaja", has_text="Pedir canciones")
+    print("url del QR  :", (cajaPedir.locator("code").text_content() or "").strip())
+    cajaPedir.locator(".qrPic svg").screenshot(path="/tmp/qr.png")
     img=cv2.imread("/tmp/qr.png"); img=cv2.copyMakeBorder(img,30,30,30,30,cv2.BORDER_CONSTANT,value=(255,255,255))
     val,_,_ = cv2.QRCodeDetector().detectAndDecode(cv2.resize(img,None,fx=2,fy=2,interpolation=cv2.INTER_NEAREST))
     print("QR decodifica:", repr(val))

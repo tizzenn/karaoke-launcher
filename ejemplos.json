@@ -1,0 +1,40 @@
+{
+  "_leeme": [
+    "Una FIESTA de ejemplo, no una lista de canciones. La diferencia importa.",
+    "",
+    "Una biblioteca con diez titulos no ensena nada: se ve una lista y sigues",
+    "sin saber como se usa esto. Lo que se monta aqui es una noche a medias —",
+    "algo esperando en la cola, algo ya cantado en el historial, la pantalla",
+    "de calentamiento encendida— para que al abrir la aplicacion por primera",
+    "vez la reaccion sea «ah, asi se usa» y no «vale, y ahora que».",
+    "",
+    "Se puede deshacer entera con un boton. Es de mentira y se dice.",
+    "",
+    "Aqui van TITULOS y no identificadores de YouTube, y es a proposito. Un",
+    "identificador escrito hoy puede estar borrado o bloqueado dentro de seis",
+    "meses, y entonces lo primero que veria alguien recien instalado seria un",
+    "video que no se ve. Buscandolos con tu propia clave, entra lo que YouTube",
+    "tiene HOY.",
+    "",
+    "Cambialo por lo que quieras: esto se abre con el Bloc de notas."
+  ],
+
+  "cola": [
+    { "titulo": "Bailando Enrique Iglesias", "quien": "Marta" },
+    { "titulo": "Corazon Partio Alejandro Sanz", "quien": "Nico" },
+    { "titulo": "La Bicicleta Carlos Vives Shakira", "quien": "" }
+  ],
+
+  "yaCantadas": [
+    { "titulo": "Bamboleo Gipsy Kings", "quien": "Rober" }
+  ],
+
+  "biblioteca": [
+    "Un Beso y una Flor Nino Bravo",
+    "Devuelveme a Mi Chica Hombres G",
+    "Mediterraneo Joan Manuel Serrat",
+    "La Macarena Los del Rio"
+  ],
+
+  "calentamiento": true
+}

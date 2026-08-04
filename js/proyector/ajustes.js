@@ -37,22 +37,37 @@ let version = -1, arrancado = false, sonandoId = null, ultimo = null;
    por la dirección, y se recuerda por si alguien la recarga a mano.
    El aparato que no da el sonido se calla, pero sigue reproduciendo. */
 /* ---- Sincronía con el ordenador --------------------------------------
-   Las dos pantallas llevan su PROPIA copia del vídeo; aquí no se recibe
-   una señal, se reproduce lo mismo por segunda vez. Y esta arranca un
-   poco después: el cambio llega por el sondeo, y luego YouTube tarda lo
-   suyo en abrir el vídeo. Medido en una tele real: unos siete décimas.
+   Esto YA NO compensa el arranque. Antes sí: las dos pantallas
+   arrancaban «a la vez» y este número intentaba tapar la diferencia. No
+   funcionaba, porque esa diferencia no es fija —depende de cuándo caiga
+   el sondeo y de lo que tarde YouTube en soltar el primer fotograma— y
+   compensar con una constante algo que varía es apuntar a un blanco que
+   se mueve.
 
-   No se puede eliminar, pero sí compensar: esta pantalla empieza el
-   vídeo ese poco más adelante y las dos van a la par. Se afina con + y -
-   viendo las dos a la vez, que es la única forma honesta de ajustarlo. */
-let DESFASE = (function(){
+   Ahora el reproductor del cantante publica en qué instante estaba en el
+   segundo cero, y esta pantalla salta a donde va. El arranque se cuadra
+   solo y este número deja de hacer falta para eso.
+
+   Se queda para lo único que el software NO puede saber ni corregir: que
+   la electrónica de una tele tarde 250 ms en pintar lo que el navegador
+   ya ha dibujado, o que el audio salga por un receptor con retardo. Eso
+   ocurre DESPUÉS del navegador y no hay forma de detectarlo desde aquí.
+
+   Por eso ya no se llama «retraso» sino CALIBRACION, y por eso el valor
+   por defecto ha pasado de 0,7 a **cero**: en el caso normal —mismo
+   ordenador, dos ventanas— no hay nada que calibrar. Se sigue afinando
+   con + y - viendo las dos pantallas a la vez, que es la única forma
+   honesta de ajustar algo que ocurre fuera del programa. */
+let CALIBRACION = (function(){
   const p = parseFloat(new URLSearchParams(location.search).get('desfase'));
   if(Number.isFinite(p)){
     try{ localStorage.setItem('karaoke_desfase', String(p)); }catch(e){}
     return p;
   }
+  /* La clave sigue siendo `karaoke_desfase`: quien ya tenía la suya
+     afinada no la pierde. Se renombra lo que lee una persona. */
   const g = parseFloat(localStorage.getItem('karaoke_desfase'));
-  return Number.isFinite(g) ? g : 0.7;
+  return Number.isFinite(g) ? g : 0;
 })();
 
 function aplicarEfecto(){

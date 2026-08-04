@@ -27,8 +27,16 @@ KL.almacen = (function () {
      trabaja sobre un archivo aparte. Sin esto, ejecutar la suite borraría
      la biblioteca de la fiesta. */
   const BD = (new URLSearchParams(location.search).get('bd') || '').match(/^[a-z_]{1,20}$/);
-  const RUTA = 'api/estado.php' + (BD ? '?bd=' + BD[0] : '');
-  const SEP  = BD ? '&' : '?';
+  /* Quién pregunta. Va en la dirección y no en el cuerpo porque el
+     sondeo es un GET, y sirve para que el panel de diagnóstico pueda
+     decir «la tele lleva 40 segundos sin dar señales» en vez de dejar al
+     operador adivinando. Cada página lo pone al cargar el almacén. */
+  const QUIEN = (window.KL_SOY || '').match(/^(operador|tele|movil)$/)
+                ? window.KL_SOY : '';
+  const RUTA = 'api/estado.php'
+             + (BD ? '?bd=' + BD[0] : '')
+             + (QUIEN ? (BD ? '&' : '?') + 'quien=' + QUIEN : '');
+  const SEP  = (BD || QUIEN) ? '&' : '?';
 
   /* Cada vuelta del sondeo deja respirar al servidor: php -S atiende
      una petición cada vez, y en la fiesta hay varios aparatos. */
@@ -54,16 +62,28 @@ KL.almacen = (function () {
      no hay nadie escuchando: se ha cerrado la ventana de Karaoke.bat, o
      la página se abrió con doble clic. Decirlo así evita mandar a
      revisar la clave de la API, que es lo último que falla. */
-  async function peticion(url, cuerpo) {
-    const opciones = cuerpo
-      ? { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cuerpo) }
-      : {};
+  async function peticion(url, cuerpo, extra) {
+    /* `extra` es para el `signal` de un AbortController: el buscador
+       cancela la petición anterior en cuanto se pide otra. No es solo por
+       orden —eso ya se resolvía ignorando la respuesta vieja— sino por
+       cuota: cada búsqueda cuesta cien unidades de las diez mil diarias
+       que da YouTube, y escribiendo deprisa se tiran tres o cuatro por
+       una. */
+    const opciones = Object.assign(
+      cuerpo
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cuerpo) }
+        : {},
+      extra || {});
 
     let r;
     try {
       r = await fetch(url, opciones);
     } catch (err) {
+      /* Cancelada a propósito: no es un fallo y no debe pintar «el karaoke
+         no está en marcha» en la pantalla. Se relanza tal cual para que
+         quien la canceló sepa distinguirla. */
+      if (err && err.name === 'AbortError') throw err;
       throw new Error(location.protocol === 'file:'
         ? 'Has abierto la aplicación con doble clic. Ciérrala y arranca Karaoke.bat: sin servidor no funciona nada.'
         : 'El karaoke no está en marcha. Abre Karaoke.bat y NO cierres la ventana negra.');

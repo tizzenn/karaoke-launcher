@@ -23,7 +23,7 @@ async function escuchar(){
      una y la tele estaría acaparándolo mientras los móviles esperan. */
   for(;;){
     try{
-      const e = await leer('api/estado.php?desde=' + version);
+      const e = await leer('api/estado.php?quien=tele&desde=' + version);
       if((e.version ?? 0) > version) pintar(e);
       else if(document.body.dataset.escena === 'calent') pintarCalentamiento(ultimo || e);
       await new Promise(r => setTimeout(r, 1500));
@@ -40,10 +40,23 @@ $('#quienSuena').innerHTML = MUDA
   : '<b>El sonido sale de aquí.</b> El ordenador lleva el mismo vídeo por su cuenta, '
     + 'en silencio: es quien encadena la siguiente.';
 
+/* La marca de la esquina: quince segundos y se va sola. Suficiente para
+   quien encendió sin leer nada; poco para que moleste desde el sofá. En
+   la tele no puede quedarse un cartel toda la noche. */
+function marcarVentana(){
+  const d = document.createElement('div');
+  d.id = 'marcaVentana';
+  d.innerHTML = '<svg class="ic"><use href="#ic-tv"></use></svg> Pantalla del público';
+  document.body.appendChild(d);
+  setTimeout(() => d.classList.add('ida'), 15000);
+  setTimeout(() => d.remove(), 16000);
+}
+
 $('#empezar').addEventListener('click', async () => {
   arrancado = true;
   const conMicro = $('#conMicro').checked;
   $('#arranque').remove();
+  marcarVentana();
   try{ await document.documentElement.requestFullscreen(); }catch(e){}
   if(conMicro) await conectarMicro();
   if(ultimo) pintar(ultimo, true);
@@ -61,6 +74,23 @@ addEventListener('mousemove', () => {
     pintar.t = setTimeout(() => $('#franja').classList.add('fuera'), 12000);
   }
 });
+
+/* ---- El tema en la tele ----------------------------------------------
+   Lo manda el servidor: la tele va vestida igual que el operador sin que
+   nadie tenga que configurarla dos veces.
+
+   Esta función estuvo **dentro** del `if` de la tecla E, pegada ahí por
+   un descuido al escribirla. Con `'use strict'` una función declarada
+   dentro de un bloque solo existe en ese bloque, así que `escenas.js` la
+   llamaba y no existía: la tele se quedaba en Clásico con cualquier tema
+   y nadie lo notó porque el fallo pasaba en silencio.
+
+   Lo caro no fue el fallo: fue que no había ninguna prueba mirando la
+   tele con un tema puesto. Ahora la hay. */
+function aplicarTemaTele(t){
+  document.documentElement.dataset.tema =
+    ['clasico','fiesta','kids','show'].includes(t) ? t : 'clasico';
+}
 
 addEventListener('keydown', e => {
   if(e.key === 'f' || e.key === 'F'){
@@ -83,22 +113,18 @@ addEventListener('keydown', e => {
     aviso('Efecto: ' + EFECTO);
   }
 
-  /* Afinar la sincronía con las dos pantallas delante, que es la única
-     forma de ajustar esto de verdad. Se aplica al saltar en el momento,
-     para poder comprobarlo sin esperar a la siguiente canción. */
+  /* Calibrar la pantalla con las dos delante, que es la única forma
+     honesta de ajustar algo que ocurre fuera del programa. Ya no se toca
+     casi nunca: el arranque lo cuadra `t0`, y esto solo hace falta si la
+     tele tarda en pintar lo que el navegador ya ha dibujado.
+
+     No hace falta saltar aquí: la corrección continua lo aplica sola en
+     la siguiente vuelta, como mucho cuatro segundos después. */
   if(e.key === '+' || e.key === '=' || e.key === '-'){
-    DESFASE = Math.round((DESFASE + (e.key === '-' ? -0.1 : 0.1)) * 10) / 10;
-    DESFASE = Math.min(5, Math.max(-5, DESFASE));
-    try{ localStorage.setItem('karaoke_desfase', String(DESFASE)); }catch(x){}
-    aviso('Retraso de esta pantalla: ' + DESFASE.toFixed(1) + ' s');
-    if(sonandoId && DESFASE > 0){
-      const t = (ultimo.cola || []).find(x => x.id === sonandoId);
-      if(t && !t.local && listo && yt){
-        try{ yt.seekTo(Math.max(0, yt.getCurrentTime() + (e.key === '-' ? -0.1 : 0.1)), true); }catch(x){}
-      } else if(t && t.local){
-        try{ $('#vlocal').currentTime += (e.key === '-' ? -0.1 : 0.1); }catch(x){}
-      }
-    }
+    CALIBRACION = Math.round((CALIBRACION + (e.key === '-' ? -0.1 : 0.1)) * 10) / 10;
+    CALIBRACION = Math.min(5, Math.max(-5, CALIBRACION));
+    try{ localStorage.setItem('karaoke_desfase', String(CALIBRACION)); }catch(x){}
+    aviso('Calibración de esta pantalla: ' + CALIBRACION.toFixed(1) + ' s');
   }
 });
 
@@ -106,4 +132,10 @@ aplicarEfecto();
 pintarEsquina();
 pintarPasos();
 pintarPanel();
-leer('api/estado.php').then(e => pintar(e, true)).catch(() => {}).then(escuchar);
+leer('api/estado.php?quien=tele').then(e => pintar(e, true)).catch(() => {}).then(escuchar);
+
+/* También la tele cachea: si el router parpadea a mitad de fiesta, la
+   pantalla del público no se queda en blanco delante de todo el mundo. */
+if('serviceWorker' in navigator){
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}

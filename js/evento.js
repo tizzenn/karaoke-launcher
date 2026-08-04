@@ -109,10 +109,18 @@ KL.evento = (function () {
       recien:  opc.recien  !== undefined ? opc.recien  : S.evento.recien,
       segundos: opc.segundos || 0,
       n:       ++contador,
-      desde:   Math.floor(Date.now() / 1000)
+      desde:   Math.floor(Date.now() / 1000),
+      /* Se arrastra mientras siga siendo la misma canción sonando; en
+         cualquier otro estado se borra, o la tele saltaría al minuto tres
+         de una canción que acaba de quedar preparada. */
+      t0: (nuevo === EV.INTERPRETACION && S.evento.estado === EV.INTERPRETACION)
+            ? S.evento.t0 : null
     };
 
     pintar();
+    /* Quien quiera enterarse, que escuche. La Cabina DJ lo usa para
+       apartarse en cuanto hay algo preparado. */
+    KL.senales.avisar('evento:cambio', S.evento);
     /* La tele se entera por el sondeo que ya existía. */
     if(!opc.silencioso) KL.comandos.publicarEvento(S.evento);
     return true;
@@ -152,6 +160,10 @@ KL.evento = (function () {
       if(ev.estado === EV.PREPARADA && qGet(ev.pistaId)) return preparar(ev.pistaId);
     }
     pintar();
+    /* También cuando el cambio viene de fuera: la pantalla del público
+       recibe el estado por el sondeo y su Cabina DJ tiene que apartarse
+       igual que la del operador. */
+    KL.senales.avisar('evento:cambio', S.evento);
   }
 
   /* ---- Las cuatro paradas del ciclo ----------------------------------- */
@@ -160,7 +172,7 @@ KL.evento = (function () {
         Aquí está la precarga: el vídeo se pide ahora, no al pulsar Play.
         El silencio entre canciones es el enemigo real de una fiesta. */
   function preparar(id){
-    const t = qGet(id) || S.queue[0];
+    const t = qGet(id) || cola()[0];
     if(!t) return pasarA(EV.ESPERA, { pistaId:null });
     pararCuenta();
     /* El estado PRIMERO: es quien dice qué se está preparando, y desde que
@@ -183,23 +195,24 @@ KL.evento = (function () {
         porque este es el momento en que hay un gesto del usuario detrás:
         el navegador no la concede de otra manera. */
   function arrancar(id){
-    const t = qGet(id) || qGet(S.evento.pistaId) || S.queue[0];
+    const t = qGet(id) || qGet(S.evento.pistaId) || cola()[0];
     if(!t){ toast('La cola está vacía'); return false; }
     pararCuenta();
     pedirPantallaCompleta();
 
-    /* Si aún no estaba preparada —se ha pulsado otra fila, o se venía de
-       ESPERA— se carga ahora, quieta.
-
-       La pregunta correcta es «¿qué tiene cargado el reproductor?», y esa
-       la contesta el reproductor. Antes se le preguntaba al estado, que
-       no lo sabe: sabe lo que DEBERÍA estar cargado. */
+    /* ¿Tiene el reproductor cargada ESTA pista? La pregunta correcta es
+       esa, y la contesta el reproductor. Antes se le preguntaba al
+       estado, que no lo sabe: sabe lo que DEBERÍA estar cargado. */
     const cargada = KL.reproductor.pistaActual();
     if(!cargada || cargada.id !== t.id){
       KL.reproductor.cargar(t, { arrancar:false });
       KL.$('#vbT').textContent = KL.Actuacion.titulo(t);
     }
 
+    /* Sin cuenta atrás se pasa derecho a sonar, y no hace falta ninguna
+       precaución especial: `play()` sabe esperar si el vídeo acaba de
+       pedirse. Hubo una versión que aquí cargaba de otra manera «porque no
+       daba tiempo», y eso eran dos caminos distintos para lo mismo. Uno. */
     if(!S.segLlamada) return arrancarYa(t.id);
 
     pasarA(EV.LLAMADA, { pistaId:t.id, segundos:S.segLlamada });
@@ -269,7 +282,14 @@ KL.evento = (function () {
        fueran tres, un móvil pidiendo a la vez podría colarse en medio. */
     KL.comandos.terminarActuacion(t ? t.id : null, S.retirar);
 
-    if(!S.autoNext){ pararCuenta(); pasarA(EV.ESPERA, { pistaId:null }); return; }
+    /* `autoNext` (el botón «bAuto») es una preferencia del Karaoke: si
+       está apagado, la siguiente NO se prepara sola y el operador decide
+       cuándo. En la Cabina DJ no es una preferencia, es la promesa del
+       espacio — «la lista la hacen todos» solo es cierto si suena sola,
+       con o sin el botón activado. Por eso aquí se ignora para los
+       espacios que encadenan (ver cuentaAtras()). */
+    const encadena = !!((KL.ESPACIOS_INFO || {})[S.modo] || {}).encadena;
+    if(!S.autoNext && !encadena){ pararCuenta(); pasarA(EV.ESPERA, { pistaId:null }); return; }
     cuentaAtras();
   }
 
@@ -285,9 +305,23 @@ KL.evento = (function () {
       pintarCuenta();
       if(restan <= 0){
         pararCuenta();
-        const sig = S.queue[0] ? (qGet(S.evento.pistaId) || S.queue[0]) : null;
-        /* preparar(), no arrancar(). Aquí es donde se para el automatismo. */
-        sig ? preparar(sig.id) : pasarA(EV.ESPERA, { pistaId:null });
+        const c = cola();
+        const sig = c[0] ? (qGet(S.evento.pistaId) || c[0]) : null;
+        if(!sig){ pasarA(EV.ESPERA, { pistaId:null }); return; }
+
+        /* Aquí es donde se para el automatismo… en el karaoke.
+           `preparar()`, no `arrancar()`: la siguiente queda lista y
+           espera a que el operador vea que la persona tiene el micro.
+           Esa es LA regla del proyecto y no se toca.
+
+           En la Cabina DJ no aplica, y no es una excepción cómoda: es que
+           la regla protege a una persona de verse empujada a un micro, y
+           allí no hay micro ni hay persona esperando. Hay una lista que
+           la gente ha hecho desde el móvil, y treinta segundos de
+           silencio en mitad de una fiesta sin karaoke no son una pausa
+           para respirar: son un fallo que sienta a todo el mundo. */
+        const encadena = !!((KL.ESPACIOS_INFO || {})[S.modo] || {}).encadena;
+        encadena ? arrancar(sig.id) : preparar(sig.id);
       }
     }, 1000);
   }
@@ -308,8 +342,9 @@ KL.evento = (function () {
     if(estado() === EV.INTERPRETACION && KL.reproductor.posicion() > 4){
       KL.reproductor.buscar(0); return;
     }
-    const i = S.queue.findIndex(t => t.id === S.curId);
-    if(i > 0) estado() === EV.INTERPRETACION ? arrancar(S.queue[i-1].id) : preparar(S.queue[i-1].id);
+    const c = cola();
+    const i = c.findIndex(t => t.id === S.curId);
+    if(i > 0) estado() === EV.INTERPRETACION ? arrancar(c[i-1].id) : preparar(c[i-1].id);
   }
 
   function espera(){
@@ -396,16 +431,19 @@ KL.evento = (function () {
       if(ya) ya.addEventListener('click', () => preparar(sig.id));
     } else if(barra === 'preparada'){
       const t = qGet(S.evento.pistaId);
-      /* Este es el único botón que arranca una canción, junto al Play de
-         la barra y la barra espaciadora. Se pulsa cuando el cantante ya
-         está delante del micro, no antes. */
+      /* Aquí había un segundo botón de «Empezar». Se ha quitado, y no por
+         limpieza estética: **dos botones son dos caminos**, y el operador
+         acababa preguntándose si hacían lo mismo. Uno de los dos sobra
+         siempre, y el que sobra es este — el de la barra de abajo está
+         en el centro, es el más grande de la pantalla y tiene su propia
+         tecla.
+
+         Esta franja se queda como lo que es: un cartel que dice qué está
+         preparado y dónde hay que mirar. Informa, no manda. */
       caja.innerHTML =
         KL.icono('microfono') +
         `<span class="txt">Preparada: <b>${esc(t ? KL.Actuacion.titulo(t) : '')}</b>` +
-        ' — arranca cuando esté delante del micro</span>' +
-        '<button class="btn" id="bYa">Empezar</button>';
-      const ya = KL.$('#bYa');
-      if(ya) ya.addEventListener('click', () => arrancar());
+        ' — dale a <b>Empezar</b> cuando esté delante del micro</span>';
     }
   }
 
@@ -418,6 +456,36 @@ KL.evento = (function () {
      `terminar()` ya se protege sola: si no estamos en INTERPRETACION no
      hace nada. Por eso puede escucharse sin más comprobaciones. */
   KL.senales.oir('reproductor:fin', () => terminar());
+
+  /* ---- El reloj maestro es el reproductor del cantante ----------------
+     Aquí estaba el problema de sincronía, y no era el que parecía.
+
+     Antes las dos pantallas «arrancaban a la vez» y un ajuste de retraso
+     intentaba compensar la diferencia. Eso no puede funcionar: la
+     pantalla del público no se entera de que hay que arrancar hasta el
+     siguiente sondeo —hasta segundo y medio después— y ese retardo no es
+     fijo, depende de cuándo caiga la vuelta. Compensar con un número
+     constante algo que varía es apuntar a un blanco que se mueve.
+
+     Lo que se publica ahora es OTRA cosa: el instante en el que el vídeo
+     del cantante estaba en el segundo cero. Con eso, la pantalla del
+     público no arranca «a la vez» —cosa imposible entre dos reproductores
+     de YouTube— sino que calcula por dónde va la canción y **salta ahí**.
+     Llegue tarde o pronto, acaba alineada.
+
+     Y se publica cuando el reproductor dice que está sonando DE VERDAD,
+     no cuando el operador pulsa: entre las dos cosas hay entre medio
+     segundo y tres, según lo que tarde YouTube en soltar el primer
+     fotograma, y ese hueco era justo el desfase que se veía. */
+  let t0De = null;
+  KL.senales.oir('reproductor:sonando', si => {
+    if(!si || estado() !== EV.INTERPRETACION) return;
+    if(t0De === S.evento.pistaId) return;      // ya publicado para esta
+    t0De = S.evento.pistaId;
+    const pos = KL.reproductor.posicion() || 0;
+    S.evento = Object.assign({}, S.evento, { t0: Date.now() - Math.round(pos * 1000) });
+    KL.comandos.publicarEvento(S.evento);
+  });
 
   /* Se da por perdida ESTA canción, pero la siguiente queda PREPARADA, no
      sonando. Nadie empieza a cantar sin que el operador lo mande. */

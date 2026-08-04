@@ -1,20 +1,43 @@
 {
-  "name": "Karaoke Launcher",
-  "short_name": "Karaoke",
-  "description": "Buscador, biblioteca y cola para cantar con vídeos de YouTube",
+  "name": "OpenKaraoke Center · Operador",
+  "short_name": "Operador",
+  "description": "El puesto de mando: la cola, la biblioteca y el boton de empezar.",
   "start_url": "./index.html",
   "scope": "./",
+  "id": "./index.html",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0d0f14",
-  "theme_color": "#0d0f14",
+  "background_color": "#1E2329",
+  "theme_color": "#5A8DEE",
   "lang": "es",
   "icons": [
-    { "src": "iconos/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
-    { "src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "iconos/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iconos/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iconos/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Pedir canción", "url": "./pedir.php" }
+    {
+      "name": "Pantalla del publico",
+      "url": "./proyector.php"
+    },
+    {
+      "name": "Ajustes",
+      "url": "./ajustes.php"
+    }
   ]
 }

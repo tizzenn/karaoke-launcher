@@ -36,6 +36,10 @@ KL.fuentes.youtube = (function () {
      en silencio y la canción no arranca nunca. */
   let pendiente = null;
 
+  /* «Alguien ha pedido que suene, pero el vídeo todavía no estaba listo.»
+     Es lo que sustituye a confiar en el tiempo. */
+  let quierePlay = false;
+
   const QUAL = ['hd720','large','medium','small','tiny'];
   const BUF  = { since:0, step:0, last:0, watch:null };
 
@@ -58,7 +62,23 @@ KL.fuentes.youtube = (function () {
             if(pendiente){ const p = pendiente; pendiente = null; cargar(p.pista, p.opc); }
           },
           onStateChange: e => {
+            /* CUED = el vídeo ya está listo y quieto. Es el único momento
+               en que `playVideo()` tiene garantía de servir para algo, y
+               por eso el play que llegó antes de tiempo se guarda y se
+               suelta AQUÍ, no a los tantos milisegundos.
+
+               Antes se resolvía por tiempo: la cuenta atrás de cinco
+               segundos daba margen de sobra entre cargar y arrancar. Al
+               poner la cuenta a cero el margen desapareció y con él el
+               vídeo. Un arreglo por tiempo es un fallo esperando a un
+               ordenador más lento. */
+            if(e.data === YT.PlayerState.CUED && quierePlay){
+              quierePlay = false;
+              try{ yt.playVideo(); }catch(x){}
+              vigilar(); vigilarArranque();
+            }
             if(e.data === YT.PlayerState.PLAYING){
+              quierePlay = false;
               clearTimeout(arranqueT);
               cb.onSonando && cb.onSonando(true);
             }
@@ -77,26 +97,47 @@ KL.fuentes.youtube = (function () {
     document.head.appendChild(s);
   }
 
-  /* `arrancar:false` deja el vídeo cargado y quieto. Es la precarga del
-     estado PREPARADA: el silencio entre canciones es el enemigo real de
-     una fiesta, y con esto baja a cero. */
+  /* ---- UN SOLO CAMINO ---------------------------------------------------
+     Cargar es SIEMPRE `cueVideoById`, arranque o no. Hubo un rato en que
+     había dos —`load` cuando venía play detrás, `cue` cuando no— y eso es
+     como se separan dos caminos que deberían ser el mismo: funcionan los
+     dos el primer día y divergen al tercer arreglo.
+
+     Ahora la diferencia entre «prepara» y «prepara y arranca» es **una
+     intención guardada**, no otra función. Quien quiere que suene lo dice
+     con `quierePlay`, y el momento de soltarlo lo decide el estado CUED
+     del reproductor, no un temporizador.
+
+     `arrancar:false` es la precarga del estado PREPARADA: el silencio
+     entre canciones es el enemigo real de una fiesta, y con esto baja a
+     cero. */
   function cargar(pista, opc){
     opc = opc || {};
     if(!listo || !yt){ pendiente = { pista, opc }; return; }
     BUF.last = 0;
+    quierePlay = !!opc.arrancar;
     const cfg = {
       videoId: pista.videoId,
       startSeconds: opc.desde || 0,
       suggestedQuality: KL.estado.quality === 'auto' ? undefined : KL.estado.quality
     };
-    try{
-      if(opc.arrancar){ yt.loadVideoById(cfg); vigilar(); }
-      else            { yt.cueVideoById(cfg); }
-    }catch(e){}
+    try{ yt.cueVideoById(cfg); }catch(e){}
   }
 
+  /* Pedir que suene. Si el reproductor todavía no tiene el vídeo listo
+     —o ni siquiera existe—, la intención se guarda y la suelta
+     `onStateChange` en cuanto llegue a CUED. Así «pulsar Empezar» hace lo
+     mismo llegue cuando llegue, y no hay ninguna ventana de tiempo en la
+     que la orden se pierda en silencio.
+
+     UNSTARTED (-1) y CUED (5) son «cargado y quieto»; los demás estados
+     ya están en marcha y basta con pedir play. */
   function play(){
-    try{ if(listo && yt){ yt.playVideo(); vigilar(); vigilarArranque(); } }catch(e){}
+    if(!listo || !yt){ quierePlay = true; return; }
+    let st = -1;
+    try{ st = yt.getPlayerState(); }catch(e){}
+    if(st === -1){ quierePlay = true; return; }   // aún no ha llegado el vídeo
+    try{ yt.playVideo(); vigilar(); vigilarArranque(); }catch(e){}
   }
 
   /* ---- El vídeo que no arranca y no se queja --------------------------
@@ -127,8 +168,12 @@ KL.fuentes.youtube = (function () {
     };
     arranqueT = setTimeout(mirar, 6000);
   }
-  function pausa(){ clearTimeout(arranqueT); try{ if(listo && yt) yt.pauseVideo(); }catch(e){} }
+  function pausa(){ quierePlay = false; clearTimeout(arranqueT); try{ if(listo && yt) yt.pauseVideo(); }catch(e){} }
   function parar(){
+    /* Y se olvida cualquier play pendiente: si no, parar y volver a cargar
+       otra canción la arrancaría sola. Que es exactamente lo que este
+       proyecto no hace nunca. */
+    quierePlay = false;
     pararVigilancia(); clearTimeout(arranqueT);
     try{ if(listo && yt) yt.stopVideo(); }catch(e){}
   }

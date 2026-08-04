@@ -26,9 +26,19 @@ echo Preparando copia limpia...
 if exist "%TEMPORAL%" rmdir /s /q "%TEMPORAL%"
 mkdir "%TEMPORAL%"
 
+REM  /XD solo reconoce nombres de carpeta sueltos o rutas absolutas, no
+REM  rutas relativas compuestas: "pruebas\e2e" no excluye nada y no avisa.
+REM  Comprobado copiando de verdad y mirando si e2e seguia ahi. Con solo
+REM  "e2e" si funciona. "data\videos" y "data\descargas" tenian el mismo
+REM  fallo sin corregir -confirmado el 2026-08-04: un video de prueba de
+REM  13 MB se colo en el zip- asi que van tambien sueltos.
+REM  php, yt-dlp.exe y ffmpeg.exe los instala Preparar.bat: no son
+REM  codigo, y con ellos puestos el zip pasa de unos cientos de KB a
+REM  mas de 150 MB. Mismas exclusiones que .gitignore, por el mismo
+REM  motivo.
 robocopy "%~dp0." "%TEMPORAL%" /e /nfl /ndl /njh /njs /nc /ns /np ^
-  /xd data\videos data\descargas .git ^
-  /xf ajustes.json estado.json pruebas.json >nul
+  /xd videos descargas .git e2e php ^
+  /xf ajustes.json estado.json pruebas.json yt-dlp.exe ffmpeg.exe ffprobe.exe *.zip >nul
 
 echo Comprobando que no se cuela ninguna clave...
 REM  La marca va partida en dos a proposito. Si estuviera entera, este

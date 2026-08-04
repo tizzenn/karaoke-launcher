@@ -10,6 +10,33 @@ El formato es a propósito aburrido. Un documento bonito no se actualiza.
 
 ---
 
+## Lo que nunca va a haber
+
+La lista corta, para leer de un vistazo. Cada una está razonada más abajo.
+
+    · chat entre invitados
+    · perfiles ni cuentas
+    · votaciones ni «me gusta»
+    · rankings ni clasificaciones
+    · puntuación de cómo canta nadie
+    · nube obligatoria
+    · anuncios
+    · IA metida donde no hace falta
+    · gamificación permanente
+
+Todo eso tiene algo en común: **pone el móvil en el centro de la fiesta**.
+Y el centro de la fiesta es la gente.
+
+El filtro para cualquier idea nueva, incluidas las que parezcan
+inofensivas:
+
+> ¿Esto hace que organizar una fiesta sea más sencillo, o solo añade otra
+> opción?
+
+Si es lo segundo, no entra.
+
+---
+
 ## No hay votaciones, ni «me gusta», ni rankings
 
 **Agosto 2026.** Se propuso que los invitados pudieran votar las canciones
@@ -140,3 +167,75 @@ doscientas cuarenta veces no desacopla nada: solo hace el texto más largo.
 
 Lo que sí importa es que **la lista esté cerrada y enumerada**, y que una
 prueba falle si aparece uno nuevo sin que nadie lo haya decidido.
+
+## El nombre cambia; las claves de localStorage, no
+
+**Agosto 2026.** La aplicación pasa a llamarse **OpenKaraoke Center**. Las
+ocho claves `karaoke_*` de localStorage siguen llamándose igual.
+
+La regla que sale de aquí y vale para lo próximo: **se renombra lo que lee
+una persona; lo que solo lee la máquina se queda quieto.** Un identificador
+interno bonito no le sirve a nadie, y el precio de equivocarse en la
+migración lo paga el usuario perdiendo ajustes que costó una tarde afinar.
+
+Hay una prueba que escribe unas preferencias con la clave vieja, recarga la
+aplicación y comprueba que las ha leído. Está para que el día que alguien
+vea `karaoke_launcher_v1` dentro de un proyecto llamado OKC y le parezca un
+descuido, lo cambie y se entere en el acto.
+
+## El Modo Show no lleva marcador
+
+**Agosto 2026.** El Modo Show iba a traer puntuación por equipos, con la
+regla «los puntos premian el espectáculo, nunca la voz». Se escribió a
+medias y se quitó antes de terminarlo.
+
+La regla era correcta —nadie recibía una nota por su forma de cantar— pero
+no era el punto. El punto es que **en cuanto hay un número en pantalla, la
+sala mira el número**. Lo que se quería del Show era que la gente se
+lanzara, y eso lo hacen las cartas de reto sin que nadie pierda.
+
+Y había una razón más dura: `ajustes.php` le promete al usuario, con esas
+palabras, que nunca hay puntuaciones ni clasificaciones en ningún tema. Una
+promesa escrita en la pantalla vale más que una función que a lo mejor se
+usa una noche. Si algún día se reabre, lo primero es cambiar ese texto —y
+esa es exactamente la conversación que hay que tener antes de escribir
+código.
+
+Hay una prueba que falla si el estado del Show crece con algo que no sea la
+carta, o si aparecen las palabras «equipos», «puntos», «marcador» o
+«ranking».
+
+## «Cabina DJ» significaba dos cosas
+
+**Agosto 2026.** La misma palabra nombraba dos conceptos incompatibles:
+
+1. La música de fondo que suena entre actuaciones de karaoke y se aparta
+   cuando alguien va a cantar.
+2. Un espacio: otra fiesta, una en la que **nadie canta** y la lista la
+   hace la gente desde el móvil.
+
+Quien leía «Cabina DJ» esperaba un VirtualDJ y encontraba un control de
+volumen automático. Y al revés: quien quería montar una fiesta sin karaoke
+no sabía que eso ya existía.
+
+**Lo primero pasa a llamarse Música ambiente**, y es una herramienta del
+karaoke, no un espacio. **La Cabina DJ es el espacio**, que es lo que de
+verdad merece ese nombre.
+
+Y la separación no es solo de vocabulario, porque las dos cosas se
+comportan al revés:
+
+- La música ambiente **no suena en la Cabina DJ**. Allí la cola ES la
+  música, y un hilo por debajo serían dos cosas sonando a la vez.
+- En la Cabina DJ **la siguiente canción arranca sola**. «Una canción no
+  arranca sola» es la regla del proyecto, pero no es una regla sobre
+  reproductores: es una regla sobre personas, y existe para que nadie se
+  vea empujado a un micro antes de estar listo. Donde no hay micro, esa
+  misma regla produce el fallo que quería evitar — treinta segundos de
+  silencio que sientan a toda la sala.
+
+Hay dos pruebas que dicen lo contrario la una de la otra a propósito. Si
+alguien «unifica» esto algún día, no pueden estar las dos en verde.
+
+Los nombres internos (`dj`, `ambiente`, `ambienteOn`) no se han tocado: se
+renombra lo que lee una persona.

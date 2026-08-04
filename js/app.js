@@ -61,8 +61,9 @@ function proponerDescargas(){
   if(Date.now() < S.avisoRedHasta) return;
 
   /* Las que vienen detrás de la que suena y aún no están en disco. */
-  const i = S.queue.findIndex(t => t.id === S.curId);
-  const siguientes = S.queue.slice(i + 1).filter(t => !t.local && !S.descargas[t.videoId]).slice(0, 3);
+  const c = cola();
+  const i = c.findIndex(t => t.id === S.curId);
+  const siguientes = c.slice(i + 1).filter(t => !t.local && !S.descargas[t.videoId]).slice(0, 3);
 
   if(!S.puedeDescargar){
     caja.innerHTML = icono('aviso') +
@@ -119,13 +120,19 @@ function showBuf(on, txt, sub){
 KL.reproductor.iniciar({
 
   onSonando: si => {
-    /* Sonando = no hay nada que pulsar aquí. El botón se apaga en vez de
-       desaparecer: si desaparece, el resto de la barra salta de sitio
-       justo cuando el operador está mirando otra cosa. */
-    $('#bPlay').classList.toggle('cantando', si);
-    $('#bPlay').title = si
-      ? 'Se está cantando. Pausar aquí descuadraría la tele: usa Terminar o Ctrl+.'
-      : 'Empezar la actuación preparada (Espacio)';
+    /* Aquí se apagaba el botón de Empezar, y estuvo mal desde el primer
+       día por el motivo de siempre (MODELO §6): **«se está cantando» ya
+       tiene dueño** —el evento— y esto era una segunda fuente.
+
+       Se notó al terminar una canción entera. `onSonando(false)` lo
+       dispara YouTube al PAUSAR; al TERMINAR manda `ENDED`, que es otro
+       aviso. Así que el botón se apagaba al empezar y no se volvía a
+       encender nunca: la siguiente quedaba preparada, el operador miraba
+       la barra y veía un botón gris con cara de deshabilitado.
+
+       Ahora el aspecto del botón lo decide el estado, más abajo. Aquí
+       solo queda lo que de verdad es del reproductor: si suena, ya no
+       está atascado. */
     if(si) showBuf(false);
   },
 
@@ -155,34 +162,156 @@ KL.reproductor.iniciar({
   }
 });
 
-/* ---- Los tres espacios ------------------------------------------------
+/* ---- Música ambiente --------------------------------------------------
+   Suena aquí solo si este ordenador es el que da el sonido. Si lo da la
+   tele, es la tele la que pone la música: sonando en las dos se oiría
+   doble y desfasado. */
+KL.ambiente.iniciar({ doySonido: () => S.sonidoEn !== 'tele' });
+
+/* ---- Maestro de ceremonias --------------------------------------------
+   Suena donde suena la música: en el aparato que da el sonido de la sala.
+   Un «un aplauso para Marta» que sale del portátil mientras el sonido va
+   por la tele no lo oye nadie. */
+KL.mc.iniciar({ doySonido: () => S.sonidoEn !== 'tele' });
+
+let djT = null;
+function pintarDJ(){
+  const b = $('#bDJ');
+  if(!b) return;
+  const hayFuente = S.ambiente && S.ambiente.fuente !== 'no';
+  const suena = KL.ambiente.suena();
+  b.classList.toggle('on', S.ambienteOn && hayFuente);
+  b.classList.toggle('sonando', suena);
+  b.classList.toggle('apagado', !hayFuente);
+
+  const que = suena ? KL.ambiente.queSuena() : '';
+  b.title = !hayFuente
+    ? 'Música ambiente: no hay ninguna lista configurada. Se pone en Ajustes → Música ambiente.'
+    : suena
+      ? 'Sonando' + (que ? ': ' + que : ' la música ambiente') + '. Pulsa para callarla.'
+      : (S.ambienteOn
+          ? 'Música ambiente encendida: sonará cuando no cante nadie.'
+          : 'Música ambiente apagada. Pulsa para encenderla.');
+
+  /* El título del vídeo tarda en llegar; se vuelve a mirar mientras suene.
+     Un intervalo y no un sondeo permanente: si no hay música, no hay
+     nada que preguntar. */
+  clearTimeout(djT);
+  if(suena) djT = setTimeout(pintarDJ, 4000);
+}
+
+$('#bDJ').addEventListener('click', () => {
+  if(!S.ambiente || S.ambiente.fuente === 'no'){
+    toast('No hay ninguna lista configurada. Ponla en Ajustes → Música ambiente.');
+    return;
+  }
+  S.ambienteOn = !S.ambienteOn;
+  guardarPrefs();
+  KL.ambiente.revisar();
+  pintarDJ();
+  toast(S.ambienteOn
+    ? (S.ambiente.auto
+        ? 'Música ambiente encendida. Se callará en cada canción y volverá al terminar.'
+        : 'Música ambiente encendida. Se callará al empezar la próxima canción.')
+    : 'Música ambiente apagada');
+});
+
+/* ---- Los dos espacios --------------------------------------------------
    Cambiar de espacio es una decisión de un clic, no un ajuste escondido:
-   durante una fiesta se pasa de karaoke a poner música y vuelta. */
+   durante una fiesta se pasa de karaoke a poner música y vuelta.
+
+   Eran tres. Freestyle se quitó porque no era un espacio: hacía lo mismo
+   que Karaoke buscando otra palabra, y buscar otra palabra ahora es
+   escribirla en el campo de filtro. */
 $$('#espacios .esp').forEach(b =>
   b.addEventListener('click', () => {
     aplicarModo(b.dataset.esp);
+    /* Y se lo decimos a todo el mundo: con una cola por espacio, la tele
+       tiene que enseñar la que toca. Dejó de ser una preferencia de este
+       aparato el día que cambiar de espacio cambió lo que hay que ver. */
+    KL.comandos.cambiarDeEspacio(S.modo);
     toast(({karaoke:'Karaoke · canciones con letra',
-            dj:'Cabina DJ · la música entre actuaciones',
-            freestyle:'Freestyle · instrumentales y bases'})[S.modo]);
+            dj:'Cabina DJ · una fiesta sin karaoke, la lista la hacen todos'})[S.modo]);
   }));
 
-/* Los dos atajos de Freestyle escriben el filtro por ti. «Instrumental» es
-   la canción sin voz, para cantarla encima; una «base» es para tocar o
-   improvisar. Es la misma búsqueda con otra palabra, y nadie tiene por qué
-   saber cuál. */
-$$('#freestyle .fbtn').forEach(b =>
-  b.addEventListener('click', () => {
-    S.sufijos.freestyle = b.dataset.suf;
-    aplicarModo('freestyle');
-    $$('#freestyle .fbtn').forEach(o => o.classList.toggle('on', o === b));
-    if($('#q').value.trim()) KL.busqueda.buscar();
-  }));
+/* ---- El filtro --------------------------------------------------------
+   Lo que se escribe aquí se le añade a cada búsqueda. Se enseña debajo,
+   ya traducido, mientras se escribe: es lo que convierte esto en algo que
+   se aprende usándolo en vez de leyendo un manual. Escribes OR, ves
+   aparecer la barra, y ya sabes lo que hace OR.
+
+   Y se guarda POR ESPACIO. Ir a la Cabina DJ y volver no puede obligar a
+   reescribir el filtro: MODELO §1, cada espacio conserva su mesa. */
+/* Los perfiles del espacio, en la lista desplegable del campo. Se
+   repintan al cambiar de espacio: un perfil de karaoke en la Cabina DJ no
+   significa nada. */
+KL.pintarPerfiles = function(){
+  const ps = KL.filtro.perfilesDe(S.modo, S.perfiles);
+  $('#perfiles').innerHTML = ps.map(p =>
+    `<option value="${esc(p.filtro)}">${esc(p.nombre)}${p.propio ? ' ★' : ''}</option>`
+  ).join('');
+};
+
+KL.pintarFiltro = function(){
+  const v = $('#filtro').value;
+  const pie = $('#filtroPie');
+  const aviso = KL.filtro.aviso(v);
+  const q = KL.filtro.aConsulta(v);
+  $('#bFiltroX').hidden = !v.trim();
+  pie.classList.toggle('mal', !!aviso);
+  if(aviso){ pie.textContent = aviso; return; }
+  /* Cuando no traduce nada —una sola palabra— no se enseña: repetir
+     «karaoke → karaoke» es ruido, y el sitio de abajo lo necesita el
+     aviso cuando haga falta. */
+  pie.textContent = (q && q !== v.trim()) ? 'Se busca: ' + q : '';
+
+  /* El truco avanzado, una vez. No es un enlace permanente porque el
+     sitio de abajo lo necesita la traducción: se enseña cuando el campo
+     está vacío, que es justo cuando alguien podría no saber qué poner. */
+  if(!v.trim())
+    pie.innerHTML = '<span class="pista">Acepta <b>AND</b>, <b>OR</b> y '
+      + '<b>-</b> para excluir · '
+      + '<a href="docs/BUSQUEDA.md" target="_blank">cómo buscar mejor</a></span>';
+};
+
+$('#filtro').addEventListener('input', () => {
+  S.suffix = $('#filtro').value;
+  S.sufijos[S.modo] = S.suffix;
+  KL.pintarFiltro();
+  guardarPrefs();
+});
+$('#filtro').addEventListener('keydown', e => {
+  if(e.key === 'Enter' && $('#q').value.trim()) KL.busqueda.buscar();
+});
+$('#bFiltroX').addEventListener('click', () => {
+  $('#filtro').value = '';
+  $('#filtro').dispatchEvent(new Event('input'));
+  $('#filtro').focus();
+});
+
+/* Guardar un perfil es guardar un texto con un nombre. Se pide el nombre
+   con un prompt y no con un diálogo propio a propósito: esto se hace una
+   vez cada muchas fiestas, y una ventana bien hecha para eso es trabajo
+   que no se nota. */
+$('#bFiltroGuardar').addEventListener('click', () => {
+  const filtro = $('#filtro').value.trim();
+  if(!filtro){ toast('Escribe primero el filtro que quieras guardar'); return; }
+  const nombre = (prompt('¿Cómo se llama este perfil?\n\n' + filtro) || '').trim();
+  if(!nombre) return;
+  S.perfiles = S.perfiles || {};
+  const lista = (S.perfiles[S.modo] || []).filter(p => p.nombre !== nombre);
+  lista.push({ nombre, filtro });
+  S.perfiles[S.modo] = lista;
+  guardarPrefs();
+  KL.pintarPerfiles();
+  toast('Perfil «' + nombre + '» guardado');
+});
 
 /* ---- Búsqueda --------------------------------------------------------- */
 $('#q').addEventListener('keydown', e => { if(e.key === 'Enter') KL.busqueda.buscar(); });
 $('#bAddSel').addEventListener('click', () => {
   if(S.sel === null){ toast('Selecciona antes un vídeo'); return; }
-  KL.cola.anadir(S.results[S.sel]); close('#ovRes');
+  KL.cola.anadir(S.results[S.sel]); cerrar('#ovRes');
 });
 
 /* ---- Biblioteca ------------------------------------------------------- */
@@ -198,19 +327,35 @@ $('#bLibCol').addEventListener('click', () => setLibCol(!S.libCol));
 
 /* ---- Cola ------------------------------------------------------------- */
 $('#bClearQ').addEventListener('click', () => {
-  if(!S.queue.length) return;
-  if(confirm('¿Vaciar la cola por completo?')){ KL.evento.espera(); KL.comandos.vaciarLaCola(); }
+  const lista = cola();
+  if(!lista.length) return;
+  /* Se dice EN CUÁL, porque ahora hay tres y vaciar la equivocada es caro. */
+  const nombre = (ESPACIOS[S.modo] || {}).nombre || 'esta';
+  if(confirm(KL.TEXTOS.pregunta('vaciarCola', { espacio:nombre, cuantas:lista.length }))){
+    KL.evento.espera();
+    KL.comandos.vaciarLaCola();
+  }
 });
 $('#bShuffleQ').addEventListener('click', () => {
-  if(S.queue.length < 2) return;
-  for(let i = S.queue.length - 1; i > 0; i--){
+  const lista = cola();
+  if(lista.length < 2) return;
+  /* Se mezcla SOLO este espacio, pero el orden se manda entero: el
+     servidor guarda una sola lista y reordenar a medias la descuadraría.
+     Así que se baraja el trozo y se recomponen las tres en su sitio. */
+  const mezclado = lista.slice();
+  for(let i = mezclado.length - 1; i > 0; i--){
     const j = Math.random() * (i + 1) | 0;
-    [S.queue[i], S.queue[j]] = [S.queue[j], S.queue[i]];
+    [mezclado[i], mezclado[j]] = [mezclado[j], mezclado[i]];
   }
+  let k = 0;
+  S.queue = S.queue.map(t => (t.espacio || 'karaoke') === S.modo ? mezclado[k++] : t);
   draw();
   KL.comandos.ordenarLaCola(S.queue.map(x => x.id));
   toast('Cola mezclada');
 });
+$('#bDescargarCola').addEventListener('click', KL.cola.descargarCola);
+$('#bHist').addEventListener('click', () => { abrir('#ovHist'); KL.cola.pintarHistorial(); });
+$('#bVaciarHist').addEventListener('click', KL.cola.vaciarHistorial);
 $('#bDelAll').addEventListener('click', KL.cola.borrarTodas);
 
 /* ---- Transporte ------------------------------------------------------- */
@@ -235,6 +380,32 @@ $('#bPlay').addEventListener('click', () => {
   if(e === KL.EV.LLAMADA){ KL.evento.arrancarYa(S.evento.pistaId); return; }
   KL.evento.arrancar();
 });
+/* El aspecto del botón se DEDUCE del estado, no se conmuta a mano desde
+   los avisos del reproductor. Es la regla del MODELO §6 aplicada a un
+   botón: si «se está cantando» ya vive en el evento, no puede haber un
+   segundo sitio que opine, porque acaban discrepando — y aquí discrepaban
+   justo en el peor momento, con la siguiente canción ya preparada.
+
+   Se apaga solo en INTERPRETACION. En LLAMADA no: ahí el botón sirve para
+   saltarse la cuenta atrás. */
+KL.senales.oir('evento:cambio', ev => {
+  /* La tarjeta «Ahora» y la fase se repintan con cada cambio de estado,
+     no solo cuando llegan datos del servidor: una transicion local tiene
+     que verse al momento, no dentro de segundo y medio. */
+  if(KL.repintarAhora) KL.repintarAhora();
+  const cantando = (ev || {}).estado === KL.EV.INTERPRETACION;
+  $('#bPlay').classList.toggle('cantando', cantando);
+  /* En Cabina DJ no hay "actuación" -MODELO.md lo dice literal: "¿Hay
+     actuaciones? No"-, así que el título no puede hablar de eso. Es el
+     mismo botón y la misma acción real (arrancar la reproducción); solo
+     cambia la palabra según el espacio (auditoría UX, 2026-08-03). */
+  const esDJ = S.modo === 'dj';
+  $('#bPlay').title = cantando
+    ? 'Se está cantando. Pausar aquí descuadraría la tele: usa Terminar o Ctrl+.'
+    : (esDJ ? 'Empezar la canción preparada (Espacio)'
+            : 'Empezar la actuación preparada (Espacio)');
+});
+
 $('#bNext').addEventListener('click', () => KL.evento.siguiente());
 $('#bPrev').addEventListener('click', () => KL.evento.anterior());
 $('#bAuto').addEventListener('click', e => {
@@ -267,13 +438,36 @@ $('#salirInterp').addEventListener('click', () => {
    YouTube pinta su error dentro del marco y a veces no avisa por la API.
    Se tapa con una pantalla propia y cuatro salidas claras: en una fiesta
    nadie va a abrir la consola del navegador. */
+/* Un fallo de reproducción pasa con el vídeo a pantalla completa y la
+   gente mirando. El mensaje tiene que decir QUÉ HACER, y para eso tiene
+   que decir qué ha pasado de verdad: todos los fallos daban el mismo
+   texto —«el dueño no permite verlo fuera de YouTube»— incluso cuando el
+   problema era un archivo descargado que ya no está en el disco. Eso
+   manda al operador a buscar otra canción cuando bastaba con volver a
+   descargarla. */
+const FALLOS = {
+  'sin arrancar':
+    'YouTube no ha llegado a reproducirlo. Puede ser la conexión, un bloqueador de '
+    + 'anuncios, o que el vídeo esté restringido. Suele arreglarse reintentando.',
+  'archivo':
+    'El archivo descargado no se puede abrir: se ha movido, se ha borrado o está a '
+    + 'medias. Bórralo desde la lista y vuelve a descargarlo, o quítalo del disco '
+    + 'para que suene otra vez desde YouTube.',
+  '2':   'La dirección del vídeo no es válida (error 2).',
+  '5':   'Este vídeo no se puede reproducir en el navegador (error 5).',
+  '100': 'El vídeo ya no existe: lo han borrado o lo han puesto en privado (error 100).',
+  '101': 'El dueño de este vídeo no permite verlo fuera de YouTube (error 101).',
+  '150': 'El dueño de este vídeo no permite verlo fuera de YouTube (error 150).'
+};
+
 function mostrarFallo(codigo){
   const t = S.curId && qGet(S.curId);
-  $('#falloTxt').textContent = codigo === 'sin arrancar'
-    ? 'YouTube no ha llegado a reproducirlo. Puede ser la conexión, un bloqueador de '
-      + 'anuncios, o que el vídeo esté restringido. Suele arreglarse reintentando.'
-    : 'El dueño de este vídeo no permite verlo fuera de YouTube (error ' + codigo + ').';
+  $('#falloTxt').textContent = FALLOS[String(codigo)]
+    || ('No se ha podido reproducir (error ' + codigo + '). Prueba a reintentar o salta a la siguiente.');
   document.body.classList.add('fallo-video');
+  /* «Abrir en YouTube» no tiene sentido si el problema es un archivo del
+     disco… salvo que justamente ahí está la solución: verlo en YouTube.
+     Se deja siempre que haya pista. */
   $('#bFalloYT').style.display = t ? '' : 'none';
 }
 function ocultarFallo(){ document.body.classList.remove('fallo-video'); }
@@ -387,8 +581,11 @@ $('#bCal').addEventListener('click', () => {
    datos cuando no dicen nada— y no vale con arreglarlo para la próxima
    fiesta.
 
-   «Solo este» fija uno y detiene la rotación: sirve para dejar el de los
-   QR mientras la gente llega, que es cuando de verdad hace falta. */
+   Aquí había además un botón «Solo este» que fijaba uno y paraba la
+   rotación. Se ha quitado: hacía exactamente lo mismo que dejar marcado
+   uno solo, y dos caminos para el mismo resultado son dos motivos para
+   dudar justo cuando no hay tiempo. Si quieres dejar fijo el de los QR
+   mientras llega la gente, desmarca los otros tres. */
 const CARTELONES = [
   { k:'pedir',    n:'Cómo pedir canciones', d:'Los tres pasos y los QR' },
   { k:'cola',     n:'La cola ahora mismo',  d:'En directo, se ve crecer' },
@@ -408,36 +605,25 @@ function pintarPaneles(){
     <div class="fila">
       <input type="checkbox" id="cp_${c.k}" ${act.includes(c.k) ? 'checked' : ''}>
       <label for="cp_${c.k}">${esc(c.n)}<small>${esc(c.d)}</small></label>
-      <button class="ver ${S.panelFijo === c.k ? 'act' : ''}" data-k="${c.k}">Solo este</button>
     </div>`).join('');
 
   caja.querySelectorAll('input').forEach(inp => inp.addEventListener('change', () => {
-    const lista = CARTELONES.filter(c => $('#cp_' + c.k).checked).map(c => c.k);
-    /* Si se apaga el que estaba fijo, la rotación vuelve sola: dejarlo
-       fijo en un cartelón apagado sería enseñar una pantalla en blanco. */
-    const fijo = lista.includes(S.panelFijo) ? S.panelFijo : null;
-    mandarPaneles(lista, fijo);
-  }));
-  caja.querySelectorAll('.ver').forEach(b => b.addEventListener('click', () => {
-    const k = b.dataset.k;
-    const nuevo = S.panelFijo === k ? null : k;
-    const lista = activosAhora().includes(k) ? activosAhora() : activosAhora().concat(k);
-    mandarPaneles(lista, nuevo);
+    mandarPaneles(CARTELONES.filter(c => $('#cp_' + c.k).checked).map(c => c.k));
   }));
 
-  $('#pieRotacion').textContent = S.panelFijo
-    ? 'Fijo en uno, sin rotar'
-    : (act.length > 1 ? `Rotando ${act.length} cada 15 s`
-                      : (act.length ? 'Solo queda uno' : 'Ninguno: la tele queda limpia'));
+  $('#pieRotacion').textContent =
+    act.length > 1 ? `Rotando ${act.length} cada 15 s`
+                   : (act.length ? 'Solo ese, fijo en la tele'
+                                 : 'Ninguno: la tele queda limpia');
 }
 
-function mandarPaneles(lista, fijo){
-  S.paneles = lista; S.panelFijo = fijo || null;
+function mandarPaneles(lista){
+  S.paneles = lista;
   pintarPaneles();
-  KL.comandos.cartelones(lista, fijo);
+  KL.comandos.cartelones(lista);
 }
 
-$('#bRotar').addEventListener('click', () => mandarPaneles(CARTELONES.map(c => c.k), null));
+$('#bRotar').addEventListener('click', () => mandarPaneles(CARTELONES.map(c => c.k)));
 $('#bCerrarPaneles').addEventListener('click', () => {
   document.body.classList.add('paneles-ocultos');
   toast('Mando oculto. Vuelve a pulsar el botón del calentamiento para verlo.');
@@ -458,13 +644,14 @@ $$('.ov').forEach(o => o.addEventListener('click', ev => {
 
 /* ---- Ajustes ----------------------------------------------------------- */
 $('#bCfg').addEventListener('click', () => {
-  $('#cSuf').value      = S.suffix;
   $('#cAuto').checked   = S.openVideo;
   $('#cStar').checked   = S.alsoStar;
   $('#cQual').value     = S.quality;
   $('#cAntiCut').checked= S.antiCut;
   $('#cSig').value      = S.avisoSig;
-  $('#cModo').value     = S.modo;
+  /* El sufijo es del espacio en el que estás, y se dice cuál: sin eso,
+     el campo parece global y se edita el equivocado. */
+  const nom = (ESPACIOS[S.modo] || {}).nombre || 'Karaoke';
   $('#cSegFin').value   = S.segFin;
   $('#cSegLlam').value  = S.segLlamada;
   $('#cSonido').value   = S.sonidoEn;
@@ -473,19 +660,12 @@ $('#bCfg').addEventListener('click', () => {
   $('#cGanCancion').value = S.efectoCancion;
   $('#cGanCalent').value  = S.efectoCalent;
   $('#cRetirar').checked= S.retirar;
-  pintarSuperpoderes();
-  open('#ovCfg');
+  KL.diagnostico.pintar();
+  abrir('#ovCfg');
 });
-/* Cambiar de modo en el desplegable enseña su sufijo al momento: si no,
-   parece que el campo no tiene nada que ver con el modo. */
-$('#cModo').addEventListener('change', e => {
-  $('#cSuf').value = S.sufijos[e.target.value] ?? '';
-});
-
 $('#bSaveCfg').addEventListener('click', () => {
   /* Al guardar, el sufijo se apunta en el modo que esté activo. */
-  S.suffix = $('#cSuf').value.trim();
-  S.sufijos[$('#cModo').value] = S.suffix;
+  S.sufijos[S.modo] = S.suffix;
   S.openVideo = $('#cAuto').checked;
   S.alsoStar  = $('#cStar').checked;
   S.quality   = $('#cQual').value;
@@ -500,46 +680,20 @@ $('#bSaveCfg').addEventListener('click', () => {
   S.efectoCancion = Math.min(4, Math.max(0, +$('#cGanCancion').value || 0));
   S.efectoCalent  = Math.min(4, Math.max(0, +$('#cGanCalent').value || 0));
   aplicarSalidaAudio();
-  aplicarModo($('#cModo').value);
-  $('#cSuf').value = S.suffix;
   dibujarSiguiente();
   KL.reproductor.calidad(S.quality);
   guardarPrefs();
-  close('#ovCfg');
+  cerrar('#ovCfg');
   toast('Ajustes guardados');
 });
 
-/* Panel de superpoderes: qué hay instalado y qué desbloquea. Un semáforo
-   dice más que una lista, y esconderlo solo consigue que la gente crea
-   que la aplicación está rota cuando en realidad le falta una pieza.
-   El panel completo, con enlaces de descarga y comprobación de PHP y
-   FFmpeg, llega en el sprint 5. */
-function pintarSuperpoderes(){
-  const caja = $('#poderes');
-  if(!caja) return;
-  const y = S.ytdlp || {};
-  const fila = (ok, nombre, que, extra) => `
-    <div class="sw" style="align-items:flex-start;gap:9px">
-      <span class="${ok ? 'est-ok' : 'est-no'}" style="margin-top:1px">${icono(ok ? 'comprobado' : 'cerrar','sm')}</span>
-      <span><b style="color:var(--txt)">${nombre}</b> — ${que}
-      ${extra ? `<div class="h" style="margin-top:3px">${extra}</div>` : ''}</span>
-    </div>`;
-  caja.innerHTML =
-    fila(true, 'PHP', 'la aplicación funciona; sin él no arranca nada') +
-    fila(S.puedeDescargar, 'yt-dlp',
-         S.puedeDescargar
-           ? 'descarga local activada: la fiesta sigue aunque caiga internet'
-           : 'sin él no se pueden descargar canciones',
-         S.puedeDescargar
-           ? 'Versión ' + esc(y.version || '?') + ' · ' + (y.descargados || 0) + ' vídeos en disco'
-           : 'Descárgalo de <b>github.com/yt-dlp/yt-dlp/releases</b>, ponlo junto a Karaoke.bat. ' +
-             'No necesita Python: lleva el suyo dentro.');
-}
-
+/* El panel de diagnóstico vive en `js/diagnostico.js`. Aquí solo se
+   llama: qué hay que comprobar y cómo se dice no es asunto del archivo
+   que conecta botones. */
 /* ---- Copia de seguridad ------------------------------------------------ */
 $('#bExp').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify({
-    app:'karaoke-launcher', version:'1.1',
+    app:'openkaraoke-center', version:'1.1',
     date:new Date().toISOString(), library:S.library, queue:S.queue
   }, null, 2)], { type:'application/json' });
   const a = document.createElement('a');
@@ -558,30 +712,12 @@ $('#file').addEventListener('change', ev => {
     try{
       const d = JSON.parse(rd.result);
       if(Array.isArray(d.library)) KL.comandos.reemplazarLaBiblioteca(d.library);
-      close('#ovCfg');
+      cerrar('#ovCfg');
       toast('Copia importada');
     }catch(e){ toast('⚠ El archivo no es válido'); }
   };
   rd.readAsText(f);
   ev.target.value = '';
-});
-
-/* ---- QR para las peticiones -------------------------------------------
-   Generado aquí mismo, sin salir a internet, y siempre con la dirección
-   de red del servidor: la de la barra del navegador es `localhost` y
-   solo sirve para quien está delante de este PC.                        */
-$('#bQR').addEventListener('click', () => {
-  const url = urlPedir();
-  if(!url){
-    $('#qrurl').textContent = '';
-    $('#qrimg').innerHTML = '<div style="color:#B71C1C;font-size:13px;max-width:200px;padding:20px 0">'
-      + 'Este PC no tiene dirección de red local. Conéctalo al router y vuelve a intentarlo.</div>';
-    open('#ovQR');
-    return;
-  }
-  $('#qrurl').textContent = url;
-  $('#qrimg').innerHTML = '<div style="width:200px;height:200px">' + KL.qr.svg(url, {borde:1}) + '</div>';
-  open('#ovQR');
 });
 
 /* ---- El ratón encima del vídeo, en modo Interpretación ------------------ */
@@ -611,6 +747,7 @@ aplicarModo(S.modo);
 setView(S.view);
 setLibCol(S.libCol);
 aplicarSalidaAudio();
+pintarDJ();
 dibujarRed();
 $('#bAuto').classList.toggle('on', S.autoNext);
 $('#cSegFin').value = S.segFin;
@@ -619,11 +756,24 @@ draw();
 if(window.innerWidth > 900) setTimeout(() => $('#q').focus(), 120);
 
 /* El estado viene del servidor, y a partir de ahí escuchamos cambios. */
-cargar().then(() => { dibujarRed(); KL.cola.comprobarDescargas(); }).then(escuchar);
+cargar().then(() => {
+  dibujarRed();
+  KL.cola.comprobarDescargas();
+  /* Enlace desde qa.php: «Cargar fiesta de ejemplo» ya no duplica la
+     lógica en PHP (se guardaban títulos sueltos, sin resolver contra
+     YouTube, y biblioteca/cola quedaban en blanco). Llega aquí y usa la
+     función de siempre, que sí busca cada título de verdad. Se limpia
+     la URL para que un F5 no la repita. */
+  if(new URLSearchParams(location.search).get('ejemplo') === '1'){
+    history.replaceState(null, '', location.pathname);
+    KL.cola.montarFiestaDeEjemplo();
+  }
+}).then(escuchar);
 
 /* Lo ÚNICO que sale de este archivo. La interfaz repinta los cartelones
    cuando el servidor dice que han cambiado —los puede tocar otro
    aparato— y necesita esta puerta. */
 KL.panelesDeCalentamiento = pintarPaneles;
+KL.pintarCabinaDJ = pintarDJ;
 
 })();

@@ -59,19 +59,6 @@ $esLocal = ($ip === null);
 
    Sin contraseña no se enseña el QR de wifi: un QR que no conecta
    confunde más que no poner ninguno. */
-function ssid_actual(): string {
-  if (stripos(PHP_OS_FAMILY, 'Windows') === false) return '';
-  if (!function_exists('shell_exec')) return '';
-  $s = @shell_exec('netsh wlan show interfaces 2>&1');
-  if (!$s) return '';
-  /* La salida está traducida al idioma del sistema; se busca la línea
-     que empieza por SSID pero no por «BSSID». */
-  foreach (preg_split('/\R/', $s) as $linea) {
-    if (preg_match('/^\s*SSID\s*:\s*(.+?)\s*$/i', $linea, $m)) return $m[1];
-  }
-  return '';
-}
-
 $ssid  = trim((string)($cfg['wifi_ssid'] ?? '')) ?: ssid_actual();
 $clave = (string)($cfg['wifi_clave'] ?? '');
 $calentamientoMin = (int)($cfg['calentamiento_min'] ?? 20);
@@ -83,11 +70,17 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000">
-<title>📺 Pantalla del público · Karaoke Launcher</title>
+<!-- Su propio manifiesto: instalada en el mini PC de la tele aparece
+     como una aplicacion aparte, con su icono y en apaisado. Comparte
+     servidor y codigo con las otras dos. -->
+<link rel="manifest" href="manifest-tele.webmanifest">
+<link rel="apple-touch-icon" href="iconos/icono-tele-192.png">
+<title>📺 Pantalla del público · OpenKaraoke Center</title>
 <!-- La paleta y los tres modos salen de base.css, igual que en el resto
      del proyecto. proyector.css solo cambia lo que de verdad es distinto
      en una tele: el fondo negro de verdad. -->
 <link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/temas.css">
 <link rel="stylesheet" href="css/proyector.css">
 </head>
 <body data-lado="der" data-escena="ESPERA">
@@ -101,6 +94,13 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 
 <div id="halo" class="no"></div>
 <div id="barras"></div>
+
+<!-- El "blackout" teatral: tapa el instante en que el vídeo se corta en
+     seco al terminar una actuación, como se apagan un poco las luces de
+     un escenario antes del siguiente número. Detrás ya está montada la
+     escena de aplausos con su confeti; el blackout solo la revela con
+     un fundido en vez de un chasquido. Ver js/proyector/escenas.js. -->
+<div id="blackout" aria-hidden="true"></div>
 
 <!-- ═══ CALENTAMIENTO ═══ -->
 <div class="escena oculto" id="calent">
@@ -180,6 +180,19 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
   <h1 id="esperaTit">🎤 Karaoke</h1>
   <div class="sub" id="esperaSub">Elige una canción en el ordenador y empieza la fiesta.</div>
   <div class="cola" id="esperaLista" style="width:64vw;max-height:38vh"></div>
+  <!-- El termómetro. No dice cuántas canciones hay: dice cómo va la
+       fiesta. Quien lo lee no sabe que hay una aplicación detrás y no
+       tiene por qué enterarse. -->
+  <div id="termometro" class="oculto"></div>
+</div>
+
+<!-- ═══ CARTA DE RETO (Modo Show) ═══
+     No es una escena: es una tira encima de lo que haya. La saca el
+     operador para quien va a salir y se queda hasta que la quita, porque
+     el reto tiene que poder leerse mientras se canta. -->
+<div id="carta" class="oculto">
+  <div class="et">Reto</div>
+  <div class="txt" id="cartaTxt"></div>
 </div>
 
 <!-- ═══ LLAMADA ═══ -->
@@ -192,6 +205,10 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 
 <!-- ═══ FIN DE ACTUACIÓN ═══ -->
 <div class="escena oculto" id="aplausos">
+  <!-- Piezas de confeti reales, generadas en JS cada vez que se ENTRA en
+       esta escena (js/proyector/escenas.js, lanzarConfeti()). Vacío en
+       reposo: nada que limpiar si la fiesta lleva horas encendida. -->
+  <div id="confeti" aria-hidden="true"></div>
   <h1>👏 <span class="ac">¡Bien!</span></h1>
   <div class="sub" id="finQue"></div>
   <div class="sub" style="font-size:2.6vw;color:var(--txt)" id="finSig"></div>
@@ -208,6 +225,16 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 <div id="esquina"></div>
 
 <div id="arranque">
+  <!-- Lo primero que se lee, en grande y antes de tocar nada. Con tres
+       ventanas abiertas —el operador, esta y los ajustes— la única
+       pregunta de quien lo monta por primera vez es cuál va a la tele.
+       Contestarla aquí ahorra la llamada de teléfono. -->
+  <div class="quien">
+    <div class="et">Esta ventana es</div>
+    <div class="nom"><svg class="ic"><use href="#ic-tv"></use></svg> LA PANTALLA DEL PÚBLICO</div>
+    <div class="don">Arrástrala a la televisión o al proyector y ponla a pantalla completa con <b>F</b>.<br>
+      La otra ventana —la de la cola y los botones— se queda en el ordenador.</div>
+  </div>
   <button class="b" id="empezar">Encender la pantalla</button>
   <div class="p">
     Pulsa una vez y ya se queda. El navegador no deja que suene el vídeo
@@ -221,6 +248,8 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 <script src="js/cancion.js"></script>
 <script src="js/actuacion.js"></script>
 <script src="js/estados.js"></script>
+<script src="js/termometro.js"></script>
+<script src="js/textos.js"></script>
 <script src="js/qr.js"></script>
 <script>
 'use strict';
@@ -245,5 +274,6 @@ const CFG = {
 <script src="js/proyector/carteles.js"></script>
 <script src="js/proyector/escenas.js"></script>
 <script src="js/proyector/servidor.js"></script>
+<script src="js/instalar.js"></script>
 </body>
 </html>

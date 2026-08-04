@@ -1,0 +1,53 @@
+{
+  "_leeme": [
+    "Las cartas del Modo Show. Esto es un archivo de datos: añadir una carta",
+    "NO es programar. Se abre con el Bloc de notas, se copia una línea, se",
+    "cambia el texto y se guarda. Cuidado solo con dos cosas: las comillas y",
+    "la coma al final de cada línea menos la última.",
+    "",
+    "La regla que cumplen todas: un reto se le pide a quien va a cantar ANTES",
+    "de empezar, y se puede cumplir sin saber cantar. Nada que dependa de",
+    "afinar, de la letra o de la voz. Si un reto solo lo puede hacer alguien",
+    "que canta bien, ese reto no es de aquí.",
+    "",
+    "«suave» son los que valen para cualquier grupo, incluso el primero de la",
+    "noche. «fuerte» son los que necesitan confianza o unas cuantas horas de",
+    "fiesta encima. El operador elige de qué montón saca."
+  ],
+
+  "suave": [
+    "Canta con una mano en el corazón todo el rato.",
+    "Cada vez que suene el estribillo, todo el mundo levanta el brazo.",
+    "Empieza la canción presentándote como una estrella internacional.",
+    "Elige a alguien del público y cántale a esa persona.",
+    "Canta con acento de otra parte de España.",
+    "Al terminar, haz una reverencia larga y agradécele a tu público.",
+    "Canta el estribillo mirando fijamente a la cámara que no existe.",
+    "Súbete a algo (seguro) durante el estribillo.",
+    "Usa algo de la mesa como micrófono de repuesto.",
+    "Baila con los pies clavados en el suelo: solo de cintura para arriba.",
+    "Ponte de espaldas al público hasta el primer estribillo.",
+    "Empieza sentado y acaba de pie, sin prisa.",
+    "Señala a alguien distinto en cada frase.",
+    "Termina con una pose y aguántala tres segundos.",
+    "Canta la primera estrofa en voz muy baja, como un secreto."
+  ],
+
+  "fuerte": [
+    "Canta con alguien más: elige a quien tú quieras del público.",
+    "Toda la sala hace los coros. Enséñales antes cómo.",
+    "Canta la canción entera bailando sin parar.",
+    "Cámbiale la letra a una frase, la que quieras.",
+    "Ponte algo encima que no sea tuyo.",
+    "Canta como si fuera la banda sonora de una película de terror.",
+    "Haz playback exagerado en la primera estrofa y canta de verdad el resto.",
+    "Dirige al público como si fueras el director de una orquesta.",
+    "Canta a dúo con alguien que no conocías esta noche.",
+    "Métete entre la gente y canta desde ahí.",
+    "Haz un solo de guitarra invisible en el instrumental.",
+    "Interpreta la canción como si estuvieras muy enfadado.",
+    "Canta de rodillas el estribillo final.",
+    "Que alguien del público te haga de bailarín todo el rato.",
+    "Presenta la canción con una historia inventada de dos frases."
+  ]
+}

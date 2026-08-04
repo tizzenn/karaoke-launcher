@@ -18,7 +18,7 @@ rem  Antes de guardar cambios aqui: comprueba que no queda ni un byte
 rem  por encima de 127.
 rem ===================================================================
 setlocal enabledelayedexpansion
-title Preparar Karaoke Launcher
+title Preparar OpenKaraoke Center
 cd /d "%~dp0"
 chcp 65001 >nul 2>&1
 
@@ -64,7 +64,12 @@ if "!PHPEXE!"=="" (
   echo    [  FALTA  ]  PHP          - obligatorio, sin esto no arranca
   set FALTA_PHP=1
 ) else (
-  for /f "tokens=2" %%V in ('"!PHPEXE!" -v 2^>nul ^| findstr /b "PHP"') do set PHPVER=%%V
+  rem  Sin comillas alrededor de !PHPEXE!: si la cadena que ejecuta
+  rem  for /f empieza por una comilla, cmd la confunde con la comilla
+  rem  que envuelve el "/c" entero y suelta un error de sintaxis. Ni
+  rem  php\php.exe ni el "php" del PATH llevan espacios, asi que no
+  rem  hacian falta.
+  for /f "tokens=2" %%V in ('!PHPEXE! -v 2^>nul ^| findstr /b "PHP"') do set PHPVER=%%V
   echo    [    OK   ]  PHP !PHPVER!
 )
 
@@ -90,6 +95,30 @@ if "!FFMPEG!"=="" (
   set FALTA_FFMPEG=1
 ) else (
   echo    [    OK   ]  ffmpeg
+)
+
+rem --------- Reparar rutas absolutas del php.ini portable ---------
+rem  Al instalar PHP, mas abajo, se escribe extension_dir y
+rem  curl.cainfo/openssl.cafile con la ruta absoluta de ESTA carpeta.
+rem  Si la carpeta se copia o se mueve -otro ordenador, otra ruta- esas
+rem  rutas se quedan apuntando al sitio viejo, y mbstring/curl/openssl
+rem  dejan de cargar sin ningun aviso claro hasta que algo los necesita
+rem  de verdad (Modo Show, o cualquier busqueda por https). Antes esto
+rem  solo se arreglaba la primera vez, cuando PHP se acababa de bajar
+rem  aqui; con PHP ya puesto -el caso normal al copiar la carpeta- nunca
+rem  se comprobaba. Se repara cada vez que se ejecuta Preparar.bat,
+rem  haga falta o no descargar algo.
+if exist "php\php.ini" if exist "php\ext" (
+  powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$ini='php\php.ini';" ^
+    "$ext=(Resolve-Path 'php\ext').Path;" ^
+    "$t=Get-Content $ini -Raw;" ^
+    "$t2=$t -replace '(?m)^[ \t]*extension_dir[ \t]*=.*$', ('extension_dir = '+[char]34+$ext+[char]34);" ^
+    "if(Test-Path 'php\cacert.pem'){" ^
+    "  $ca=(Resolve-Path 'php\cacert.pem').Path;" ^
+    "  $t2=$t2 -replace '(?m)^[ \t]*curl\.cainfo[ \t]*=.*$', ('curl.cainfo = '+[char]34+$ca+[char]34);" ^
+    "  $t2=$t2 -replace '(?m)^[ \t]*openssl\.cafile[ \t]*=.*$', ('openssl.cafile = '+[char]34+$ca+[char]34) };" ^
+    "if($t2 -ne $t){ [IO.File]::WriteAllText((Resolve-Path $ini).Path, $t2, (New-Object Text.UTF8Encoding $false)); Write-Host '   [OK] Rutas de php.ini actualizadas a esta carpeta.' }"
 )
 
 echo.

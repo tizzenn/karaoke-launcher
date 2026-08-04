@@ -1,0 +1,54 @@
+{
+  "_leeme": [
+    "El Maestro de ceremonias: seis sonidos y cinco frases.",
+    "",
+    "SONIDOS. Los archivos estan en assets/mc/. Para cambiar uno, sustituye",
+    "el .mp3 por el tuyo con el mismo nombre. Para anadir otro, copia una",
+    "linea aqui y pon el archivo al lado. Si un archivo no esta, su boton",
+    "no aparece — no hay botones muertos.",
+    "",
+    "Son SEIS y no dieciseis a proposito. Un panel de dieciseis botones es",
+    "una mesa de mezclas, y el operador ya tiene bastante con la fiesta.",
+    "",
+    "FRASES. No son grabaciones: las dice el ordenador con la voz del",
+    "sistema. Una grabacion nunca puede decir el nombre de quien canta, y",
+    "\"un aplauso para Marta\" hace en una sala lo que \"un aplauso\" no hace.",
+    "El {quien} se sustituye por el nombre de verdad.",
+    "",
+    "Ninguna frase valora como canta nadie. Esa regla vale aqui tambien:",
+    "esta en docs/DISENO.md, apartado 4. Ojo: \"que grande\" no valora como",
+    "ha cantado, celebra que ha salido. Es la misma diferencia de siempre.",
+    "",
+    "`energia` es cuanto se sube el tono y la velocidad de la voz. 1.0 es",
+    "hablar normal, que en una sala con musica suena a locutor de aeropuerto.",
+    "Entre 1.05 y 1.2 suena a alguien animando. Por encima de 1.3 suena a",
+    "dibujos animados."
+  ],
+
+  "sonidos": [
+    { "archivo": "aplausos",  "nombre": "Aplausos",  "icono": "estrella",   "tecla": "1" },
+    { "archivo": "redoble",   "nombre": "Redoble",   "icono": "musica",     "tecla": "2" },
+    { "archivo": "fanfarria", "nombre": "Fanfarria", "icono": "microfono",  "tecla": "3" },
+    { "archivo": "remate",    "nombre": "Remate",    "icono": "comprobado", "tecla": "4" },
+    { "archivo": "campana",   "nombre": "Atencion",  "icono": "aviso",      "tecla": "5" },
+    { "archivo": "tension",   "nombre": "Tension",   "icono": "fuego",      "tecla": "6" }
+  ],
+
+  "frases": [
+    { "clave": "presenta",
+      "texto": "\u00a1Y con todos vosotros... {quien}!",
+      "cuando": "Justo antes de que empiece", "energia": 1.15 },
+    { "clave": "aplauso",
+      "texto": "\u00a1Un fuerte aplauso para {quien}!",
+      "cuando": "Al terminar", "energia": 1.2 },
+    { "clave": "prepara",
+      "texto": "\u00a1Preparaos, que sale {quien}!",
+      "cuando": "Mientras se acerca al micro", "energia": 1.05 },
+    { "clave": "gracias",
+      "texto": "\u00a1Muchas gracias, {quien}! \u00a1Qu\u00e9 grande!",
+      "cuando": "Cuando alguien baja del escenario", "energia": 1.1 },
+    { "clave": "animo",
+      "texto": "\u00a1Venga, que hay sitio para todos! \u00bfQui\u00e9n se anima?",
+      "cuando": "Cuando quedan pocas canciones", "energia": 1.15 }
+  ]
+}

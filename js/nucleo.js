@@ -78,11 +78,17 @@ KL.estado = {
   openVideo: true, alsoStar: false,
   quality: 'medium', antiCut: true, view: 'full', libCol: true,
   avisoSig: 'der',        // esquina del aviso «después canta»: der, izq o no
-  modo: 'karaoke',        // karaoke | dj | mc — solo cambia color y filtro
-  /* Un sufijo por modo, editable. DJ vacío a propósito: buscar tal cual.
-     Se guardan los tres, no solo el del modo activo, para que cambiar de
-     modo y volver no obligue a reescribirlo. */
-  sufijos: { karaoke:'karaoke', dj:'', freestyle:'instrumental' },
+  modo: 'karaoke',        // karaoke | dj — y nada más (ver js/filtro.js)
+  /* Un filtro por espacio, editable y A LA VISTA desde la v1.2: antes
+     era un «sufijo» escondido en Ajustes, que es lo mismo que no existir.
+     DJ vacío a propósito: quien pincha quiere la canción, no una versión
+     de nada. Se guardan los dos, no solo el del espacio activo, para que
+     cambiar de espacio y volver no obligue a reescribirlo. */
+  sufijos: { karaoke:'karaoke', dj:'' },
+  /* Los perfiles que guarda el operador, por espacio. Los de fábrica NO
+     están aquí: viven en js/filtro.js, que es quien sabe de esto. Aquí
+     solo lo suyo, que es lo único que hay que recordar. */
+  perfiles: { karaoke:[], dj:[] },
   /* Los aplausos duraban 15 segundos y sobraban: la siguiente queda
      PREPARADA y ahí se espera al operador, así que ese rato no lo decide
      el reloj, lo decide él. Cinco bastan para el aplauso. */
@@ -102,10 +108,18 @@ KL.estado = {
   descargas: {},          // vídeos bajándose ahora mismo: {videoId:{pct}}
   cortes: 0,              // veces que el antiparones ha tenido que actuar
   avisoRedHasta: 0,       // hasta cuándo no se vuelve a insistir
+  avisoCopilotoHasta: 0,  // ídem, para el aviso de "hace rato que no piden"
+  ultimaAnadida: Date.now(), // cuándo entró la última canción a la cola de este aparato
   paneles: null,          // cartelones activos en la tele; null = todos
-  panelFijo: null,        // uno fijo, sin rotar
+  show: { reto: null },   // Modo Show: la carta que está en la tele
+  wifi: { ssid:'', clave:'' },  // solo para dibujar el QR de conexión
+  termometro: { on:true, niveles:[] },  // el pulso de la fiesta en la tele
+  ambienteOn: false,      // Cabina DJ encendida en ESTE aparato
   sonidoEn: 'pc',         // 'pc' o 'tele': por dónde salen los altavoces
-  desfaseTele: 0.7,       // segundos que la pantalla pública va por detrás
+  /* Antes 0,7: los segundos que la tele tardaba en arrancar. Ya no hace
+     falta compensar eso —la tele salta a donde va la canción—, así que
+     ahora es una calibración de pantalla y por defecto vale cero. */
+  desfaseTele: 0,
   efecto: 'halo',         // halo | borde | barras | ninguno
   efectoCancion: 1,       // cuánto se nota mientras suena una canción
   efectoCalent: 2.2,      // cuánto se nota en el calentamiento
@@ -135,7 +149,7 @@ KL.estado = {
    del último archivo que se carga, que es justo el que no debería tener
    nada que nadie necesite. Se resuelve tarde —dentro de la función— para
    no obligar a que el almacén esté montado al leer este archivo. */
-KL.api = (url, cuerpo) => KL.almacen.peticion(url, cuerpo);
+KL.api = (url, cuerpo, opc) => KL.almacen.peticion(url, cuerpo, opc);
 
 /* ---- «Qué se está cantando» tiene UN dueño --------------------------
    Aquí había un campo `curId` que se escribía a mano en cinco sitios, y
@@ -158,6 +172,20 @@ Object.defineProperty(KL.estado, 'curId', {
 });
 
 KL.prefs = (function () {
+  /* ── Esta clave NO se renombra, y es una decisión ──────────────────
+     Al pasar a OpenKaraoke Center la tentación era dejarlo todo
+     conjuntado: `okc_prefs_v1` y a correr. Habría costado una migración
+     que hay que mantener para siempre, y el precio de equivocarse lo
+     paga el usuario perdiendo el desfase de la tele, el efecto y el
+     espacio en el que estaba — justo lo que más cuesta volver a ajustar.
+
+     A cambio no gana nadie: esto no se lee, lo lee el navegador. Se
+     renombra lo que la gente ve; lo que solo ve la máquina se queda
+     quieto. Hay una prueba que lo sujeta, porque dentro de un año esto
+     va a parecer un descuido y no lo es.
+
+     El mismo criterio vale para las otras siete claves `karaoke_*`
+     (modo, desfase, efecto, salida de audio, nombre en el móvil…). */
   const CLAVE = 'karaoke_launcher_v1';
   const S = KL.estado;
 
@@ -180,6 +208,7 @@ KL.prefs = (function () {
         }
       }
       if (['pc', 'tele'].includes(d.sonidoEn)) S.sonidoEn = d.sonidoEn;
+      S.ambienteOn = d.ambienteOn === true;
       if (Number.isFinite(+d.desfaseTele)) S.desfaseTele = Math.min(5, Math.max(-5, +d.desfaseTele));
       if (['halo','borde','barras','ninguno'].includes(d.efecto)) S.efecto = d.efecto;
       if (Number.isFinite(+d.efectoCancion)) S.efectoCancion = Math.min(4, Math.max(0, +d.efectoCancion));
@@ -196,7 +225,7 @@ KL.prefs = (function () {
       localStorage.setItem(CLAVE, JSON.stringify({
         quality: S.quality, antiCut: S.antiCut, openVideo: S.openVideo,
         view: S.view, autoNext: S.autoNext, libCol: S.libCol,
-        avisoSig: S.avisoSig, modo: S.modo, sufijos: S.sufijos, segFin: S.segFin, segLlamada: S.segLlamada, retirar: S.retirar,
+        avisoSig: S.avisoSig, modo: S.modo, ambienteOn: S.ambienteOn, sufijos: S.sufijos, segFin: S.segFin, segLlamada: S.segLlamada, retirar: S.retirar,
         sonidoEn: S.sonidoEn, desfaseTele: S.desfaseTele,
         efecto: S.efecto, efectoCancion: S.efectoCancion, efectoCalent: S.efectoCalent
       }));

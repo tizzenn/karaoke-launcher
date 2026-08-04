@@ -9,12 +9,49 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 :root{
-  --bg:#0d0f14; --bg2:#141821; --bg3:#1b2029; --bg4:#252b38;
-  --line:#2b323f; --line2:#39424f;
-  --txt:#eaedf3; --txt2:#98a1b2; --txt3:#6a7383;
+  /* Paleta de Clásico repensada (2026-08-03, a petición explícita):
+     grafito cálido en vez de azul-carbón por defecto, blanco cálido en
+     vez de blanco frío de pantalla. El objetivo es que se sienta como un
+     salón bien iluminado de noche, no como el panel de estado de un
+     servidor. Mismo contraste, mismo número de pasos — solo cambia el
+     tinte elegido en cada uno. */
+  --bg:#121316; --bg2:#1a1b1f; --bg3:#232428; --bg4:#2b2c31;
+  --line:#2e2f34; --line2:#3a3b41;
+  --txt:#f0efec; --txt2:#a8a6a0; --txt3:#726f68;
   --star:#ffc94d; --dang:#ff5d6c; --info:#4da3ff;
+  /* Escala de radios. Antes había ocho valores sueltos (1, 3, 6, 7, 8, 9,
+     10, 11, 12, 14, 16px) repartidos por los dos archivos sin ninguno
+     declarado — ni siquiera este --r, que existía y no se usaba en
+     ningún sitio. Se centralizan aquí los dos que más se repetían
+     (9px y el círculo de las píldoras); el resto de valores puntuales se
+     dejan como estaban: cambiarlos a ciegas, sin ver la interfaz
+     renderizada, es más riesgo del que vale un radio de borde. */
+  --r-sm:9px; --r-pill:999px;
   --r:12px; --sh:0 20px 60px rgba(0,0,0,.6);
   /* Sombra corta para relieves pequeños, y el aro del foco de teclado. */
+  --bg-cab:#1c1d21;      /* el borde alto del degradado de la cabecera */
+
+  /* Los avisos tenían sus colores escritos a mano en cinco sitios, y por
+     eso un tema claro los dejaba ilegibles: rosa pálido sobre crema.
+     Aquí están, y aquí los cambia un tema. */
+  --avi:#ffb648;         /* atención */
+  --avi-txt:#ffcf9a;  --avi-d:#3a1f0c;  --avi-line:#7a4515;
+  --dang-txt:#ffc4ca;  --dang-d:#2a1418;  --dang-line:#5c2a31;
+  --avi-d2:#2b2415;    --avi-line2:#584a22;   /* la banda de «la red va justa» */
+  /* Los cinco momentos de la fiesta. Van aquí y no en el termómetro
+     porque son colores, y los colores los manda el tema: cualquiera de
+     los cuatro puede cambiarlos sin tocar el componente.
+
+     El orden NO es un semáforo. No hay ningún momento «malo»: el verde
+     claro del principio es «hay sitio», no «va mal», y el naranja del
+     final es «qué buen ambiente», no «peligro». Si algún día alguien
+     pone rojo en el último, habrá convertido esto en una alarma. */
+  --tm-0:#7ecb92;   /* Empezando   — verde claro, hay sitio */
+  --tm-1:#22d97a;   /* Animándose  — verde */
+  --tm-2:#4da3ff;   /* En marcha   — azul */
+  --tm-3:#a78bfa;   /* Muy animada — morado */
+  --tm-4:#ff9f43;   /* A tope      — naranja cálido */
+
   --sh1:0 1px 2px rgba(0,0,0,.4);
   --sh2:0 6px 20px rgba(0,0,0,.35);
 }
@@ -28,20 +65,22 @@
    El acento se reserva para lo que suena y para la acción principal. Si
    lo lleva todo, deja de significar nada.                              */
 
+/* Esmeralda profundo en vez de verde de botón de confirmar, y violeta
+   apagado en vez de morado brillante: el mismo papel (acento de
+   espacio), un tono más grave y menos "interfaz web genérica". */
 :root,
 html[data-modo="karaoke"]{
-  --ac-claro:#2ee888; --ac:#22d97a; --ac2:#18b464; --ac-oscuro:#0a8a4b;
-  --ac-d:#0d3d24; --ac-txt:#052b16; --ac-rgb:34,217,122;
+  --ac-claro:#39c084; --ac:#2ba86f; --ac2:#1f7d53; --ac-oscuro:#155c3c;
+  --ac-d:#0f2e21; --ac-txt:#06231a; --ac-rgb:43,168,111;
 }
 html[data-modo="dj"]{
-  --ac-claro:#a78bfa; --ac:#8b5cf6; --ac2:#6d3ff0; --ac-oscuro:#4c1fbf;
-  --ac-d:#241640; --ac-txt:#f6f2ff; --ac-rgb:139,92,246;
+  --ac-claro:#9a82e0; --ac:#7c5cd6; --ac2:#5c3fb0; --ac-oscuro:#3f2a86;
+  --ac-d:#211a3d; --ac-txt:#f6f2ff; --ac-rgb:124,92,214;
 }
-html[data-modo="mc"],
-html[data-modo="freestyle"]{
-  --ac-claro:#ffb56b; --ac:#ff9f43; --ac2:#f08a24; --ac-oscuro:#b35f0a;
-  --ac-d:#3d2a10; --ac-txt:#2b1500; --ac-rgb:255,159,67;
-}
+/* El naranja era del tercer espacio, Freestyle, que ya no existe: hacía
+   lo mismo que Karaoke con otra palabra de búsqueda, y eso ahora es un
+   campo de texto. Los nombres viejos guardados caen en Karaoke, así que
+   este bloque no lo pedía ya nadie. */
 :root{ --aro:0 0 0 3px rgba(var(--ac-rgb),.32) }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -56,7 +95,7 @@ button{cursor:pointer}
 /* Solo con teclado: quien usa el ratón no ve aros, quien navega con
    Tab sabe siempre dónde está. */
 :focus-visible{outline:none;box-shadow:var(--aro)}
-.it:focus-visible,button:focus-visible,input:focus-visible{border-radius:9px}
+.it:focus-visible,button:focus-visible,input:focus-visible{border-radius:var(--r-sm)}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#3a4250;border-radius:8px;border:2px solid transparent;background-clip:content-box}
@@ -75,7 +114,7 @@ button{cursor:pointer}
 /* ---- Botones ---------------------------------------------------------- */
 .btn{
   background:linear-gradient(180deg,var(--ac-claro),var(--ac));color:var(--ac-txt);
-  border:none;padding:12px 22px;border-radius:999px;font-weight:800;font-size:14px;
+  border:none;padding:12px 22px;border-radius:var(--r-pill);font-weight:800;font-size:14px;
   white-space:nowrap;transition:.15s;box-shadow:var(--sh1);
   display:inline-flex;align-items:center;justify-content:center;gap:8px
 }
@@ -126,7 +165,7 @@ button{cursor:pointer}
 .fld label{display:block;font-size:12.5px;font-weight:700;color:var(--txt2);margin-bottom:6px}
 .fld input[type=text],.fld input[type=password],.fld input[type=number],.fld select{
   width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--line);
-  border-radius:9px;font-size:14px;outline:none}
+  border-radius:var(--r-sm);font-size:14px;outline:none}
 .fld input:focus,.fld select:focus{border-color:var(--ac)}
 .fld .h{font-size:11.5px;color:var(--txt3);margin-top:7px;line-height:1.6}
 .sw{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--txt2);cursor:pointer;margin-bottom:10px}
@@ -147,7 +186,7 @@ button{cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 #toast{position:fixed;left:50%;bottom:98px;transform:translateX(-50%) translateY(18px);
-  background:var(--bg4);border:1px solid var(--line2);padding:12px 22px;border-radius:999px;
+  background:var(--bg4);border:1px solid var(--line2);padding:12px 22px;border-radius:var(--r-pill);
   font-size:13.5px;font-weight:700;box-shadow:var(--sh);opacity:0;pointer-events:none;
   transition:.22s;z-index:90;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -161,3 +200,4 @@ button{cursor:pointer}
 #buf .sp{margin-bottom:12px}
 #buf b{display:block;font-size:14px;margin-bottom:4px}
 #buf span{font-size:12px;color:var(--txt3)}
+

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guía de OpenKaraoke Center — montar tu karaoke paso a paso</title>
+<style>
+  :root{
+    --bg:#0e1016; --bg2:#161a24; --bg3:#1e2330; --line:#2b3243;
+    --txt:#e9ebf2; --txt2:#aeb6c6; --txt3:#727c92;
+    --ac:#3ecf8e; --av:#ffb020; --mal:#ff6b6b; --az:#7cc4ff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px 90px}
+
+  header.top{
+    padding:70px 0 40px; text-align:center;
+    border-bottom:1px solid var(--line); margin-bottom:10px;
+  }
+  header.top .em{font-size:58px;line-height:1}
+  h1{font-size:38px;line-height:1.15;margin:14px 0 10px;letter-spacing:-.6px}
+  .lead{color:var(--txt2);font-size:19px;max-width:56ch;margin:0 auto}
+
+  nav.indice{
+    background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+    padding:22px 26px;margin:34px 0 10px;
+  }
+  nav.indice b{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--txt3)}
+  nav.indice ol{margin:12px 0 0;padding-left:22px}
+  nav.indice li{margin:7px 0}
+  nav.indice a{color:var(--az);text-decoration:none}
+  nav.indice a:hover{text-decoration:underline}
+
+  h2{
+    font-size:27px;margin:64px 0 6px;letter-spacing:-.3px;
+    padding-top:14px;border-top:1px solid var(--line);
+  }
+  h2 .n{
+    display:inline-block;min-width:38px;height:38px;line-height:38px;
+    text-align:center;background:var(--ac);color:#06120c;border-radius:10px;
+    font-size:18px;font-weight:800;margin-right:12px;
+  }
+  h3{font-size:20px;margin:36px 0 4px}
+  p{margin:14px 0}
+  .sub{color:var(--txt3);margin:2px 0 20px;font-size:15.5px}
+
+  ol.pasos{counter-reset:p;list-style:none;padding:0;margin:22px 0}
+  ol.pasos>li{
+    counter-increment:p;position:relative;padding:0 0 26px 46px;
+    border-left:2px solid var(--line);margin-left:14px;
+  }
+  ol.pasos>li:last-child{border-left-color:transparent;padding-bottom:4px}
+  ol.pasos>li::before{
+    content:counter(p);position:absolute;left:-15px;top:0;
+    width:28px;height:28px;border-radius:50%;background:var(--bg3);
+    border:2px solid var(--line);color:var(--txt2);
+    font-size:13px;font-weight:800;text-align:center;line-height:25px;
+  }
+  ol.pasos>li>b{display:block;font-size:17.5px;margin-bottom:2px}
+
+  .caja{border-radius:12px;padding:18px 22px;margin:24px 0;border-left:4px solid}
+  .caja p:first-child{margin-top:0} .caja p:last-child{margin-bottom:0}
+  .ojo{background:rgba(255,176,32,.10);border-color:var(--av)}
+  .bien{background:rgba(62,207,142,.10);border-color:var(--ac)}
+  .info{background:rgba(124,196,255,.10);border-color:var(--az)}
+  .caja b{color:inherit}
+
+  code,kbd{
+    background:var(--bg3);padding:2px 8px;border-radius:6px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;
+  }
+  kbd{border:1px solid var(--line);border-bottom-width:2px}
+  pre{
+    background:#070910;border:1px solid var(--line);border-radius:11px;
+    padding:16px 20px;overflow:auto;font-size:14px;line-height:1.6;color:#c9d0de;
+  }
+
+  table{width:100%;border-collapse:collapse;margin:22px 0;font-size:15.5px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--txt3);font-size:12.5px;letter-spacing:.7px;text-transform:uppercase}
+
+  .tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin:24px 0}
+  .tj{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .tj .ic{font-size:26px}
+  .tj b{display:block;margin:8px 0 3px}
+  .tj span{color:var(--txt2);font-size:14.5px;line-height:1.6}
+
+  details{background:var(--bg2);border:1px solid var(--line);border-radius:11px;
+          padding:14px 20px;margin:16px 0}
+  summary{cursor:pointer;font-weight:700;color:var(--az)}
+  details[open] summary{margin-bottom:10px}
+
+  a{color:var(--az)}
+  footer{margin-top:70px;padding-top:26px;border-top:1px solid var(--line);
+         color:var(--txt3);font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="em">🎤</div>
+  <h1>Monta tu karaoke</h1>
+  <p class="lead">
+    Todo lo que hace falta saber, sin dar nada por sabido. Si no has
+    instalado un programa así en tu vida, esta guía está escrita para ti.
+  </p>
+</header>
+
+<nav class="indice">
+  <b>Lo que vas a hacer</b>
+  <ol>
+    <li><a href="#instalar">Instalarlo en el ordenador</a> — 10 minutos, una vez</li>
+    <li><a href="#tele">Conectar la tele</a></li>
+    <li><a href="#clave">La clave de YouTube</a> — 10 minutos, una vez, gratis</li>
+    <li><a href="#moviles">Que pidan canciones desde el móvil</a></li>
+    <li><a href="#pwa">Ponerlo como si fuera una app</a></li>
+    <li><a href="#fiesta">La noche de la fiesta</a></li>
+    <li><a href="#problemas">Si algo no va</a></li>
+  </ol>
+</nav>
+
+<div class="caja info">
+  <p><b>Antes de empezar, lo importante:</b> esto no se instala en el
+  sistema. Todo vive dentro de una carpeta. No toca el registro de
+  Windows, no cambia nada de tu ordenador y no deja rastro. <b>Para
+  desinstalarlo, borras la carpeta.</b> Ya está.</p>
+</div>
+
+
+<h2 id="instalar"><span class="n">1</span>Instalarlo</h2>
+<p class="sub">Diez minutos y no vuelves a hacerlo nunca.</p>
+
+<ol class="pasos">
+  <li>
+    <b>Deja la carpeta donde quieras</b>
+    <p>El Escritorio vale. Lo único que importa es que <b>no esté dentro de
+    OneDrive, Dropbox o Google Drive</b>: esos programas sincronizan
+    archivos mientras los usas y pueden dar problemas en mitad de una
+    fiesta. Una carpeta normal en el Escritorio o en Documentos.</p>
+  </li>
+  <li>
+    <b>Doble clic en <code>Preparar.bat</code></b>
+    <p>Se abre una ventana negra. Eso es normal y es buena señal. Mira lo
+    que le falta al ordenador y te pregunta si lo descarga.</p>
+    <p>Contesta <kbd>S</kbd> y espera. Puede tardar unos minutos: si
+    hay que bajarlo todo son unos 200 MB.</p>
+  </li>
+  <li>
+    <b>Si Windows te avisa</b>
+    <p>Puede salir un cartel azul que dice <i>«Windows protegió tu PC»</i>.
+    No es que el programa sea peligroso: es que no tiene un certificado de
+    empresa, que cuesta cientos de euros al año.</p>
+    <p>Pulsa <b>Más información</b> y luego <b>Ejecutar de todas formas</b>.</p>
+  </li>
+  <li>
+    <b>Doble clic en <code>Karaoke.bat</code></b>
+    <p>Se abre otra ventana negra y, detrás, el navegador con el karaoke.</p>
+  </li>
+</ol>
+
+<div class="caja ojo">
+  <p><b>La ventana negra no se cierra.</b> Es el programa. Si la cierras,
+  el karaoke se apaga. Déjala minimizada toda la noche.</p>
+</div>
+
+<h3>¿Y qué son esas cosas que descarga?</h3>
+<table>
+  <tr><th>Qué</th><th>Para qué</th><th>¿Obligatorio?</th></tr>
+  <tr><td><b>PHP</b></td><td>El motor. Sin esto no arranca.</td><td>Sí</td></tr>
+  <tr><td><b>yt-dlp</b></td><td>Guardar canciones en el disco para cantar sin internet.</td><td>No</td></tr>
+  <tr><td><b>ffmpeg</b></td><td>Junta el vídeo y el sonido de lo que baja yt-dlp.</td><td>No</td></tr>
+  <tr><td><b>Certificados</b></td><td>Para que el programa pueda hablar con Google.</td><td>Sí</td></tr>
+</table>
+
+<div class="caja ojo">
+  <p><b>Si ya tenías PHP instalado en el ordenador</b>, <code>Preparar.bat</code>
+  lo detecta y se salta esa parte — pero entonces no le pone los
+  certificados, y la búsqueda falla echándole la culpa a la wifi. Si te
+  pasa, abre <code>qa.php</code> (más abajo te explico) y te lo dirá con
+  todas las letras.</p>
+</div>
+
+
+<h2 id="tele"><span class="n">2</span>Conectar la tele</h2>
+<p class="sub">Un portátil y una tele. Es el montaje del 90 % de las fiestas.</p>
+
+<ol class="pasos">
+  <li>
+    <b>Conecta el cable HDMI</b> del portátil a la tele.
+  </li>
+  <li>
+    <b>Pon Windows en modo «Extender»</b>
+    <p>Pulsa <kbd>Windows</kbd> + <kbd>P</kbd> y elige <b>Extender</b>.
+    Esto es lo más importante de todo: si eliges «Duplicar», la tele
+    enseñará lo mismo que el portátil y verás la consola del operador
+    delante de todo el mundo.</p>
+  </li>
+  <li>
+    <b>En el karaoke, pulsa el botón de la segunda pantalla</b>
+    <p>Es el icono de la tele, arriba a la derecha. Se abre una ventana
+    nueva.</p>
+  </li>
+  <li>
+    <b>Arrastra esa ventana a la tele</b> y pulsa la tecla <kbd>F</kbd>
+    para que ocupe toda la pantalla.
+  </li>
+</ol>
+
+<div class="caja bien">
+  <p><b>Cómo saber que va bien:</b> en la tele se ve el vídeo y las
+  canciones que vienen; en el portátil, tu puesto de mando. Son dos cosas
+  distintas y esa es la gracia.</p>
+</div>
+
+<h3>El sonido</h3>
+<p>Lo normal es que salga por la tele, que suele tener mejores altavoces.
+En <b>Ajustes → Este aparato → «El sonido sale por…»</b> le dices cuál de
+las dos manda. La otra pantalla se queda muda pero sigue reproduciendo
+—eso es a propósito, así van las dos sincronizadas.</p>
+
+
+<h2 id="clave"><span class="n">3</span>La clave de YouTube</h2>
+<p class="sub">Es gratis, se hace una vez y nunca sale de tu ordenador.</p>
+
+<p>Para buscar canciones escribiendo su nombre, YouTube pide una
+«clave». Es gratuita y se saca en unos diez minutos.</p>
+
+<div class="caja bien">
+  <p><b>Puedes empezar sin ella.</b> Si copias la dirección de un vídeo de
+  YouTube y la pegas en el buscador, la canción se añade igual — eso no
+  pasa por la clave y funciona desde el primer minuto. La clave solo hace
+  falta para buscar <i>escribiendo</i>.</p>
+</div>
+
+<ol class="pasos">
+  <li>
+    <b>Entra en <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a></b>
+    <p>Con tu cuenta de Google de siempre, la del correo. No hace falta
+    poner ninguna tarjeta.</p>
+  </li>
+  <li>
+    <b>Crea un proyecto</b>
+    <p>Arriba, donde pone <i>Seleccionar proyecto</i> → <b>Proyecto
+    nuevo</b>. El nombre da igual: «Karaoke» sirve.</p>
+  </li>
+  <li>
+    <b>Activa la API de YouTube</b>
+    <p>En el menú de la izquierda: <b>API y servicios → Biblioteca</b>.
+    Busca <b>YouTube Data API v3</b> y pulsa <b>Habilitar</b>.</p>
+  </li>
+  <li>
+    <b>Crea la clave</b>
+    <p><b>API y servicios → Credenciales → Crear credenciales → Clave de
+    API</b>. Te sale un texto largo que empieza por <code>AIza…</code>.
+    Cópialo.</p>
+  </li>
+  <li>
+    <b>Pégala en el karaoke</b>
+    <p><b>Ajustes → Clave de YouTube</b>. Pégala y pulsa <b>Guardar</b>.
+    Hay un botón para probarla ahí mismo.</p>
+  </li>
+</ol>
+
+<h3>¿Cuánto dura? Esto conviene saberlo</h3>
+<p>Google da <b>10.000 puntos al día</b> y cada búsqueda cuesta 100. Eso
+son <b>unas 99 búsquedas diarias</b>, y a medianoche vuelve a cero.</p>
+<p>Parece poco y para una fiesta suele sobrar, porque el programa hace
+tres cosas para no gastar:</p>
+<div class="tarjetas">
+  <div class="tj"><div class="ic">💾</div><b>Se acuerda</b>
+    <span>Buscar dos veces lo mismo solo se paga una. Las búsquedas se
+    guardan un mes.</span></div>
+  <div class="tj"><div class="ic">🔗</div><b>Los enlaces son gratis</b>
+    <span>Pegar la dirección de un vídeo no gasta ni un punto.</span></div>
+  <div class="tj"><div class="ic">📊</div><b>Te lo cuenta</b>
+    <span>En <code>qa.php</code> ves cuánto llevas gastado hoy.</span></div>
+</div>
+
+<div class="caja info">
+  <p><b>Tu clave no sale de tu ordenador.</b> Se guarda en un archivo
+  dentro de la carpeta y solo la usa tu propio ordenador para hablar con
+  Google. Los invitados nunca la ven.</p>
+</div>
+
+
+<h2 id="moviles"><span class="n">4</span>Que pidan desde el móvil</h2>
+<p class="sub">Es lo que convierte esto en una fiesta y no en un reproductor.</p>
+
+<p>Cada invitado abre una página en su móvil, busca su canción y la pide.
+Aparece en tu cola con su nombre. No tienen que instalar nada.</p>
+
+<p>Pulsa el botón del móvil en la barra de arriba y salen <b>dos códigos
+QR</b>. El orden importa:</p>
+
+<ol class="pasos">
+  <li>
+    <b>QR 1 — Conectarse al wifi</b>
+    <p>Apuntan la cámara y el móvil se conecta a tu red solo, sin que
+    tengas que dictar una contraseña de veinte letras con la música
+    puesta. Para que este QR funcione, pon el nombre y la clave de tu wifi
+    en <b>Ajustes → Wifi</b>.</p>
+  </li>
+  <li>
+    <b>QR 2 — Pedir canciones</b>
+    <p>Este abre la página de pedir. <b>No sirve de nada si antes no están
+    en tu wifi</b>, y ese es el paso donde se atasca todo el mundo.</p>
+  </li>
+</ol>
+
+<div class="caja ojo">
+  <p><b>Tienen que estar en tu wifi.</b> No en los datos del móvil. La
+  página vive en tu ordenador, no en internet — por eso funciona aunque se
+  caiga la conexión, y por eso hay que estar en la misma red.</p>
+</div>
+
+
+<h2 id="pwa"><span class="n">5</span>Ponerlo como si fuera una app</h2>
+<p class="sub">Opcional, pero queda mucho mejor y evita accidentes.</p>
+
+<p>Se puede «instalar» cada pantalla como si fuera un programa: con su
+icono, su ventana propia y <b>sin la barra de direcciones del navegador</b>.
+Eso último importa más de lo que parece — evita que alguien cierre la
+pestaña del karaoke sin querer.</p>
+
+<h3>En el ordenador (Chrome o Edge)</h3>
+<p>Con el karaoke abierto, mira el <b>lado derecho de la barra de
+direcciones</b>. Hay un iconito de una pantalla con una flecha hacia
+abajo, o un <b>+</b>. Púlsalo y luego <b>Instalar</b>.</p>
+<p>Si no lo ves: menú de tres puntos → <b>Guardar y compartir</b> →
+<b>Instalar página como aplicación</b>.</p>
+
+<h3>En el móvil de un invitado</h3>
+<p>La página de pedir también se puede instalar, y para alguien que vaya a
+pedir cuatro canciones en la noche va muy bien.</p>
+<table>
+  <tr><th>Móvil</th><th>Cómo</th></tr>
+  <tr><td><b>Android</b> (Chrome)</td>
+      <td>Menú de tres puntos → <b>Añadir a pantalla de inicio</b></td></tr>
+  <tr><td><b>iPhone</b> (Safari)</td>
+      <td>Botón de compartir (el cuadrado con la flecha) → <b>Añadir a
+      pantalla de inicio</b>. En iPhone <b>tiene que ser Safari</b>: desde
+      Chrome no aparece la opción.</td></tr>
+</table>
+
+<details>
+  <summary>¿Qué es una PWA y por qué esto no necesita la tienda de aplicaciones?</summary>
+  <p>Una PWA es una página web que el móvil trata como si fuera una app:
+  icono propio, pantalla completa y funciona aunque falle la conexión.</p>
+  <p>La ventaja aquí es doble. No hay que publicar nada en Google Play ni
+  en la App Store —lo que significa que no hay revisiones, ni cuotas, ni
+  que nadie pueda retirarla— y tus invitados no tienen que descargar
+  nada. Y como la página está guardada en el móvil, si el router
+  parpadea a mitad de fiesta la pantalla no se queda en blanco.</p>
+</details>
+
+<div class="caja info">
+  <p><b>Las tres pantallas se instalan por separado:</b> el operador, la
+  del público y la de pedir. Puedes tener el operador como app en el
+  portátil y la del público como app en un mini PC conectado a la tele.</p>
+</div>
+
+
+<h2 id="fiesta"><span class="n">6</span>La noche de la fiesta</h2>
+<p class="sub">Lo que va a pasar, en orden.</p>
+
+<p>El programa te dice en todo momento en qué punto estás. Arriba del
+todo hay una franja que va cambiando sola:</p>
+
+<div class="tarjetas">
+  <div class="tj"><div class="ic">🔥</div><b>Calentamiento</b>
+    <span>Suena música y la gente va pidiendo. Coloca pantallas y micros.</span></div>
+  <div class="tj"><div class="ic">🎤</div><b>Actuación en curso</b>
+    <span>Deja el portátil. Mira a la sala.</span></div>
+  <div class="tj"><div class="ic">🎵</div><b>Preparando la siguiente</b>
+    <span>Cuando esté delante del micro, dale a Empezar.</span></div>
+  <div class="tj"><div class="ic">👋</div><b>Fin de fiesta</b>
+    <span>No queda nadie en la cola.</span></div>
+</div>
+
+<h3>Lo que haces tú</h3>
+<ol class="pasos">
+  <li><b>Enciendes el calentamiento</b>
+    <p>Botón de la llama. La tele explica cómo pedir canciones y va
+    enseñando la cola en directo. Mientras, suena la música de fondo.</p></li>
+  <li><b>La gente pide desde el móvil</b>
+    <p>Tú ordenas la lista arrastrando, corriges algún nombre y hablas con
+    la gente. Poco más.</p></li>
+  <li><b>Colocas al primero delante del micro</b></li>
+  <li><b>Pulsas EMPEZAR</b>
+    <p>El botón grande. La consola desaparece y el portátil se convierte
+    en un monitor de letra a pantalla completa.</p></li>
+  <li><b>Al acabar la canción, la consola vuelve sola</b>
+    <p>No hay que cerrar nada ni acordarse de nada.</p></li>
+  <li><b>Y otra vez</b>
+    <p>Colocas al siguiente y pulsas Empezar. Toda la noche es eso.</p></li>
+</ol>
+
+<div class="caja bien">
+  <p><b>La regla que no se rompe:</b> en el karaoke una canción
+  <b>nunca</b> arranca sola. Siempre espera a que tú le des. Es para que
+  nadie se vea empujado al micro antes de estar listo.</p>
+  <p>En la <b>Cabina DJ</b> pasa lo contrario y también a propósito: allí
+  nadie canta, así que las canciones se encadenan solas y no hay silencios.</p>
+</div>
+
+<h3>Cantar sin internet</h3>
+<p>Si la wifi de tu casa va justa, puedes descargar las canciones antes de
+la fiesta: la flechita que sale al lado de cada una. Se guardan en el
+disco y suenan aunque se caiga la conexión. Requiere yt-dlp, que instala
+<code>Preparar.bat</code>.</p>
+
+
+<h2 id="problemas"><span class="n">7</span>Si algo no va</h2>
+<p class="sub">Empieza siempre por el mismo sitio.</p>
+
+<div class="caja info">
+  <p><b>Abre <code>qa.php</code>.</b> Con el karaoke arrancado, escribe en
+  el navegador:</p>
+  <pre>http://localhost:8123/qa.php</pre>
+  <p>Esa página revisa tu ordenador —versión de PHP, permisos, archivos,
+  certificados, cuánta cuota de YouTube te queda— y te dice en rojo lo que
+  esté mal <b>y qué hacer</b>. Si algo sale en rojo, arréglalo antes de
+  seguir buscando: lo demás serán consecuencias de eso.</p>
+</div>
+
+<table>
+  <tr><th>Lo que ves</th><th>Qué es</th></tr>
+  <tr><td>La ventana negra se cierra sola</td>
+      <td>Falta PHP. Ejecuta <code>Preparar.bat</code>.</td></tr>
+  <tr><td>Busco y no encuentra nada</td>
+      <td>Falta la clave de YouTube, o se ha agotado la cuota de hoy.
+      Mientras tanto, pega enlaces.</td></tr>
+  <tr><td>«No he podido contactar con YouTube»</td>
+      <td>Faltan los certificados. Ejecuta <code>Preparar.bat</code> otra vez.</td></tr>
+  <tr><td>El móvil no abre la página de pedir</td>
+      <td>No está en tu wifi. Que escanee primero el QR del wifi.</td></tr>
+  <tr><td>La tele va con retraso</td>
+      <td><b>Ajustes → Avanzado → Calibración</b>. Solo hace falta si la
+      tele tiene modo cine o hay una barra de sonido de por medio.</td></tr>
+  <tr><td>Una pantalla en blanco</td>
+      <td>No debería pasar nunca. Si pasa, el motivo queda apuntado en
+      <code>data\errores.log</code>.</td></tr>
+</table>
+
+<h3>Antes de irte a dormir</h3>
+<p><b>Ajustes → Exportar copia.</b> Es un archivo pequeño con tu
+biblioteca y tus ajustes. Te ahorra un disgusto el día que cambies de
+ordenador.</p>
+
+
+<footer>
+  <p><b>OpenKaraoke Center.</b> No necesita internet para funcionar —solo
+  para buscar en YouTube—, no manda tus datos a ninguna parte y no lleva
+  publicidad. Todo lo que guarda está en la carpeta <code>data</code>.</p>
+  <p>Para lo que esta guía no cubre: <code>PRUEBAS.md</code> es la lista de
+  comprobación de veinte minutos antes de una fiesta de verdad, y
+  <code>docs/BUSQUEDA.md</code> explica cómo afinar las búsquedas.</p>
+</footer>
+
+</div>
+</body>
+</html>

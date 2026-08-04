@@ -44,8 +44,10 @@ KL.comandos = (function () {
 
     /* ── La cola ─────────────────────────────────────────────────── */
 
-    anadirALaCola: video =>
-      enviar({ accion: 'anadir_cola', video }),
+    /* El espacio va con la canción: cada uno tiene su cola y una canción
+       pedida desde la Cabina DJ no debe aparecer en la del karaoke. */
+    anadirALaCola: (video, espacio) =>
+      enviar({ accion: 'anadir_cola', video, espacio: espacio || KL.estado.modo }),
 
     quitarDeLaCola: id =>
       enviar({ accion: 'quitar_cola', id }),
@@ -57,8 +59,14 @@ KL.comandos = (function () {
     ordenarLaCola: orden =>
       enviar({ accion: 'ordenar_cola', orden }),
 
-    vaciarLaCola: () =>
-      enviar({ accion: 'vaciar_cola' }),
+    /* Vacía SOLO el espacio en el que estás. */
+    vaciarLaCola: espacio =>
+      enviar({ accion: 'vaciar_cola', espacio: espacio || KL.estado.modo }),
+
+    /* En qué espacio está la fiesta. Es compartido, no una preferencia de
+       este aparato: la tele tiene que enseñar la cola que corresponde. */
+    cambiarDeEspacio: espacio =>
+      enviar({ accion: 'espacio', espacio }),
 
     /* ── La biblioteca ───────────────────────────────────────────── */
 
@@ -74,11 +82,21 @@ KL.comandos = (function () {
       enviar({ accion: 'reemplazar_biblioteca', biblioteca }),
 
     /* Cambia campos sueltos de una pista esté donde esté —cola,
-       biblioteca o las dos—. `local:null` es «ya no está descargada»,
-       y hay que distinguirlo de «no me consta»: por eso se manda el
-       objeto de campos tal cual y no se filtran los nulos. */
+       biblioteca o las dos—: título, canal, carátula, duración.
+
+       `local` NO está entre ellos y no se puede mandar. Si una canción
+       está descargada o no lo dice el disco, y el servidor lo mira en
+       cada lectura. Hubo un `local: null` viajando por aquí y fue el
+       origen de dos fallos seguidos con el icono de descargada. */
     actualizarPista: (videoId, campos) =>
       enviar(Object.assign({ accion: 'actualizar_pista', videoId }, campos)),
+
+    /* Pedir que se vuelva a mirar el disco. No cambia ningún campo: sube
+       la versión del estado, y eso basta para que todas las pantallas
+       vuelvan a leer y recalculen si el archivo sigue ahí. Es lo que se
+       usa después de borrar una descarga. */
+    refrescarPista: videoId =>
+      enviar({ accion: 'actualizar_pista', videoId }),
 
     /* ── La actuación ────────────────────────────────────────────── */
 
@@ -102,13 +120,24 @@ KL.comandos = (function () {
     vaciarElHistorial: () =>
       enviar({ accion: 'vaciar_historial' }),
 
+    /* La carta de reto del Modo Show. Se manda el TEXTO ya elegido y no
+       «dame una carta»: quien elige es el operador, que la lee antes de
+       enseñársela a la sala. El servidor solo la reparte. */
+    sacarCarta: texto =>
+      enviar({ accion: 'show', reto: { texto: String(texto || '') } }),
+
+    retirarCarta: () =>
+      enviar({ accion: 'show', reto: null }),
+
     /* ── La pantalla del público ─────────────────────────────────── */
 
     calentamiento: activo =>
       enviar({ accion: 'calentamiento', activo: !!activo }),
 
-    /* `fijo` es el cartelón que se queda quieto; null vuelve a rotar. */
-    cartelones: (paneles, fijo) =>
-      enviar({ accion: 'paneles', paneles, fijo: fijo || null })
+    /* La lista de cartelones activos. Lista vacía = ninguno, y es una
+       elección legítima: deja la tele con el cartel de espera limpio.
+       Uno solo = ese, quieto. No hace falta nada más. */
+    cartelones: paneles =>
+      enviar({ accion: 'paneles', paneles })
   };
 })();

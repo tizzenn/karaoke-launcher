@@ -1,0 +1,33 @@
+{
+  "name": "OpenKaraoke Center · Pedir cancion",
+  "short_name": "Pedir",
+  "description": "Busca una cancion y mandala a la cola. Nada mas.",
+  "start_url": "./pedir.php",
+  "scope": "./",
+  "id": "./pedir.php",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1E2329",
+  "theme_color": "#5A8DEE",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "iconos/icono-pedir-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iconos/icono-pedir-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iconos/icono-pedir-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

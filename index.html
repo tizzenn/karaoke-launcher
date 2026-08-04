@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d0f14">
-<title>🎤 Operador · Karaoke Launcher</title>
+<title>🎤 Operador · OpenKaraoke Center</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="iconos/icono-192.png">
 <link rel="icon" href="iconos/icono.svg">
 
 <!-- Los estilos van en tres archivos y en este orden: base define las
@@ -13,7 +14,9 @@
      interpretacion lo que pasa cuando alguien canta. Ninguno escribe un
      color literal; todos salen de las variables de base.css. -->
 <link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/temas.css">
 <link rel="stylesheet" href="css/operador.css">
+<link rel="stylesheet" href="css/ahora.css">
 <link rel="stylesheet" href="css/interpretacion.css">
 </head>
 <body data-pantalla="operador" data-evento="ESPERA">
@@ -22,6 +25,7 @@
      análisis de la página, así que cuando el navegador llega al primer
      <use href="#…"> ya están disponibles. El porqué de que sea un .js y
      no un .svg externo está explicado dentro del archivo. -->
+<script>window.KL_SOY = 'operador';</script>
 <script src="js/simbolos.js"></script>
 
 <div id="app">
@@ -29,45 +33,128 @@
   <header>
     <div class="logo">
       <span class="m"><svg class="ic" aria-hidden="true"><use href="#ic-microfono"></use></svg></span>
-      <span class="titulo">Karaoke Launcher<small>v1.1</small></span>
+      <span class="titulo">OpenKaraoke Center<small>v1.1</small></span>
+      <!-- Cuál de las ventanas es esta. Parece de más hasta que alguien
+           monta esto por primera vez con tres abiertas y no sabe en cuál
+           tiene que buscar los botones. -->
+      <span class="soy">Operador · esta pantalla es la tuya</span>
       <span class="edicion" id="edicion"></span>
     </div>
 
     <!-- En qué espacio estás. El color solo no bastaba: quien abre esto por
          primera vez ve verde o morado y no deduce nada. -->
     <div id="espacios" role="tablist" aria-label="Espacio">
-      <button class="esp" data-esp="karaoke" title="Canciones con letra para cantar"><svg class="ic"><use href="#ic-microfono"></use></svg>Karaoke</button>
-      <button class="esp" data-esp="dj" title="La música de la fiesta cuando no canta nadie"><svg class="ic"><use href="#ic-musica"></use></svg>Cabina DJ</button>
-      <button class="esp" data-esp="freestyle" title="Instrumentales y bases para cantar, rapear o tocar encima"><svg class="ic"><use href="#ic-freestyle"></use></svg>Freestyle</button>
+      <button class="esp" data-esp="karaoke" title="🎤 Empezar karaoke: canciones con letra para cantar"><svg class="ic"><use href="#ic-microfono"></use></svg>Karaoke</button>
+      <button class="esp" data-esp="dj" title="🎧 Música ambiente: una fiesta sin karaoke, la lista la hacéis entre todos desde el móvil"><svg class="ic"><use href="#ic-plato"></use></svg>Cabina DJ</button>
     </div>
-    <div class="sbox">
-      <span class="mg"><svg class="ic" aria-hidden="true"><use href="#ic-buscar"></use></svg></span>
-      <!-- La barra hace de botón: escribir y pulsar Intro. El botón
-           «Buscar en YouTube» que había aquí decía lo mismo dos veces. -->
-      <input id="q" type="text" placeholder="Buscar karaokes, o pegar un enlace de YouTube…" autocomplete="off" enterkeyhint="search">
-    </div>
-    <!-- Solo en Freestyle: dos maneras distintas de buscar lo mismo, y la
-         diferencia está en qué se hace encima. Instrumental es la canción
-         sin voz, para cantarla; una base es para tocar o improvisar. Nadie
-         tiene por qué saber cómo se escribe eso en un buscador. -->
-    <div id="freestyle">
-      <button class="fbtn" data-suf="instrumental">Instrumentales</button>
-      <button class="fbtn" data-suf="backing track">Bases</button>
+    <!-- Dos campos porque son dos preguntas distintas: QUÉ busco (arriba)
+         y CÓMO lo acoto (abajo). El de abajo era hasta ahora un «sufijo»
+         escondido en Ajustes, y escondido no lo usaba nadie. -->
+    <div id="buscador">
+      <div class="sbox">
+        <span class="mg"><svg class="ic" aria-hidden="true"><use href="#ic-buscar"></use></svg></span>
+        <!-- La barra hace de botón: escribir y pulsar Intro. El botón
+             «Buscar en YouTube» que había aquí decía lo mismo dos veces. -->
+        <input id="q" type="text" placeholder="Buscar karaokes, o pegar un enlace de YouTube…" autocomplete="off" enterkeyhint="search">
+      </div>
+      <div class="sbox fbox">
+        <span class="mg" title="Filtro"><svg class="ic" aria-hidden="true"><use href="#ic-embudo"></use></svg></span>
+        <input id="filtro" type="text" autocomplete="off" enterkeyhint="search" list="perfiles"
+               aria-describedby="filtroPie"
+               title="Se añade a cada búsqueda. Acepta AND, OR y «-» para excluir.">
+        <!-- Los perfiles: el mismo campo, con nombre. Un <datalist> y no
+             un menú propio porque el navegador ya sabe hacer esto, se
+             puede seguir escribiendo a mano encima, y funciona con el
+             teclado sin que yo escriba una línea de accesibilidad. -->
+        <datalist id="perfiles"></datalist>
+        <button class="ib mini" id="bFiltroGuardar" title="Guardar este filtro como perfil"><svg class="ic"><use href="#ic-estrella-borde"></use></svg></button>
+        <button class="ib mini" id="bFiltroX" title="Quitar el filtro" hidden><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
+      </div>
+      <!-- Lo que de verdad se va a buscar, mientras se escribe. Es la
+           única manera de que alguien aprenda la sintaxis sin leer nada:
+           escribe OR, ve aparecer la barra, y ya lo sabe. -->
+      <div id="filtroPie" aria-live="polite"></div>
     </div>
     <!-- Qué se hace en este espacio, en una frase. El nombre ya está en la
          pestaña de arriba; repetirlo aquí solo robaba sitio al buscador. -->
     <div id="espacio"></div>
     <!-- Solo se ve cuando falta la clave, que es cuando hay algo que hacer. -->
-    <span class="badge demo" id="modo">Sin clave</span>
-    <button class="ib" id="bCal" title="Calentar la sala: la tele explica cómo pedir canciones y enseña la cola en directo. Se quita sola al empezar la primera"><svg class="ic"><use href="#ic-fuego"></use></svg></button>
-    <button class="ib" id="bQR" title="Peticiones: el QR y la dirección para que pidan desde el móvil"><svg class="ic"><use href="#ic-movil-envia"></use></svg></button>
+    <span class="badge demo" id="modo">Configura tu clave</span>
+    <button class="ib" id="bCal" title="🎉 Preparar la fiesta: la tele explica cómo pedir canciones y enseña la cola en directo. Se quita sola al empezar la primera"><svg class="ic"><use href="#ic-fuego"></use></svg></button>
+    <button class="ib" id="bQR" title="Unirse a la fiesta: los códigos para conectarse y pedir canciones"><svg class="ic"><use href="#ic-movil-envia"></use></svg></button>
     <button class="ib" id="bProy" title="Mandar a la otra pantalla: abre la ventana del televisor"><svg class="ic"><use href="#ic-segunda-pantalla"></use></svg></button>
     <button class="ib" id="bView" title="Disposición: completa → compacta → mini  (tecla V)"><svg class="ic"><use href="#ic-disposicion"></use></svg></button>
-    <button class="ib" id="bCfg" title="Ajustes"><svg class="ic"><use href="#ic-ajustes"></use></svg></button>
+    <!-- El tema, a la vista. Estaba solo dentro de ajustes.php y en la
+         práctica eso significaba que no existía: nadie va a buscar una
+         función que no sabe que hay. -->
+    <button class="ib" id="bTema" title="Cómo se ve y cómo habla: Clásico, Fiesta, Peques o Show"><svg class="ic"><use href="#ic-paleta"></use></svg></button>
+    <button class="ib" id="bCfg" title="⚙ Ajustes"><svg class="ic"><use href="#ic-ajustes"></use></svg></button>
   </header>
 
+  <!-- Modo Show: el botón de las cartas de reto. Solo se ve con el tema
+       Show; en los demás el CSS ni lo pinta. -->
+  <div id="panelShow"></div>
+
+  <!-- Maestro de ceremonias: seis sonidos y cinco frases. Se despliega
+       porque no se usa todo el rato — se usa entre canción y canción— y
+       una fila de botones siempre a la vista le robaría sitio a la cola,
+       que es donde el operador mira el 95 % del tiempo. -->
+  <details id="mc">
+    <summary><svg class="ic sm"><use href="#ic-microfono"></use></svg>
+      Maestro de ceremonias</summary>
+    <div id="panelMC"></div>
+  </details>
+
+  <!-- ══ AHORA ══════════════════════════════════════════════════════
+       La pieza que faltaba, y la que cambia cómo se lee la consola.
+
+       Antes esto era una aplicación que gestionaba una COLA: arriba las
+       herramientas, y quién canta había que deducirlo mirando la lista.
+       Pero un operador no piensa en listas. Piensa, todo el rato, en dos
+       cosas: **quién está cantando y quién va después**. Eso es lo que
+       mira cada quince segundos.
+
+       Así que ocupa el sitio más visible y el resto pasa a ser apoyo. Y
+       el botón de Empezar vive AQUÍ, no abajo: es el que más se pulsa de
+       toda la aplicación y tiene que ser imposible no verlo.
+
+       Es el MISMO botón, con el mismo id, mudado de sitio. No hay dos
+       —eso ya pasó una vez— y la prueba que lo vigila sigue en verde. -->
+  <section id="ahora">
+    <div id="faseCaja" title="En qué momento de la noche estamos">
+      <span id="faseIcono">🔥</span>
+      <div>
+        <div id="faseNombre">Calentamiento</div>
+        <div id="fasePista"></div>
+      </div>
+      <!-- Los testigos. No son controles: son para no tener que
+           preguntarse nada. «¿Se ha quedado la sala en silencio?» es la
+           duda más frecuente de un operador, y se contesta con un punto
+           verde en vez de con un viaje a Ajustes. -->
+      <div id="testigos"></div>
+    </div>
+
+    <div id="ahoraFilas">
+      <div class="af" id="afAhora">
+        <span class="et">Ahora</span>
+        <div class="qui" id="afAhoraQuien">—</div>
+        <div class="tit" id="afAhoraTit"></div>
+      </div>
+
+      <div class="af sig" id="afSig">
+        <span class="et">Después</span>
+        <div class="qui" id="afSigQuien">—</div>
+        <div class="tit" id="afSigTit"></div>
+      </div>
+
+      <div id="afAccion">
+        <button class="cb big" id="bPlay" title="Empezar la actuación preparada (Espacio)"><svg class="ic"><use href="#ic-play"></use></svg><span>Empezar</span></button>
+      </div>
+    </div>
+  </section>
+
   <div id="tabs">
-    <button data-p="lib" class="on"><svg class="ic sm"><use href="#ic-estrella"></use></svg> Biblioteca</button>
+    <button data-p="lib" class="on"><svg class="ic sm"><use href="#ic-estrella"></use></svg> Canciones</button>
     <button data-p="que"><svg class="ic sm"><use href="#ic-musica"></use></svg> Cola</button>
   </div>
 
@@ -77,7 +164,7 @@
       <div class="ph">
         <button id="bLibCol" title="Plegar la biblioteca"><svg class="ic"><use href="#ic-estrella"></use></svg></button>
         <span id="libCount">0</span>
-        <h2>Biblioteca rápida</h2>
+        <h2>Canciones</h2>
         <span class="n" id="nLib">0</span>
         <button class="lnk" id="bFix" title="Volver a pedir títulos y carátulas a YouTube">Reparar títulos</button>
         <button class="lnk" id="bAddAll">Añadir todo</button>
@@ -92,9 +179,16 @@
         <h2><svg class="ic sm"><use href="#ic-musica"></use></svg> Cola</h2>
         <span class="n" id="nQue">0</span>
         <button class="lnk" id="bShuffleQ"><svg class="ic sm"><use href="#ic-barajar"></use></svg> Mezclar</button>
+        <button class="lnk" id="bHist" title="Ver lo ya cantado esta fiesta"><svg class="ic sm"><use href="#ic-repetir"></use></svg> Ya cantadas</button>
+        <button class="lnk" id="bDescargarCola" title="Descargar toda la cola, para preparar la fiesta con antelación sin depender de la wifi"><svg class="ic sm"><use href="#ic-descargar"></use></svg></button>
         <button class="lnk" id="bDelAll" title="Borrar todos los vídeos descargados del disco"><svg class="ic sm"><use href="#ic-borrar-todo"></use></svg></button>
         <button class="lnk d" id="bClearQ">Vaciar</button>
       </div>
+      <!-- El mismo termómetro que ve la sala, aquí en pequeño. No es
+           decoración: el operador escribe esas frases en Ajustes y nunca
+           ve el resultado, y sobre todo — «hay que animar a la gente» se
+           lee mejor en la frase que en el número de al lado. -->
+      <div id="termometro" class="mini oculto"></div>
       <div class="scroll" id="que"></div>
     </section>
   </main>
@@ -113,10 +207,10 @@
     <div id="ct">
       <div class="crow">
         <button class="cb" id="bPrev" title="Anterior (←)"><svg class="ic"><use href="#ic-anterior"></use></svg></button>
-        <!-- El botón principal de la aplicación. Dice EMPEZAR con todas las
-         letras: un triángulo de «play» sugiere «reproducir/pausar», y
-         pausar aquí descuadra la tele. -->
-        <button class="cb big" id="bPlay" title="Empezar la actuación preparada (Espacio)"><svg class="ic"><use href="#ic-play"></use></svg><span>Empezar</span></button>
+        <!-- El botón de Empezar estaba aquí. Se ha MUDADO a la tarjeta
+             «Ahora», arriba: es el que más se pulsa de toda la aplicación
+             y aquí abajo, del tamaño de sus vecinos, había que buscarlo.
+             Es el mismo botón con el mismo id, no uno nuevo. -->
         <button class="cb" id="bNext" title="Siguiente (→)"><svg class="ic"><use href="#ic-siguiente"></use></svg></button>
         <button class="cb on" id="bAuto" title="Al terminar una canción, dejar la siguiente preparada (no la arranca)"><svg class="ic"><use href="#ic-repetir"></use></svg></button>
       </div>
@@ -127,12 +221,25 @@
       </div>
     </div>
     <div id="rc">
+      <!-- La música ambiente, a mano. Está en Ajustes porque ahí se
+           configura, pero apagarla es algo que se hace EN MEDIO de la
+           fiesta —entra alguien a hablar, hay un brindis— y para eso
+           nadie va a abrir otra página.
+
+           Ojo con el nombre: esto NO es la Cabina DJ. La Cabina DJ es un
+           espacio, otra fiesta distinta. Esto es la música de fondo del
+           karaoke. Se llamaron igual durante meses y confundía. -->
+      <button class="cb" id="bDJ" title="Música ambiente: lo que suena entre actuaciones"><svg class="ic"><use href="#ic-musica"></use></svg></button>
       <button class="cb" id="bVid" title="Mostrar / ocultar vídeo"><svg class="ic"><use href="#ic-tv"></use></svg></button>
       <button class="cb" id="bYT" title="Abrir en YouTube"><svg class="ic"><use href="#ic-abrir-fuera"></use></svg></button>
     </div>
   </div>
 
   <div id="avisoRed"></div>
+  <!-- El operador "copiloto": sugiere, nunca decide. Mismo patrón que
+       avisoRed —se calla un cuarto de hora si se descarta— pero para
+       algo bien distinto: no un fallo, un silencio. -->
+  <div id="avisoCopiloto"></div>
   <div id="avisoMudo">Este PC está en <b>silencio</b> y es el que tiene que sonar &nbsp;
     <button class="btn" id="bDesmutear">Devolver el sonido</button></div>
   <div id="redbar"></div>
@@ -208,33 +315,49 @@
   </div>
 </div>
 
+<!-- YA CANTADAS -->
+<div class="ov" id="ovHist">
+  <div class="md">
+    <div class="mh">
+      <h3>Ya cantadas</h3>
+      <span class="hi">Lo que ha sonado esta fiesta</span>
+      <button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
+    </div>
+    <div class="mb"><div id="hist"></div></div>
+    <div class="mf">
+      <span class="hi" id="histF"></span>
+      <button class="lnk d" id="bVaciarHist">Vaciar historial</button>
+      <button class="btn g" data-x>Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- AJUSTES -->
 <div class="ov" id="ovCfg">
   <div class="md" style="width:min(560px,100%)">
     <div class="mh"><h3>Ajustes</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
     <div class="mb" style="padding:18px 22px">
 
-      <div class="grupo">
-        <h4>Interfaz</h4>
-        <div class="fld">
-          <label>Espacio</label>
-          <select id="cModo">
-            <option value="karaoke">Karaoke</option>
-            <option value="dj">Cabina DJ</option>
-            <option value="freestyle">Freestyle</option>
-          </select>
-          <div class="h">Cambia el color principal. La palabra que se añade a cada búsqueda
-          (karaoke · nada · instrumental) se configura justo debajo.</div>
-        </div>
-        <div class="fld">
-          <label>Texto añadido a cada búsqueda</label>
-          <input id="cSuf" type="text" placeholder="karaoke">
-          <div class="h">Se añade automáticamente a lo que escribas. Vacío = buscar tal cual.</div>
-        </div>
-      </div>
+      <!-- ── Cómo está organizado esto, y por qué ────────────────────
+           Tres grupos, y los tres responden a una pregunta distinta:
 
+             ESTE APARATO   solo cambia aquí. La calidad de vídeo de tu
+                            portátil no es asunto de la fiesta.
+             LA TELE        cómo se ve la pantalla del público.
+             EL RITMO       cuánto duran las pausas.
+
+           Y lo que se configura una vez para toda la fiesta —la clave de
+           YouTube, el tema, la wifi, quién puede pedir— no está aquí: está
+           en Ajustes de la fiesta, abajo del todo.
+
+           Aquí había además un selector de «Espacio» y el campo del texto
+           que se añade a las búsquedas. Los dos se han quitado por el
+           mismo motivo: ya están en la barra de arriba, siempre a la
+           vista y sin abrir ningún diálogo. Dos caminos para lo mismo, y
+           sobraba el de dentro — sobre todo con el filtro, que se cambia
+           EN MITAD de una fiesta y estaba a tres clics. -->
       <div class="grupo">
-        <h4>Modo Operador</h4>
+        <h4>Este aparato</h4>
         <div class="fld">
           <label>Calidad de vídeo</label>
           <select id="cQual">
@@ -249,10 +372,19 @@
         <label class="sw"><input type="checkbox" id="cAntiCut" checked> Antiparones: bajar calidad sola si la conexión cae</label>
         <label class="sw"><input type="checkbox" id="cAuto"> Abrir la ventana de vídeo al empezar una canción</label>
         <label class="sw"><input type="checkbox" id="cStar"> Al añadir a la cola, guardar también en la biblioteca</label>
+        <div class="fld" style="margin-top:14px">
+          <label>El sonido sale por…</label>
+          <select id="cSonido">
+            <option value="pc">Este ordenador (altavoces o equipo conectado al PC)</option>
+            <option value="tele">La pantalla pública (tele con altavoces por HDMI)</option>
+          </select>
+          <div class="h">El otro aparato se queda <b>mudo, pero sigue reproduciendo</b>: el PC es
+          quien detecta el final de la canción y encadena la siguiente. Callarlo no es pararlo.</div>
+        </div>
       </div>
 
       <div class="grupo">
-        <h4>Ritmo de la fiesta</h4>
+        <h4>El ritmo</h4>
         <div class="fld">
           <label>Cuenta atrás antes de empezar</label>
           <input id="cSegLlam" type="number" min="0" max="15" step="1" value="0">
@@ -275,24 +407,7 @@
       </div>
 
       <div class="grupo">
-        <h4>Pantalla Pública</h4>
-        <div class="fld">
-          <label>El sonido sale por…</label>
-          <select id="cSonido">
-            <option value="pc">Este ordenador (altavoces o equipo conectado al PC)</option>
-            <option value="tele">La pantalla pública (tele con altavoces por HDMI)</option>
-          </select>
-          <div class="h">El otro aparato se queda <b>mudo, pero sigue reproduciendo</b>: el PC es
-          quien detecta el final de la canción y encadena la siguiente. Callarlo no es pararlo.</div>
-        </div>
-        <div class="fld">
-          <label>Retraso de la pantalla pública (segundos)</label>
-          <input id="cDesfase" type="number" min="-5" max="5" step="0.1" value="0.7">
-          <div class="h">Las dos pantallas llevan su propia copia del vídeo y la tele suele
-          arrancar un poco después. Este valor le dice cuánto <b>adelantarse</b> para ir a la par.
-          Se puede afinar en la propia tele con las teclas <b>+</b> y <b>−</b> mientras suena algo.
-          Negativo si va adelantada.</div>
-        </div>
+        <h4>La tele</h4>
         <div class="fld">
           <label>Efecto con el sonido de la sala</label>
           <select id="cEfecto">
@@ -330,13 +445,66 @@
         </div>
       </div>
 
+      <!-- La calibración no es una opción visual: es un ajuste técnico
+           que compensa algo que pasa FUERA del programa. Estaba entre los
+           efectos de la tele y ahí chirriaba — el efecto lo elige quien
+           monta la fiesta por gusto, esto lo toca quien está arreglando
+           un problema concreto. Grupo aparte. -->
       <div class="grupo">
-        <h4>Sistema · Superpoderes</h4>
+        <h4>Avanzado</h4>
+        <!-- Escondido a propósito. Antes esto era «Retraso de la pantalla
+             pública» y estaba a la vista porque hacía falta. Ya no: la
+             pantalla del cantante publica en qué instante estaba en el
+             segundo cero y la del público salta a donde va, y además se
+             corrige sola cada pocos segundos.
+
+             Lo que queda es lo único que el programa no puede saber: que
+             una tele tarde en pintar lo que el navegador ya ha dibujado.
+             Eso pasa DESPUÉS del navegador. En el caso normal —mismo
+             ordenador, dos ventanas— vale cero y nadie lo abre. -->
+        <details class="fld">
+          <summary style="cursor:pointer;color:var(--txt3);font-size:13px">
+            Calibración de pantalla (normalmente no hace falta)</summary>
+          <label style="margin-top:10px">Compensación de la tele (segundos)</label>
+          <input id="cDesfase" type="number" min="-5" max="5" step="0.1" value="0">
+          <div class="h">Las dos pantallas van sincronizadas solas. Esto es para el
+          caso raro en que la <b>tele</b> tarde en pintar lo que ya ha salido en el
+          ordenador —modo cine, procesado de imagen, un receptor de audio por
+          medio—: eso ocurre fuera del programa y no se puede detectar.
+          Se afina en la propia tele con <b>+</b> y <b>−</b> viendo las dos a la vez.
+          Negativo si la tele va adelantada. <b>Casi siempre es 0.</b></div>
+        </details>
+      </div>
+
+      <div class="grupo">
+        <h4>¿Está todo bien?</h4>
         <div id="poderes"></div>
+        <!-- Esto mira si la FIESTA va bien: la tele, el sonido, la red.
+             Lo que no puede mirar es si la MÁQUINA puede correr esto
+             —extensiones de PHP, permisos, archivos corruptos—, porque
+             para eso ya tiene que estar funcionando.
+
+             No se llama «diagnóstico» ni es otro panel: es la misma
+             pregunta a otra profundidad, y por eso está aquí y no en un
+             botón nuevo (MODELO §8, un concepto un nombre). -->
+        <div class="h" style="margin-top:12px">
+          ¿Acabas de instalarlo en otro ordenador y algo no va?
+          <a href="qa.php" target="_blank">Comprobar esta máquina</a> —
+          PHP, permisos, archivos y cuota de YouTube.
+        </div>
+        <!-- «Ajustes del servidor» era un mal nombre: no hay ningún
+             servidor en la cabeza de quien organiza una fiesta. Lo que hay
+             ahí dentro es lo que se configura una vez y vale para toda la
+             noche — la clave de YouTube, el tema, la wifi, quién puede
+             pedir—, y eso es la fiesta, no el servidor. -->
         <div style="display:flex;gap:9px;margin-top:16px">
-          <a class="btn g" href="ajustes.php" style="flex:1;text-align:center;text-decoration:none;line-height:1.6">Ajustes del servidor</a>
-          <button class="btn g" id="bExp" style="flex:1">Exportar copia</button>
-          <button class="btn g" id="bImp" style="flex:1">Importar copia</button>
+          <a class="btn" href="ajustes.php" style="flex:1;text-align:center;text-decoration:none;line-height:1.6">Ajustes de la fiesta</a>
+          <button class="btn g" id="bExp" style="flex:1"
+                  title="Incluye la biblioteca y las colas de Karaoke y de Cabina DJ, las dos">
+            <svg class="ic sm"><use href="#ic-descargar"></use></svg> Exportar copia</button>
+          <button class="btn g" id="bImp" style="flex:1"
+                  title="Sustituye tu biblioteca por la del archivo. La cola no se toca.">
+            <svg class="ic sm" style="transform:rotate(180deg)"><use href="#ic-descargar"></use></svg> Importar copia</button>
         </div>
       </div>
 
@@ -351,18 +519,34 @@
   <span id="bufS">La conexión ha bajado</span>
 </div>
 
-<div class="ov" id="ovQR">
-  <div class="md" style="width:min(440px,100%)">
-    <div class="mh"><h3>Que pidan desde el móvil</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
-    <div class="mb" style="padding:22px;text-align:center">
-      <div id="qrimg" style="background:#fff;padding:14px;border-radius:14px;display:inline-block;min-height:220px"></div>
-      <div style="margin-top:16px;font-size:13px;color:var(--txt2);line-height:1.6">
-        Que apunten con la cámara del móvil.<br>
-        Tienen que estar en <b>tu misma red</b>.
-      </div>
-      <code id="qrurl" style="display:block;margin-top:14px;padding:11px;background:var(--bg3);
-        border:1px solid var(--line);border-radius:9px;font-size:13px;word-break:break-all"></code>
+<!-- ═══ TEMA ═══
+     Cuatro tarjetas con una muestra de color y una frase de qué cambia.
+     Un desplegable con cuatro nombres no dice nada: «Peques» no explica
+     que además desaparece el QR y cambian todos los mensajes. -->
+<div class="ov" id="ovTema">
+  <div class="md" style="width:min(560px,100%)">
+    <div class="mh"><h3>Cómo se ve y cómo habla</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
+    <div class="mb" id="temaLista" style="padding:16px;display:grid;gap:10px"></div>
+    <div class="mf">
+      <span style="flex:1;font-size:12.5px;color:var(--txt3)">El tema es de la fiesta, no de este aparato: la tele se pone igual sola.</span>
+      <button class="btn" data-x>Cerrar</button>
     </div>
+  </div>
+</div>
+
+<!-- ═══ QR ═══
+     DOS QR y en este orden, porque ese es el orden en que se atasca la
+     gente: primero conectarse a la red, después pedir. Enseñar solo el
+     de pedir a alguien que no está en tu wifi es enseñarle una puerta
+     cerrada — y dictar una contraseña de veinte caracteres en voz alta
+     con música puesta no funciona nunca.
+
+     El de wifi solo aparece si hay contraseña configurada: un QR que no
+     conecta es peor que ninguno. -->
+<div class="ov" id="ovQR">
+  <div class="md" style="width:min(700px,100%)">
+    <div class="mh"><h3>Unirse a la fiesta</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
+    <div class="mb" id="qrCuerpo" style="padding:22px"></div>
     <div class="mf"><button class="btn" data-x>Cerrar</button></div>
   </div>
 </div>
@@ -385,19 +569,30 @@
      js/almacen-local.js y no hay que tocar nada más. -->
 <script src="js/qr.js"></script>
 <script src="js/estados.js"></script>
+<script src="js/termometro.js"></script>
+<script src="js/textos.js"></script>
 <script src="js/nucleo.js"></script>
 <script src="js/senales.js"></script>
 <script src="js/cancion.js"></script>
 <script src="js/actuacion.js"></script>
 <script src="js/almacen-servidor.js"></script>
 <script src="js/comandos.js"></script>
+<script src="js/filtro.js"></script>
+<script src="js/fase.js"></script>
 <script src="js/interfaz.js"></script>
 <script src="js/busqueda.js"></script>
 <script src="js/cola.js"></script>
 <script src="js/reproductor.js"></script>
 <script src="js/cronometro.js"></script>
+<script src="js/ambiente.js"></script>
 <script src="js/evento.js"></script>
 <script src="js/atajos.js"></script>
+<script src="js/copiloto.js"></script>
+<script src="js/mc.js"></script>
 <script src="js/app.js"></script>
+<script src="js/diagnostico.js"></script>
+<script src="js/paneles.js"></script>
+<script src="js/show.js"></script>
+<script src="js/instalar.js"></script>
 </body>
 </html>

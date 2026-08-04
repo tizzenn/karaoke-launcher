@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════════════════════════════
+   AHORA — la tarjeta del momento
+
+   El cambio de fondo de la Fase 3: la consola deja de estar organizada
+   por FUNCIONES (biblioteca, cola, ajustes) y pasa a estarlo por lo que
+   ESTÁ PASANDO. Quién canta ahora, quién va después, y el botón.
+
+   Todo lo demás —biblioteca, buscador, herramientas— sigue donde estaba,
+   pero por debajo, que es su sitio: son apoyo.
+   ═══════════════════════════════════════════════════════════════════ */
+#ahora{
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--bg2),var(--bg));
+  flex:none
+}
+
+/* ---- La fase ----------------------------------------------------------
+   Franja fina y siempre presente. No es un adorno: hasta ahora el
+   operador sabía en qué punto de la noche estaba porque se acordaba. */
+#faseCaja{
+  display:flex; align-items:center; gap:13px;
+  padding:9px 20px; border-bottom:1px solid var(--line)
+}
+#faseIcono{ font-size:21px; line-height:1; flex:none }
+#faseNombre{ font-size:13.5px; font-weight:800; letter-spacing:.3px }
+#fasePista{ font-size:12.5px; color:var(--txt3); margin-top:1px }
+/* El color de la franja lo pone la fase, no el espacio: es lo único de
+   la consola que habla del tiempo y no del sitio. */
+body[data-fase="actuacion"] #faseCaja{ background:rgba(var(--ac-rgb),.12) }
+body[data-fase="actuacion"] #faseNombre{ color:var(--ac) }
+body[data-fase="calentamiento"] #faseCaja{ background:rgba(255,176,32,.10) }
+body[data-fase="fin"] #faseCaja{ background:rgba(255,255,255,.04) }
+
+/* ---- Los testigos -----------------------------------------------------
+   Para no tener que preguntarse nada. Apagados son casi invisibles;
+   encendidos se leen de un vistazo. Nunca piden que se haga algo. */
+#testigos{ margin-left:auto; display:flex; gap:7px; flex-wrap:wrap }
+.tg{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px; border-radius:999px; font-size:12px; font-weight:600;
+  border:1px solid var(--line); color:var(--txt3); background:var(--bg3)
+}
+.tg .pt{ width:7px; height:7px; border-radius:50%; background:var(--txt3) }
+.tg.on{ color:var(--txt); border-color:rgba(var(--ac-rgb),.5) }
+.tg.on .pt{ background:var(--ac); box-shadow:0 0 7px rgba(var(--ac-rgb),.8) }
+
+/* ---- Ahora y después --------------------------------------------------
+   Dos columnas y el botón. En una pantalla estrecha se apilan y el botón
+   se va abajo del todo, a lo ancho: es la única acción de verdad. */
+#ahoraFilas{
+  display:grid; grid-template-columns:1fr 1fr auto;
+  gap:18px; align-items:center; padding:14px 20px 16px
+}
+.af{ min-width:0 }
+.af .et{
+  font-size:10.5px; letter-spacing:1.1px; text-transform:uppercase;
+  color:var(--txt3); font-weight:800
+}
+.af .qui{
+  font-size:23px; font-weight:800; line-height:1.15; margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap
+}
+.af .tit{
+  font-size:13.5px; color:var(--txt2); margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap
+}
+/* «Después» va más apagado a propósito: es información, no acción. Si
+   los dos pesan igual, hay que leer para saber cuál es cuál. */
+.af.sig .qui{ font-size:18px; font-weight:700; color:var(--txt2) }
+.af.vacia .qui{ color:var(--txt3); font-weight:600; font-size:17px }
+
+/* Cantando, el «ahora» se enciende: es la única fila que importa. */
+body[data-fase="actuacion"] #afAhora .qui{ color:var(--ac) }
+
+/* ---- El botón ---------------------------------------------------------
+   Ha subido desde la barra de abajo, donde tenía el mismo tamaño que sus
+   vecinos y había que buscarlo. Es el que más se pulsa de la aplicación:
+   ahora es el objeto más grande de la pantalla. */
+#afAccion{ display:flex; align-items:center; gap:10px }
+#ahora #bPlay{
+  height:58px; min-width:200px; padding:0 30px; border-radius:14px;
+  font-size:17px; font-weight:800; gap:11px
+}
+#ahora #bPlay .ic{ width:24px; height:24px }
+
+@media (max-width:900px){
+  #ahoraFilas{ grid-template-columns:1fr 1fr; row-gap:14px }
+  #afAccion{ grid-column:1 / -1 }
+  #ahora #bPlay{ width:100%; min-width:0 }
+  #fasePista{ display:none }
+}
+/* En compacta y mini la consola es una barra: la tarjeta sobra. Y
+   durante la actuación no hay consola en absoluto. */
+body.mini #ahora, body.compact #fasePista, body.compact #testigos{ display:none }
+body[data-pantalla="interpretacion"] #ahora{ display:none }

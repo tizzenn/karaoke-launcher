@@ -17,12 +17,19 @@
 (function () {
 
 /* Extrae el ID de youtube.com/watch?v=, youtu.be/, /embed/, /shorts/ o
-   de un ID pegado tal cual. Devuelve null si no es ninguna de esas. */
+   de un ID pegado tal cual. Devuelve null si no es ninguna de esas.
+
+   El dominio va anclado a propósito (2026-08-04, QA): la versión
+   anterior buscaba «youtube.com/watch?v=» en cualquier parte de la
+   cadena, así que «https://noesyoutube.com/watch?v=…» colaba —
+   «youtube.com» es una subcadena de «noesyoutube.com». Ahora exige que
+   justo antes venga el principio, «//» o un punto (para www./m.), y lo
+   mismo para youtu.be. */
 function parseYT(s){
   s = (s || '').trim();
   if(/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
-  const m = s.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  return m ? m[1] : null;
+  const m = s.match(/(?:^|\/\/|\.)youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})|(?:^|\/\/)youtu\.be\/([A-Za-z0-9_-]{11})/);
+  return m ? (m[1] || m[2]) : null;
 }
 
 /* oEmbed: título y canal reales SIN clave de API. Es lo que arregla los
@@ -54,26 +61,62 @@ async function resolveAll(force){
   toast('Títulos actualizados');
 }
 
+/* La búsqueda anterior se CANCELA, no solo se ignora.
+
+   Ignorar la respuesta vieja evita que pise a la buena —que era el fallo—
+   pero la petición sigue viajando, el servidor la atiende y, si hay clave
+   de API, **gasta cuota de YouTube para nada**: cien unidades por
+   búsqueda, y el plan gratuito da diez mil al día. Escribiendo deprisa se
+   tiran tres o cuatro búsquedas por una. */
+let enCurso = null;
+
 async function search(text){
   /* El sufijo viaja en la dirección: depende del modo, que es una
      preferencia de este aparato y no del servidor. Vacío es una respuesta
      válida —el modo DJ busca tal cual— y por eso se manda siempre. */
+  if(enCurso) enCurso.abort();
+  enCurso = new AbortController();
+  /* El tema viaja también: en Peques el servidor pide búsqueda segura y
+     aparta lo que YouTube marca con la restricción de edad máxima. No es
+     un ajuste del servidor porque el tema no lo es — es de la fiesta, y
+     puede cambiar a media noche. */
   const j = await KL.api('api/buscar.php?q=' + encodeURIComponent(text)
-                    + '&sufijo=' + encodeURIComponent(S.suffix || ''));
+                    + '&sufijo=' + encodeURIComponent(S.suffix || '')
+                    + '&tema=' + encodeURIComponent(S.tema || 'clasico'),
+                    null, { signal: enCurso.signal });
   return j.items || [];
 }
+
+/* Cada búsqueda lleva número, y solo pinta la última que se pidió.
+
+   Sin esto hay una carrera de verdad: se escribe «queen», se pulsa
+   Intro, se sigue escribiendo «quilapayun» y se vuelve a pulsar. Si la
+   primera petición tarda más que la segunda —cosa normal, dependen de
+   YouTube— llega después y **pisa los resultados buenos con los
+   viejos**. La pantalla enseña «queen» habiendo buscado otra cosa, y no
+   hay ningún error en ninguna parte: simplemente la respuesta equivocada
+   fue la última en llegar.
+
+   El arreglo no es cancelar la petición vieja —no se puede cancelar lo
+   que ya viaja— sino ignorar su respuesta. */
+let peticion = 0;
 
 async function doSearch(){
   const text = $('#q').value.trim();
   if(!text){ $('#q').focus(); return; }
+  const mia = ++peticion;
   S.sel = null;
-  open('#ovRes');
+  abrir('#ovRes');
   $('#res').innerHTML = '<div class="load"><div class="sp"></div>Buscando en YouTube…</div>';
   $('#resF').textContent = '';
   try{
-    S.results = await search(text);
+    const items = await search(text);
+    if(mia !== peticion) return;      // ha llegado tarde: ya hay otra búsqueda
+    S.results = items;
     drawResults();
   }catch(e){
+    if(mia !== peticion) return;      // el error también llega tarde
+    if(e && e.name === 'AbortError') return;   // la cancelamos nosotros
     /* El consejo depende del fallo: si no hay servidor, el engranaje no
        arregla nada y solo despista. */
     const esDeClave = /clave|cuota|API|habilitada/i.test(e.message);
@@ -123,12 +166,12 @@ function drawResults(){
     const i = +el.dataset.i, v = r[i];
     el.addEventListener('click', ev => {
       const b = ev.target.closest('button');
-      if(b && b.classList.contains('aq')){ KL.cola.anadir(v); close('#ovRes'); return; }
+      if(b && b.classList.contains('aq')){ KL.cola.anadir(v); cerrar('#ovRes'); return; }
       if(b && b.classList.contains('al')){ KL.cola.alternarBiblioteca(v); drawResults(); return; }
       box.querySelectorAll('.rs').forEach(n => n.classList.remove('sel'));
       el.classList.add('sel'); S.sel = i;
     });
-    el.addEventListener('dblclick', () => { KL.cola.anadir(v); close('#ovRes'); });
+    el.addEventListener('dblclick', () => { KL.cola.anadir(v); cerrar('#ovRes'); });
   });
 }
 

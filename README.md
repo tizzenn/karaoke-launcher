@@ -1,4 +1,4 @@
-# Karaoke Launcher
+# OpenKaraoke Center
 
 Lanza vídeos de karaoke de YouTube en una fiesta, sin cortar la música.
 

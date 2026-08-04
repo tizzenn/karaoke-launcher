@@ -13,7 +13,19 @@
    aquí porque es «ninguna»: se apagan todas y queda el vídeo debajo. */
 const CARTELES = ['calent', 'espera', 'llamada', 'aplausos'];
 
+/* El apagón y el confeti son opcionales (Ajustes → La tele → «Efectos
+   escénicos»). `true` hasta que llegue el primer estado del servidor,
+   que es exactamente lo que ya hacían antes de existir el ajuste. */
+let efectosOn = true;
+
 function mostrarEscena(cual){
+  /* El confeti y el apagón solo se lanzan al ENTRAR en aplausos, no en
+     cada sondeo mientras ya está ahí — si no, la lluvia no pararía nunca
+     durante los segundos que dura la cuenta atrás de la tele. */
+  if(cual === 'aplausos' && document.body.dataset.escena !== 'aplausos'){
+    lanzarConfeti();
+    destelloBlackout();
+  }
   document.body.dataset.escena = cual || 'video';
   CARTELES.forEach(id => $('#' + id).classList.toggle('oculto', id !== cual));
   $('#franja').classList.toggle('oculto', !!cual);
@@ -34,22 +46,124 @@ function mostrarEscena(cual){
   else pararPaneles();
 }
 
+/* ---- Confeti de los aplausos -------------------------------------------
+   Piezas reales, cada una con su propio color, ancho, giro, deriva
+   lateral y tiempo — no un patrón que se repite igual cada vez, que se
+   nota enseguida en una fiesta que dura horas y ve esto treinta veces.
+   Los cuatro colores salen de los tokens del tema activo (`--ac`,
+   `--star`, `--info` y blanco), así que cambian solos con Clásico,
+   Fiesta, Peques o Show sin tocar esta función. */
+const CONFETI_COLORES = ['var(--ac)', 'var(--star)', 'var(--info)', '#fff'];
+const CONFETI_PIEZAS = 34;
+
+function lanzarConfeti(){
+  const caja = $('#confeti');
+  if(!caja) return;
+  caja.innerHTML = '';
+  if(!efectosOn) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  for(let i = 0; i < CONFETI_PIEZAS; i++){
+    const p = document.createElement('span');
+    p.className = 'confeti-p' + (Math.random() < .4 ? ' ronda' : '');
+    p.style.left = (2 + Math.random() * 96) + '%';
+    p.style.setProperty('--cc', CONFETI_COLORES[i % CONFETI_COLORES.length]);
+    p.style.setProperty('--cw', (.5 + Math.random() * .7) + 'vw');
+    p.style.setProperty('--cx', (Math.random() * 16 - 8) + 'vw');
+    p.style.setProperty('--cr', Math.round(360 + Math.random() * 540) + 'deg');
+    p.style.setProperty('--cd', (1.8 + Math.random() * 1.3).toFixed(2) + 's');
+    p.style.setProperty('--ct', (Math.random() * .7).toFixed(2) + 's');
+    caja.appendChild(p);
+  }
+}
+
+/* ---- El "blackout" teatral --------------------------------------------
+   Tapa el corte en seco de `parar()` al terminar el vídeo: opaco al
+   instante (sin transición, para que no se vea el chasquido A TRAVÉS del
+   fundido de entrada), aguanta un momento con la escena de aplausos ya
+   montada detrás, y se retira con un fundido. El resultado es que el
+   público ve un apagón breve y luego la celebración — nunca el frame
+   congelado de YouTube ni el hueco en blanco del sondeo. */
+let blackoutT1 = null, blackoutT2 = null;
+function destelloBlackout(){
+  const b = $('#blackout');
+  if(!b || !efectosOn) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  clearTimeout(blackoutT1); clearTimeout(blackoutT2);
+  b.classList.remove('desvanece');
+  b.classList.add('on');
+  blackoutT1 = setTimeout(() => b.classList.add('desvanece'), 350);
+  blackoutT2 = setTimeout(() => b.classList.remove('on', 'desvanece'), 700);
+}
+
 function pintarProximas(cola, desdeId){
   const i = cola.findIndex(t => t.id === desdeId);
   const sig = (i >= 0 ? cola.slice(i + 1) : cola).slice(0, 3);
   const caja = $('#proximas');
   if(!sig.length){ caja.classList.add('oculto'); return; }
   caja.classList.remove('oculto');
-  caja.innerHTML = '<div class="cab">A continuación</div>' + sig.map((t, n) =>
+  const cab = KL.TEXTOS.de(document.documentElement.dataset.tema || 'clasico', 'proximas');
+  caja.innerHTML = '<div class="cab">' + esc(cab) + '</div>' + sig.map((t, n) =>
     `<div class="f"><span class="n">${n+1}</span><span class="t">${esc(KL.Actuacion.titulo(t))}</span></div>`).join('');
 }
+
+/* ---- La carta de reto del Modo Show ----------------------------------
+   Encima de todo y sin tocar las escenas: el reto se lee mientras se
+   canta, así que no puede ser una escena que tape el vídeo.
+
+   `n` es lo que distingue una carta de la siguiente aunque el texto sea
+   el mismo. Sin ese número, sacar dos veces seguidas el mismo reto no
+   volvía a animar nada y parecía que el botón del operador se había
+   roto. */
+let cartaN = -1;
+function pintarCarta(e){
+  const caja = $('#carta');
+  if(!caja) return;
+  const r = (e.show || {}).reto || null;
+  /* Y con el tema Show puesto, no con cualquiera. Las cartas de reto son
+     del Modo Show: si el operador cambia a Clásico con una carta en
+     pantalla, la carta se queda ahí colgada como un cartel que nadie
+     sabe quitar — que es exactamente lo que pasaba.
+
+     No se borra del estado al cambiar de tema a propósito: si vuelves a
+     Show, la carta sigue donde estaba. Lo que cambia es si se enseña. */
+  const enShow = (e.tema || 'clasico') === 'show';
+  if(!enShow || !r || !r.texto){
+    caja.classList.add('oculto'); cartaN = -1;
+    document.body.classList.remove('conCarta');
+    return;
+  }
+  document.body.classList.add('conCarta');
+  if(r.n !== cartaN){
+    cartaN = r.n;
+    $('#cartaTxt').textContent = r.texto;
+    /* Reiniciar la animación: quitar la clase, forzar un reflujo y
+       volver a ponerla. Sin el reflujo el navegador junta las dos
+       operaciones y no anima nada. */
+    caja.classList.remove('entra');
+    void caja.offsetWidth;
+    caja.classList.add('entra');
+  }
+  caja.classList.remove('oculto');
+}
+
+/* Con la carta puesta, la escena baja: la tira ocupa la parte de arriba
+   y el título se le metía debajo. Se hace con una clase en el body para
+   que lo resuelva el CSS y no haya que medir nada. */
 
 function pintar(e, forzar){
   ultimo = e;
   version = e.version ?? version;
   if(e.ahora) desfase = e.ahora - Math.floor(Date.now()/1000);
+  if(e.tema) aplicarTemaTele(e.tema);
+  if(e.efectos !== undefined) efectosOn = !!e.efectos;
 
-  const cola = e.cola || [];
+  /* Solo las del espacio en el que está la fiesta. Cada espacio tiene su
+     cola, y si la tele enseña la del karaoke mientras el operador está en
+     la Cabina DJ, están contando cosas distintas delante de la gente. */
+  const donde = e.espacio || 'karaoke';
+  const cola = (e.cola || []).filter(t => (t.espacio || 'karaoke') === donde);
   const ev = e.evento || {estado:'ESPERA'};
   /* Qué toca enseñar sale de la tabla de js/estados.js, la misma que usa
      el operador. Incluida la columna `calienta`, que dice si el
@@ -59,6 +173,13 @@ function pintar(e, forzar){
   const enCalentamiento = !!e.calentamiento && escena.calienta;
 
   aplicarSeleccion(e);
+  pintarCarta(e);
+  /* El pulso de la fiesta. Se cuentan las que esperan en el espacio
+     activo: son las que la gente puede ver que vienen. */
+  if(KL.termometro)
+    KL.termometro.pintar($('#termometro'),
+      (e.cola || []).filter(t => (t.espacio || 'karaoke') === (e.espacio || 'karaoke')).length,
+      e.tema, e.termometro);
   pintarProximas(cola, e.sonando);
 
   /* --- Calentamiento --- */
@@ -90,7 +211,8 @@ function pintar(e, forzar){
     mostrarEscena('aplausos');
     $('#finQue').textContent = ev.recien ? ev.recien.title : '';
     const sig = cola.find(t => t.id === ev.pistaId) || cola[0];
-    $('#finSig').textContent = sig ? 'A continuación: ' + KL.Actuacion.titulo(sig) : 'Se acabó la cola';
+    const T2 = c => KL.TEXTOS.de(document.documentElement.dataset.tema || 'clasico', c);
+    $('#finSig').textContent = sig ? T2('aContinuacion') + KL.Actuacion.titulo(sig) : T2('seAcabo');
     return;
   }
 
@@ -101,12 +223,21 @@ function pintar(e, forzar){
     if(sonandoId !== null || forzar){ parar(); sonandoId = null; }
     mostrarEscena('espera');
     const preparada = escena.barra === 'preparada' ? cola.find(t => t.id === ev.pistaId) : null;
-    $('#esperaTit').innerHTML = preparada ? 'Ahora <span class="ac">canta</span>' : '🎤 Karaoke';
+    const T = c => KL.TEXTOS.de(document.documentElement.dataset.tema || 'clasico', c);
+    $('#esperaTit').innerHTML = preparada ? T('ahoraCanta') : T('esperaTitulo');
+    /* Aquí ponía «Hay 4 canciones esperando», que es exactamente lo que
+       el termómetro viene a sustituir: la aplicación contando su estado
+       interno delante de gente que no sabe que hay una aplicación. Y con
+       un número, que es lo peor — en cuanto lo lees te pones a calcular
+       cuánto falta para la tuya.
+
+       Con canciones esperando, el subtítulo se calla: lo que hay que
+       decir sobre el ambiente lo dice el termómetro de abajo, y decirlo
+       dos veces con dos tonos distintos es peor que no decirlo. */
     $('#esperaSub').textContent = preparada
-      ? KL.Actuacion.titulo(preparada) + '  ·  al micro'
-      : (cola.length
-          ? 'Hay ' + cola.length + (cola.length === 1 ? ' canción esperando.' : ' canciones esperando.')
-          : 'Escanea el QR y pide la tuya.');
+      ? KL.Actuacion.titulo(preparada) + T('alMicro')
+      : (cola.length ? '' : T('esperaVacia'));
+    $('#esperaSub').classList.toggle('oculto', !preparada && !!cola.length);
     /* La lista empieza DESPUÉS de la que está preparada. Salía dos veces:
        arriba en grande —«Ahora canta X»— y otra vez como número 1 de la
        lista de abajo. Quien lo mira desde el fondo de la sala no está
@@ -130,7 +261,7 @@ function pintar(e, forzar){
      sondeo cortaría el vídeo por la mitad. */
   if(hoy.id !== sonandoId || forzar){
     sonandoId = hoy.id;
-    if(arrancado) poner(hoy);
+    if(arrancado) poner(hoy, ev);
     $('#franja').classList.remove('fuera');
     clearTimeout(pintar.t);
     pintar.t = setTimeout(() => $('#franja').classList.add('fuera'), 12000);

@@ -1,0 +1,513 @@
+/* ═══════════════════════════════════════════════════════════════════
+   temas.css — la misma aplicación en cuatro contextos
+
+   **Por qué existe cada tema y qué prioridad tiene está en
+   `docs/DISENO.md`, no aquí.** Este archivo explica por qué cada bloque
+   de reglas es como es; el documento explica por qué el tema existe.
+
+   Separarlo no es orden por orden: es que este archivo va a doblar de
+   tamaño, y una hoja de estilos que empieza con dos páginas de filosofía
+   deja de leerse. Quien abre esto viene a cambiar un color.
+
+   El resumen de una línea, para no tener que ir al documento:
+
+     CLÁSICO   que se lea          FIESTA   que se note la fiesta
+     PEQUES    sin ninguna presión SHOW     que parezca un escenario
+
+   Y la regla que más se rompe sin querer: en Clásico manda el espacio
+   (verde, morado, naranja); en los otros tres manda el tema.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+
+/* ════════════════════════ CLÁSICO ════════════════════════
+   Segunda repensada del mismo día (2026-08-03): la primera pasada bajó
+   el ruido (grafito cálido, acentos más graves). Esta cambia una regla
+   de fondo — a petición explícita, sabiendo lo que rompe: **el color ya
+   no lo decide el espacio.** Antes Karaoke era verde y Cabina DJ morado
+   también en Clásico; ahora Clásico tiene un único "color de
+   personalidad" —azul acero— que no cambia con el espacio. Esa señal
+   —"¿en qué espacio estoy?"— la siguen dando las pestañas 🎤/🎧 de la
+   cabecera, no ya el color de fondo del botón Empezar.
+
+   Fiesta, Peques y Show siguen sin tocar: ya tenían un color fijo por
+   tema, no por espacio, así que esto los alinea con Clásico en vez de
+   dejarlo como la excepción.
+
+   Sigue sin llevar partículas, degradados ni transparencias — la regla
+   de fondo de siempre: Clásico no compite con los demás, es el punto de
+   referencia. */
+html[data-tema="clasico"]{
+  --bg:#1E2329; --bg2:#2B3138; --bg3:#353D46; --bg4:#3F4852;
+  --line:#3A414B; --line2:#4A525D; --bg-cab:#242930;
+  --txt:#F3F5F7; --txt2:#A8B2BD; --txt3:#7C8794;
+}
+/* El color de personalidad de Clásico es el azul acero — pero Karaoke y
+   Cabina DJ siguen siendo espacios distintos, y necesitan poder
+   distinguirse sin leer la pestaña de la cabecera. No vuelve al verde de
+   antes: un violeta que combina con el azul en vez de pelearse con él,
+   pareja con el resto de la paleta fría de Clásico. */
+html[data-tema="clasico"][data-modo="karaoke"]{
+  --ac-claro:#7DA5F2; --ac:#5A8DEE; --ac2:#4676D6; --ac-oscuro:#3560B8;
+  --ac-d:#16233D; --ac-txt:#ffffff; --ac-rgb:90,141,238;
+}
+html[data-tema="clasico"][data-modo="dj"]{
+  --ac-claro:#B79CF2; --ac:#9B6BEA; --ac2:#7F4FD1; --ac-oscuro:#6236A8;
+  --ac-d:#241A3D; --ac-txt:#ffffff; --ac-rgb:155,107,234;
+}
+
+
+/* ════════════════════════ FIESTA ════════════════════════
+   Aquí sí se busca el efecto. La diferencia con Clásico no es «más
+   rosa»: es que en Fiesta las cosas **brillan y laten**, y en Clásico no
+   se mueve nada.
+
+   Fucsia y cian, que es la pareja de neón que todo el mundo reconoce, y
+   un fondo con dos focos de color en las esquinas superiores. Sigue
+   siendo un fondo oscuro: es una noche, y una pantalla que deslumbra en
+   un salón a oscuras es una pantalla que se apaga.
+
+   ── La regla de Fiesta, entera ───────────────────────────────────────
+       Movimiento lento. Luz. Neón. **Nunca confusión.**
+
+   La última palabra es la que manda. El operador está trabajando en esta
+   pantalla con gente esperando delante: una interfaz de fiesta que le
+   distraiga es peor que una aburrida. Por eso lo que se mueve es lento,
+   está lejos de donde se lee y no cambia de sitio nada. */
+html[data-tema="fiesta"]{
+  --ac-claro:#ff77c8; --ac:#ff2fa8; --ac2:#e0128c; --ac-oscuro:#a30b64;
+  --ac-d:#3d0a2a; --ac-txt:#ffffff; --ac-rgb:255,47,168;
+  --bg:#0a0713; --bg2:#150d24; --bg3:#20142f; --bg4:#2d1c40;
+  --line:#3d2a56; --line2:#563a78; --bg-cab:#1a0f2c;
+  --txt:#f6f0ff; --txt2:#c0aede; --txt3:#8f7bb5;
+  --info:#33e1ff; --star:#ffd84a;
+  --sh:0 20px 70px rgba(0,0,0,.75);
+  --sh2:0 8px 26px rgba(255,47,168,.22);
+}
+html[data-tema="fiesta"] body{ background:
+  radial-gradient(900px 620px at 8% -12%, #4a0f5e 0%, transparent 62%),
+  radial-gradient(900px 620px at 92% -12%, #08324f 0%, transparent 62%),
+  var(--bg); }
+
+/* El neón de verdad: el botón principal y el espacio activo llevan halo.
+   Solo esos dos. Si brilla todo, no brilla nada — es la misma regla del
+   acento, aplicada a la luz. */
+html[data-tema="fiesta"] #bPlay{
+  box-shadow:0 0 22px rgba(255,47,168,.55), 0 0 60px rgba(255,47,168,.25);
+}
+html[data-tema="fiesta"] #espacios .esp.on{
+  box-shadow:0 0 16px rgba(255,47,168,.45);
+}
+/* Y la cabecera con una línea de luz que recorre: es lo único que se
+   mueve, dura seis segundos y no está debajo de ningún texto. */
+html[data-tema="fiesta"] header{ position:relative; overflow:hidden }
+html[data-tema="fiesta"] header::after{
+  content:''; position:absolute; left:-30%; bottom:0; height:2px; width:30%;
+  background:linear-gradient(90deg, transparent, var(--ac-claro), #33e1ff, transparent);
+  animation:fiestaBarrido 6s linear infinite;
+}
+@keyframes fiestaBarrido{ to{ left:130% } }
+
+/* Con el movimiento reducido activado, la luz se queda quieta. El tema
+   sigue siendo Fiesta; lo que se quita es lo que marea. */
+@media (prefers-reduced-motion: reduce){
+  html[data-tema="fiesta"] header::after{ animation:none; opacity:.5; left:0; width:100% }
+}
+
+
+/* ════════════════════════ PEQUES ════════════════════════
+   El porqué de cada decisión está en `docs/DISENO.md`. Aquí, lo que hay
+   que saber para tocar estas reglas sin romperlas.
+
+   ── Las tres líneas del contraste ────────────────────────────────────
+       fondo → pastel · botones → MUY saturados · texto → casi negro
+   Pastel sobre pastel es el error que tenía la primera versión y el que
+   más contraste destruye.
+
+   ── Ni un gris ───────────────────────────────────────────────────────
+   `--txt2` y `--txt3` no son grises aquí: son el mismo marrón oscuro del
+   texto con menos peso, o color. Un gris intermedio es jerarquía para un
+   adulto y una cosa que no se ve para un niño.
+
+   ── Los colores significan siempre lo mismo ──────────────────────────
+       verde = seguir · naranja = la acción principal · azul = volver
+       coral = quitar · morado = información
+   Se aprenden por repetición en dos usos, y a partir de ahí ya no hace
+   falta leer el botón. Si algún día un botón verde deja de significar
+   «seguir», esto deja de funcionar entero.
+
+   ── Volumen de juguete ───────────────────────────────────────────────
+   Borde oscuro del mismo color + sombra dura del mismo color + brillo
+   arriba. Sombras COLOREADAS, no grises: una sombra gris sobre crema es
+   suciedad; una naranja es relieve.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="kids"]{
+  --bg:#fff3dc; --bg2:#ffffff; --bg3:#ffe7bd; --bg4:#ffd79a;
+  --line:#e2a33f; --line2:#c9821c; --bg-cab:#ffe7bd;
+  /* Ni un gris: los tres niveles de texto son el mismo marrón casi
+     negro. Se distinguen por peso y tamaño, no por estar apagados. */
+  --txt:#1f1405; --txt2:#3a2609; --txt3:#5a3d12;
+  --ac-claro:#ffa93d; --ac:#ff7a00; --ac2:#e56200; --ac-oscuro:#a33f00;
+  --ac-d:#ffe0bd; --ac-txt:#ffffff; --ac-rgb:255,122,0;
+  --dang:#e83b2e; --star:#ffb800; --info:#7a4dd6;
+  --avi:#e07800; --avi-txt:#7d4100; --avi-d:#ffe6c2; --avi-line:#e0a24a;
+  --dang-txt:#8a0f0f; --dang-d:#ffdede; --dang-line:#e79b9b;
+  --avi-d2:#fff0d0; --avi-line2:#e0b76a;
+  --r:26px;
+  --sh:0 18px 46px rgba(163,63,0,.28);
+  --sh1:0 4px 0 rgba(163,63,0,.45);
+  --sh2:0 8px 20px rgba(163,63,0,.22);
+
+  /* Los cinco significados. Se usan por nombre y no por color: el día
+     que el verde cambie de tono, cambia aquí y en ningún sitio más. */
+  --k-seguir:#2fbf5c;  --k-seguir-o:#177a37;
+  --k-volver:#2f8fe0;  --k-volver-o:#175f9c;
+  --k-quitar:#e8564a;  --k-quitar-o:#a32a20;
+  --k-info:#8a5cf0;    --k-info-o:#5a2fbf;
+}
+html[data-tema="kids"] body{
+  font-family:'Segoe UI Rounded','SF Pro Rounded','Varela Round',
+              'Quicksand','Nunito','Baloo 2',system-ui,sans-serif;
+  font-weight:700;
+  background:
+    radial-gradient(760px 520px at 6% -8%, #ffe08a 0%, transparent 58%),
+    radial-gradient(760px 520px at 96% 2%, #b7f0ff 0%, transparent 58%),
+    radial-gradient(620px 460px at 50% 108%, #ffd0ec 0%, transparent 60%),
+    var(--bg);
+}
+
+/* ── Piezas de plástico ──
+   El brillo de arriba es lo que separa «botón de color» de «pieza de
+   juguete»: es un degradado blanco translúcido en el tercio superior,
+   como el reflejo de una superficie curva. */
+html[data-tema="kids"] .btn,
+html[data-tema="kids"] button{
+  border-radius:999px; font-weight:800; letter-spacing:.2px;
+}
+html[data-tema="kids"] .btn{
+  border:2px solid var(--ac-oscuro); box-shadow:var(--sh1);
+  padding:0 24px; min-height:54px; font-size:16px;
+  background-image:linear-gradient(180deg, rgba(255,255,255,.30) 0%,
+                                   rgba(255,255,255,0) 45%);
+}
+html[data-tema="kids"] #bPlay{
+  padding:0 44px 0 34px; font-size:23px; height:76px;
+  border:3px solid var(--k-seguir-o);
+  background:var(--k-seguir);
+  background-image:linear-gradient(180deg, rgba(255,255,255,.34) 0%,
+                                   rgba(255,255,255,0) 48%);
+  color:#fff; box-shadow:0 7px 0 var(--k-seguir-o);
+}
+
+/* ── La física ──
+   Se hunde, rebota y se queda quieto. La curva del rebote es lo único
+   que hace que se sienta con peso; un escalado rápido se lee como un
+   parpadeo, no como un objeto. */
+html[data-tema="kids"] .btn:active,
+html[data-tema="kids"] .cb:active,
+html[data-tema="kids"] #bPlay:active{
+  transform:translateY(5px);
+  box-shadow:0 2px 0 var(--ac-oscuro);
+}
+html[data-tema="kids"] #bPlay:active{ box-shadow:0 2px 0 var(--k-seguir-o) }
+html[data-tema="kids"] .btn,
+html[data-tema="kids"] .cb,
+html[data-tema="kids"] #bPlay{
+  transition:transform .18s cubic-bezier(.2,1.6,.4,1), box-shadow .18s ease;
+}
+
+/* Los colores con significado, aplicados. Vaciar y quitar son coral
+   SIEMPRE: es lo que un niño mirando por encima del hombro aprende a
+   no tocar. */
+html[data-tema="kids"] #bClearQ,
+html[data-tema="kids"] .lnk.d,
+html[data-tema="kids"] .it .rm{ color:var(--k-quitar) }
+html[data-tema="kids"] .btn.g{
+  background:var(--k-volver); border-color:var(--k-volver-o); color:#fff;
+  box-shadow:0 4px 0 var(--k-volver-o);
+}
+html[data-tema="kids"] .h,
+html[data-tema="kids"] .empty p:not(:first-of-type){ color:var(--txt2) }
+
+/* El refuerzo sonoro importa más aquí que en ningún otro tema —un "¡bien!"
+   audible vale más que uno visual para esta edad—, y sigue siendo una
+   herramienta manual: el operador decide cuándo, nunca suena solo. Este
+   halo es solo para que no se pase por alto entre los demás sonidos.
+   Auditoría UX, 2026-08-03. */
+html[data-tema="kids"] .mcBtn[data-son="aplausos"]{
+  box-shadow:0 0 0 3px var(--k-seguir-o), var(--sh1);
+}
+
+/* ── Todo más grande ── */
+html[data-tema="kids"] .cb{ width:66px; height:66px; border:3px solid var(--line2);
+  box-shadow:0 4px 0 var(--line2) }
+html[data-tema="kids"] .ib{ width:50px; height:50px }
+html[data-tema="kids"] .ic{ width:28px; height:28px }
+html[data-tema="kids"] .cb .ic{ width:32px; height:32px }
+html[data-tema="kids"] .ic.sm{ width:22px; height:22px }
+html[data-tema="kids"] .empty .b .ic{ width:96px; height:96px }
+html[data-tema="kids"] #espacios .esp{ padding:13px 22px; font-size:16px;
+  border-width:3px }
+html[data-tema="kids"] .ph h2{ font-size:20px }
+html[data-tema="kids"] #tabs button{ padding:18px; font-size:18px }
+
+/* ══ FICHAS, NO LISTA ══
+   Este es el cambio que separa de verdad Peques del Clásico, y era el
+   último sitio donde se notaba que había nacido de él.
+
+   Una fila —índice, miniatura pequeña, texto a la derecha, botones al
+   final— es la anatomía de una tabla. Se lee de izquierda a derecha, hay
+   que contar renglones para saber dónde acaba una canción y empieza la
+   siguiente, y todo pesa lo mismo. Eso funciona para un adulto que
+   escanea veinte títulos deprisa.
+
+   Un niño no busca leyendo: busca **objetos**. Así que aquí cada canción
+   deja de ser una fila y pasa a ser una ficha: carátula grande arriba,
+   título debajo, botones grandes al pie, y mucho aire entre una y otra.
+   Se encuentra por la imagen, no por el texto.
+
+   Se hace con `grid` y sin tocar el HTML: las mismas cuatro piezas
+   (`idx`, `th`, `meta`, `acts`) colocadas en otro sitio. Un tema que
+   necesitara su propio HTML dejaría de ser un tema. */
+html[data-tema="kids"] .scroll{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));
+  gap:18px; align-content:start; padding:16px;
+}
+html[data-tema="kids"] .it{
+  grid-template-columns:1fr;
+  grid-template-areas:'foto' 'texto' 'botones';
+  align-items:stretch; gap:10px;
+  border-radius:30px; border:3px solid var(--line);
+  padding:14px; margin:0;
+  background:var(--bg2); box-shadow:0 6px 0 rgba(163,63,0,.16);
+  text-align:center;
+}
+html[data-tema="kids"] .it:hover{ transform:translateY(-3px) }
+html[data-tema="kids"] .it{ transition:transform .18s cubic-bezier(.2,1.5,.4,1) }
+html[data-tema="kids"] .it .th{
+  grid-area:foto; width:100%; height:120px; border-radius:22px;
+  object-fit:cover; background:var(--bg3);
+}
+html[data-tema="kids"] .it .meta{ grid-area:texto }
+html[data-tema="kids"] .it .acts{
+  grid-area:botones; justify-content:center; gap:6px; flex-wrap:wrap;
+}
+/* El número de orden, encima de la carátula como una pegatina: en una
+   ficha no cabe una columna a la izquierda, y el orden de la cola sí hay
+   que verlo. */
+html[data-tema="kids"] .it .idx{
+  position:absolute; margin:6px; width:34px; height:34px;
+  border-radius:50%; background:var(--ac); color:#fff;
+  font-size:16px; font-weight:900; border:2px solid var(--ac-oscuro);
+}
+html[data-tema="kids"] .it{ position:relative }
+
+/* Texto para leerlo desde un metro: quien maneja el aparato es un adulto
+   de pie, con un niño al lado tirándole de la manga. */
+html[data-tema="kids"] .it .t{ font-size:18px; font-weight:800; white-space:normal }
+html[data-tema="kids"] .it .c{ font-size:16px; color:var(--txt2) }
+html[data-tema="kids"] .it .dur{ font-size:15px }
+html[data-tema="kids"] .it .acts .ib{ width:44px; height:44px }
+/* El asa de arrastrar se va. En una fila tiene sentido —agarras el
+   renglón y lo subes—; en una rejilla de fichas no sabe nadie a dónde
+   arrastrar, y encima se caía a una línea ella sola. Reordenar en Peques
+   se hace quitando y volviendo a añadir, que es lo que hace un adulto
+   con prisa de todas formas. */
+html[data-tema="kids"] .it .grip{ display:none }
+
+/* ── Ritmo visual ──
+   Dos tonos alternos muy suaves. No es decoración: separa una ficha de
+   la de al lado sin necesidad de leer nada, que es exactamente lo que
+   hace falta cuando la pantalla tiene doce. */
+html[data-tema="kids"] .it:nth-child(even){ background:#fff8ec }
+
+html[data-tema="kids"] .empty{ font-size:17px; line-height:1.75;
+  grid-column:1 / -1 }
+
+/* El QR desaparece: no es que se esconda, es que en Peques no pinta
+   nada. Los niños no organizan la cola. */
+html[data-tema="kids"] #esquina,
+html[data-tema="kids"] #bQR{ display:none !important }
+
+/* ── La tele en Peques ──
+   Menos texto y más imagen. Un niño de siete años mira esto desde tres
+   metros, con ruido y gente delante: lo que no se entienda sin leer, no
+   se entiende. */
+html[data-tema="kids"] #espera h1,
+html[data-tema="kids"] #aplausos h1{ font-size:7.5vw; line-height:1.08 }
+html[data-tema="kids"] #espera .sub{ font-size:2.6vw; color:var(--txt2) }
+html[data-tema="kids"] .escena:not(.oculto) h1{
+  animation:kidsEntra .5s cubic-bezier(.2,1.5,.35,1) both;
+}
+@keyframes kidsEntra{
+  from{ transform:translateY(30px) scale(.88); opacity:0 }
+  65% { transform:translateY(-6px) scale(1.05) }
+  to  { transform:none; opacity:1 }
+}
+
+/* ── La pantalla de espera está VIVA, pero no compite con leer ──
+   Es la que un crío puede estar mirando cinco minutos. Tres estrellas
+   flotando muy despacio, y nada más: lo justo para que la pantalla no
+   parezca congelada.
+
+   Más lenta y más floja que la primera versión (auditoría UX,
+   2026-08-03): un niño cansado o con la atención frágil no necesita
+   nada moviéndose sin parar encima de lo que tiene que leer. Sigue
+   viva, solo que se nota menos y pesa menos en la mirada. */
+html[data-tema="kids"] #espera::after{
+  content:'⭐   ✨   ⭐';
+  display:block; font-size:3.4vw; letter-spacing:1.2vw; opacity:.6;
+  animation:kidsFlota 18s ease-in-out infinite;
+}
+@keyframes kidsFlota{
+  0%,100%{ transform:translateY(0) }
+  50%    { transform:translateY(-1vh) }
+}
+
+/* ── Los aplausos celebran el momento, no la actuación ──
+   Sin explosiones ni confeti: una fila de globos y estrellas que sube
+   despacio. Lo que se celebra es que ha salido, y eso no pide
+   fuegos artificiales, pide calor. */
+html[data-tema="kids"] #aplausos::before{
+  content:'🎈  ⭐  ✨  🎉  ⭐  🎈';
+  display:block; font-size:4.6vw; letter-spacing:.8vw; margin-bottom:1.6vh;
+  animation:kidsCelebra 5s ease-in-out infinite;
+}
+@keyframes kidsCelebra{
+  0%,100%{ transform:translateY(.6vh); opacity:.9 }
+  50%    { transform:translateY(-.8vh); opacity:1 }
+}
+
+@media (prefers-reduced-motion: reduce){
+  html[data-tema="kids"] .escena:not(.oculto) h1,
+  html[data-tema="kids"] #espera::after,
+  html[data-tema="kids"] #aplausos::before{ animation:none }
+  html[data-tema="kids"] .btn,
+  html[data-tema="kids"] .cb,
+  html[data-tema="kids"] #bPlay{ transition:none }
+}
+
+
+/* ════════════════════════ SHOW ════════════════════════
+   La tele como escenario, no como monitor.
+
+   Casi todo negro, dos focos azul y violeta cayendo desde arriba, y el
+   dorado reservado para lo único que importa en cada momento. La idea es
+   que desde el sofá parezca un plató de televisión y no una aplicación
+   con los colores cambiados.
+
+   La consecuencia práctica: **menos interfaz visible**. En un escenario
+   no hay barras de herramientas. Lo que en Clásico son detalles útiles
+   —bordes, fondos de caja, separadores— aquí se apagan, y lo que queda
+   es el texto grande y el vídeo. */
+html[data-tema="show"]{
+  --bg:#04060d; --bg2:#0a1020; --bg3:#101a30; --bg4:#182543;
+  --line:#1e2c4c; --line2:#2d4373; --bg-cab:#070c18;
+  --txt:#f2f6ff; --txt2:#9fb0d0; --txt3:#6d7fa3;
+  --ac-claro:#ffe07a; --ac:#ffc21a; --ac2:#e0a000; --ac-oscuro:#8a6000;
+  --ac-d:#332600; --ac-txt:#140e00; --ac-rgb:255,194,26;
+  --star:#ffd75e;
+  --sh:0 24px 80px rgba(0,0,0,.85);
+}
+/* Los focos. Los tres colores están escritos a mano porque son LUZ, no
+   marca: si salieran de --ac, cambiar el dorado convertiría el plató en
+   un charco del mismo color. */
+html[data-tema="show"] body{ background:
+  radial-gradient(800px 900px at 18% -30%, rgba(40,90,200,.30) 0%, transparent 62%),
+  radial-gradient(800px 900px at 82% -30%, rgba(150,40,190,.28) 0%, transparent 62%),
+  radial-gradient(1200px 500px at 50% 120%, rgba(255,194,26,.07) 0%, transparent 70%),
+  var(--bg); }
+html[data-tema="show"] .logo .titulo{ letter-spacing:1px }
+
+/* ── La tele: pantalla LED ──
+   Letras gigantes, sin cajas y con un resplandor tenue detrás, que es lo
+   que hace que un texto sobre negro se lea como un rótulo de escenario
+   y no como una diapositiva. */
+html[data-tema="show"] #espera h1,
+html[data-tema="show"] #aplausos h1,
+html[data-tema="show"] #llamada .tit{
+  font-size:8vw; line-height:1.05; letter-spacing:-.02em;
+  text-shadow:0 0 40px rgba(255,194,26,.28);
+}
+html[data-tema="show"] #franja .quien{ font-size:3.4vw; font-weight:900 }
+
+/* ── El telón ──
+   La diferencia entre «tema elegante» y «evento» no está en el color:
+   está en cómo entra cada cosa. En televisión un rótulo no aparece, SUBE
+   — y no se va en cuanto termina, se queda un segundo de más.
+
+   Aquí las escenas entran desde abajo, despacio y con la curva pesada de
+   una cortina, en vez del fundido de medio segundo que usan los otros
+   temas. Novecientos milisegundos parecen muchos en una interfaz y son
+   exactamente lo que hace que se lea como un pase y no como un cambio de
+   pantalla.
+
+   El aguante del final no es CSS: son los segundos de aplausos, que en
+   Show conviene subir a ocho o diez desde los ajustes. Eso lo decide
+   quien monta la fiesta, no la hoja de estilos. */
+html[data-tema="show"] .escena{
+  animation:showTelon .9s cubic-bezier(.16,.84,.28,1) both;
+}
+@keyframes showTelon{
+  from{ opacity:0; transform:translateY(16vh) scaleY(.94); transform-origin:bottom }
+  60% { opacity:1 }
+  to  { opacity:1; transform:none }
+}
+/* Y el rótulo de quién canta entra después del telón, no a la vez: dos
+   cosas moviéndose al mismo tiempo se leen como una sola. */
+html[data-tema="show"] .escena h1{
+  animation:showRotulo .7s .35s cubic-bezier(.16,.84,.28,1) both;
+}
+@keyframes showRotulo{
+  from{ opacity:0; transform:translateY(3vh); letter-spacing:.06em }
+  to  { opacity:1; transform:none }
+}
+@media (prefers-reduced-motion: reduce){
+  html[data-tema="show"] .escena,
+  html[data-tema="show"] .escena h1{ animation:none }
+}
+html[data-tema="show"] #proximas{ opacity:.72 }
+/* Menos interfaz: en un escenario no hay bordes de caja. */
+html[data-tema="show"] #calent .panel .caja,
+html[data-tema="show"] #proximas{ border-color:transparent; background:transparent }
+
+/* ── En Fiesta, Peques y Show manda el tema, no el espacio ──
+   El fondo, la tipografía y el carácter general no cambian de un espacio
+   a otro — si no, cambiar de espacio descolocaba el tema entero. Pero el
+   ACENTO sí, y hasta el 2026-08-04 estos tres bloques no lo hacían:
+   fijaban exactamente el mismo valor que ya tenía el tema por defecto,
+   copiados de la estructura de Clásico ([[16]]) sin cambiar los números.
+   Un bloque que existe y no hace nada. Mismo criterio que Clásico: un
+   giro de tono manteniendo el carácter del tema, para que se note en qué
+   escenario se está sin tener que leer la palabra «DJ» en ningún sitio. */
+html[data-tema="fiesta"][data-modo="dj"],
+html[data-tema="fiesta"][data-modo="mc"]{
+  --ac-claro:#a985ff; --ac:#7c3fff; --ac2:#6420e0; --ac-oscuro:#3d0ba3;
+  --ac-d:#180a3d; --ac-txt:#ffffff; --ac-rgb:124,63,255;
+}
+html[data-tema="kids"][data-modo="dj"],
+html[data-tema="kids"][data-modo="mc"]{
+  --ac-claro:#5fe3d6; --ac:#1ec9b7; --ac2:#16a693; --ac-oscuro:#0d6d5f;
+  --ac-d:#d7f7f2; --ac-txt:#ffffff; --ac-rgb:30,201,183;
+}
+html[data-tema="show"][data-modo="dj"],
+html[data-tema="show"][data-modo="mc"]{
+  --ac-claro:#7fd4ff; --ac:#29c4ff; --ac2:#0aa3e0; --ac-oscuro:#04618a;
+  --ac-d:#00263a; --ac-txt:#00131e; --ac-rgb:41,196,255;
+}
+
+/* ── El botón de reto del Modo Show en el operador ──
+   Solo existe con este tema. No se esconde con `display:none` en los
+   otros: es que no se pinta, y así no hay forma de que aparezca medio
+   panel por un descuido de CSS. */
+#panelShow{ display:none }
+html[data-tema="show"] #panelShow{ display:flex }
+#panelShow{
+  flex-wrap:wrap; gap:8px; align-items:center;
+  padding:8px 14px; border-bottom:1px solid var(--line); background:var(--bg2);
+}
+#panelShow .carta{
+  flex:1; min-width:180px; color:var(--txt2); font-size:13px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#panelShow .carta b{ color:var(--ac) }

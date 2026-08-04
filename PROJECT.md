@@ -1,4 +1,4 @@
-# Karaoke Launcher — documento del proyecto
+# OpenKaraoke Center — documento del proyecto
 
 Este archivo es la referencia única. Quien lo lea entero debería poder
 ponerse a trabajar sin preguntar nada ni leer conversaciones anteriores.
@@ -9,7 +9,7 @@ Versión del documento: 1.0 · Corresponde al código de agosto de 2026.
 
 ## 1. Qué es y para qué sirve
 
-Karaoke Launcher lanza vídeos de karaoke de YouTube en una fiesta. El
+OpenKaraoke Center lanza vídeos de karaoke de YouTube en una fiesta. El
 problema que resuelve es concreto y doméstico: cuando alguien quiere cantar
 algo, la secuencia habitual es abrir YouTube, buscar, equivocarse de vídeo
 porque el primer resultado es la canción original y no la pista de karaoke,
@@ -394,25 +394,53 @@ servidor no responde bien. `Preparar.bat` usa `php.ini-production`.
 Ordenado por relación entre lo que aporta y lo que cuesta. Lo de arriba es lo
 siguiente que hay que hacer.
 
-**Sincronizar la posición entre dispositivos.** Ahora mismo `sonando` dice
-qué canción va, pero no por qué segundo. Guardar la posición permitiría que
-la pantalla de proyección siguiera al reproductor con exactitud.
+<!-- «Sincronizar la posición entre dispositivos» estaba aquí. Ya está
+     hecho (comprobado 2026-08-03): `evento.js` publica `t0` -el instante
+     real en que el reproductor maestro empieza a sonar de verdad- y
+     `proyector/reproductor.js` lo usa para saltar al segundo correcto.
+     Ver MODELO.md §7. Este backlog no se había actualizado. -->
 
-**Descarga en segundo plano.** `descargar.php` bloquea hasta que yt-dlp
-termina, lo que con un vídeo largo puede ser un minuto de espera. Debería
-lanzar el proceso, devolver el control y que la interfaz consulte el progreso.
+<!-- «Descargar la cola entera de una vez» estaba aquí. Hecho
+     (2026-08-03): botón nuevo junto a Mezclar, `KL.cola.descargarCola()`
+     en cola.js, reutiliza el mismo `descargar()` de siempre por cada
+     pista sin `.local`, con un respiro de 400ms entre cada arranque
+     para no saturar el servidor de PHP. Probado con una descarga real
+     de principio a fin. -->
 
-**Descargar la cola entera de una vez**, para preparar la fiesta con
-antelación y no depender de la wifi.
+<!-- «Historial de lo cantado, para no repetir y para saber a la mañana
+     siguiente qué pasó» estaba aquí, pendiente. HECHO (2026-08-03): el
+     servidor ya lo guardaba (`historial` en estado.json, hasta 100
+     entradas) pero no tenía panel. Ahora hay uno: botón «Ya cantadas»
+     en la cabecera de la cola, abre `#ovHist` con miniatura, quién la
+     pidió, hora y un botón «Pedir otra vez» que la vuelve a añadir a la
+     cola. «Vaciar historial» reutiliza la acción `vaciar_historial` que
+     ya existía. Ver js/cola.js (drawHist, vaciarHistorial). -->
 
-**Historial de lo cantado**, para no repetir y para saber a la mañana
-siguiente qué pasó.
-
-**Votar canciones desde el móvil**, subiendo en la cola las más votadas.
+<!-- «Votar canciones desde el móvil» estaba aquí. Se quitó (2026-08-03):
+     DECISIONES.md ya la rechazó explícitamente en agosto 2026 («no hay
+     votaciones, ni «me gusta», ni rankings») y este backlog no se había
+     actualizado. Este archivo y ese eran la misma lista contando dos
+     cosas distintas — el fallo exacto que MODELO.md §8 pide evitar. -->
 
 **Traducción al inglés**, en línea con la web de tizzenn, que ya es bilingüe.
+Decidido (2026-08-04): va en **v1.3**, no en v1.2 — después de publicar,
+no bloquea el proceso de publicar.
 
-**Modo dúo**, marcando canciones que se cantan a dos voces.
+<!-- «bAuto rompe la promesa de la Cabina DJ» estaba aquí, detectado en la
+     revisión UX de DJ (2026-08-03), sin arreglar. HECHO (2026-08-04):
+     `terminar()` en evento.js miraba `S.autoNext` (el botón bAuto) para
+     los DOS espacios por igual, así que si estaba apagado la Cabina DJ
+     se paraba en silencio al terminar una canción — justo lo contrario
+     de "la lista suena sola". Ahora `terminar()` ignora `autoNext` para
+     los espacios con `encadena:true` (ESPACIOS_INFO en interfaz.js), y
+     el botón bAuto se deshabilita solo al entrar en la Cabina DJ, con un
+     title que explica por qué. Karaoke no cambia: ahí bAuto sigue
+     mandando, que es su sitio. -->
+
+<!-- «Modo dúo» estaba aquí. Rechazado (2026-08-03), no aplazado: quién
+     canta es un valor de la actuación, informal, y no aporta nada saber
+     si son una persona o varias. Marcarlo no cambiaría ni la cola ni la
+     pantalla de nadie — sería un dato que nadie usaría después. -->
 
 ---
 
