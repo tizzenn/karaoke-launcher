@@ -75,6 +75,14 @@ Necesitas `yt-dlp` y `ffmpeg`, que instala `Preparar.bat` por ti. Si
 prefieres ponerlos a mano, déjalos junto a `Karaoke.bat` o escribe la ruta
 en Ajustes. Las canciones descargadas salen marcadas con ⭳.
 
+## Idiomas
+
+Cada aparato elige el suyo con el selector ES/EN de la cabecera —no afecta a
+los demás—. Para traducir a un idioma nuevo sin tocar código, usa
+[Weblate](https://hosted.weblate.org/projects/openkaraoke-center/): un
+formulario web, sin instalar nada. Los detalles técnicos están en
+[idiomas/LEEME.md](idiomas/LEEME.md).
+
 ## Detalles útiles para la fiesta
 
 La biblioteca arranca plegada en la estrellita de la izquierda, para que el

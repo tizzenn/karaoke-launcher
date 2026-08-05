@@ -43,6 +43,14 @@ Sin clave también funciona: puedes pegar enlaces de YouTube.
 Instrucciones completas en [LEEME.md](LEEME.md). La documentación técnica, en
 [PROJECT.md](PROJECT.md).
 
+## Idiomas
+
+La aplicación se traduce en [Weblate](https://hosted.weblate.org/projects/openkaraoke-center/),
+sin necesidad de tocar código ni abrir GitHub — un formulario y ya está.
+Los cambios llegan aquí solos, como Pull Requests. Ver
+[idiomas/LEEME.md](idiomas/LEEME.md) para añadir un idioma nuevo a mano,
+si lo prefieres.
+
 ## Por qué no usa frameworks
 
 Ni React, ni Vue, ni Bootstrap, ni npm, ni paso de compilación. HTML, CSS,

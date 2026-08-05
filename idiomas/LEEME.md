@@ -22,12 +22,10 @@ el HTML de partida, así que siempre está completo por definición.
 
 ## Traducir vía Weblate (recomendado, sin usar GitHub)
 
-Este proyecto está preparado para traducirse en [Weblate](https://hosted.weblate.org/),
-una plataforma gratuita para proyectos de código abierto donde puedes
-editar el texto en un formulario, sin descargar nada ni tocar archivos a
-mano. Los cambios llegan aquí automáticamente como Pull Requests.
+**[hosted.weblate.org/projects/openkaraoke-center](https://hosted.weblate.org/projects/openkaraoke-center/)**
+— entra, elige un idioma (o pide uno nuevo) y traduce desde un
+formulario web, sin descargar nada ni tocar archivos a mano. Los
+cambios llegan aquí solos, como Pull Requests.
 
-Si el proyecto ya está conectado a Weblate, hay un enlace a la página de
-traducción en el `README.md` principal. Si no lo ves, es que todavía no
-se ha conectado — mientras tanto, edita el `.json` directamente y abre
-un Pull Request en GitHub.
+`idiomas/en.json` es la plantilla: cualquier idioma nuevo que se
+empiece en Weblate parte de sus claves.
