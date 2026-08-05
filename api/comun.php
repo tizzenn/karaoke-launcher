@@ -459,46 +459,6 @@ function ip_local(): ?string {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Normalizar lo que se escribe en «música ambiente»
-
-   La gente pega lo que tiene a mano: la dirección de una lista, la de un
-   canal, un `@usuario`, o solo el identificador. Pedirle que averigüe
-   cuál de esas cosas es «el ID de la playlist» es pedirle que haga el
-   trabajo del programa.
-
-   Devuelve el identificador de una lista de reproducción, o cadena vacía
-   si no se ha reconocido nada.
-
-   ── El truco del canal ──────────────────────────────────────────────
-   Un canal `UCxxxx` tiene siempre una lista con todas sus subidas cuyo
-   identificador es el mismo cambiando `UC` por `UU`. Es una convención
-   vieja de YouTube y sigue funcionando. Gracias a eso, poner la
-   dirección de un canal equivale a poner «todo lo que suba, según lo
-   suba», que para música de fondo es justo lo que se quiere: una lista
-   fija se queda vieja y a los tres meses suena siempre lo mismo.
-
-   Lo que NO se acepta: un `@usuario`. Desde el servidor no se puede
-   traducir a su identificador sin pedírselo a YouTube, y esto tiene que
-   funcionar con el router caído.
-   ═══════════════════════════════════════════════════════════════════ */
-function lista_ambiente(string $texto): string {
-  $t = trim($texto);
-  if ($t === '') return '';
-
-  /* ?list=... dentro de una dirección */
-  if (preg_match('~[?&]list=([A-Za-z0-9_-]{10,})~', $t, $m)) return $m[1];
-
-  /* /channel/UCxxxx → su lista de subidas */
-  if (preg_match('~/channel/(UC[A-Za-z0-9_-]{20,})~', $t, $m)) return 'UU' . substr($m[1], 2);
-
-  /* Pegado a secas: una lista, o un canal */
-  if (preg_match('~^UC[A-Za-z0-9_-]{20,}$~', $t)) return 'UU' . substr($t, 2);
-  if (preg_match('~^[A-Za-z0-9_-]{10,}$~', $t)) return $t;
-
-  return '';
-}
-
-/* ═══════════════════════════════════════════════════════════════════
    Guardar un JSON sin poder dejarlo a medias
 
    `file_put_contents` escribe encima del archivo bueno. Si el proceso se

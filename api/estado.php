@@ -12,6 +12,7 @@
 
 declare(strict_types=1);
 require __DIR__ . '/comun.php';
+require_once __DIR__ . '/claves.php';
 
 $cfg = cfg();
 
@@ -185,8 +186,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
      Preguntar cada segundo y medio cuesta unos milisegundos por vuelta y
      deja el servidor libre el resto del tiempo. */
   $e['peticiones'] = (bool)$cfg['peticiones'];
-  $e['con_clave']  = trim((string)$cfg['api_key']) !== ''
-                     && $cfg['api_key'] !== 'PON_AQUI_TU_CLAVE';
+  /* BUG REAL arreglado (2026-08-04): esto solo miraba la clave suelta
+     de antes del pool (`$cfg['api_key']`), que el formulario de
+     ajustes.php ya no escribe desde que existen las filas de claves —
+     así que quien configuraba su clave por el pool (la única forma que
+     hay hoy) veía «Configura tu clave» para siempre, aunque la clave
+     funcionara perfectamente. Ahora mira la lista de verdad, que ya
+     incluye la suelta como respaldo si alguien la tenía de antes (ver
+     claves_lista() en claves.php). */
+  $e['con_clave']  = !empty(claves_lista($cfg));
   /* La marca de la edición —«A Veiga Edition»— es un ajuste, no otra
      versión del programa. Aquí viaja igual que cualquier otro. */
   $e['edicion']    = (string)($cfg['edicion'] ?? '');
@@ -222,13 +230,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   /* La dirección de este PC en la red local y el puerto: es lo que hay
      que enseñar a los móviles. NO se puede deducir de la URL del
      navegador, porque Karaoke.bat abre la aplicación en localhost. */
-  /* La Cabina DJ: qué suena cuando no canta nadie. Viaja con el estado
-     porque el operador tiene que poder cambiarla sin recargar, y porque
-     la lista normalizada la calcula el servidor: el navegador no tiene
-     por qué saber que un canal `UC…` es la lista `UU…`. */
+  /* La música ambiente: qué suena cuando no canta nadie en Karaoke.
+     Viaja con el estado porque el operador tiene que poder cambiarla sin
+     recargar. Ya no lleva una lista propia (2026-08-05): cuando la
+     fuente es "dj", el navegador rellena los huecos del karaoke con la
+     cola de verdad de la Cabina DJ —que ya recibe en `cola`—, así que no
+     hay nada que calcular aquí; ver js/ambiente.js. */
   $e['ambiente'] = [
-    'fuente'  => (string)($cfg['ambiente_fuente'] ?? 'youtube'),
-    'lista'   => lista_ambiente((string)($cfg['ambiente_lista'] ?? '')),
+    'fuente'  => (string)($cfg['ambiente_fuente'] ?? 'no'),
     'carpeta' => trim((string)($cfg['ambiente_carpeta'] ?? '')) !== '',
     'volumen' => (int)($cfg['ambiente_volumen'] ?? 35),
     'auto'    => !empty($cfg['ambiente_auto']),
@@ -274,6 +283,40 @@ if ($invitado) {
   if ($pass !== '' && (string)($in['clave'] ?? '') !== $pass) {
     error_json('contraseña de la fiesta incorrecta', 403);
   }
+}
+
+/* Dónde entra una canción nueva en la cola, con la rotación por turnos
+   activada (v1.3). No reordena nada de lo que ya hay: solo decide en
+   qué punto de la cola YA EXISTENTE encaja la nueva, así que un
+   arrastre manual del operador nunca se deshace con la siguiente
+   petición.
+
+   La idea: cada persona tiene su propia «ronda» — su primera canción
+   es ronda 0, la segunda ronda 1, y así. La nueva canción entra justo
+   antes de la primera canción de otra persona cuya ronda ya sea mayor
+   que la suya. Si Ana pide tres seguidas y Luis pide la primera
+   después, Luis entra antes de la segunda de Ana, no detrás de la
+   tercera.
+
+   Sin identidad (`$quien` vacío, canciones puestas por el operador),
+   cada una cuenta como su propia persona de una sola canción: no
+   compite por turno con nadie, así que nunca empuja ni es empujada. */
+function indice_por_turno(array $cola, string $espacio, ?string $quien): int {
+  $miRonda = 0;
+  if ($quien !== null) {
+    foreach ($cola as $t) {
+      if (($t['espacio'] ?? 'karaoke') === $espacio && ($t['pedida'] ?? null) === $quien) $miRonda++;
+    }
+  }
+  $vistos = [];
+  foreach ($cola as $i => $t) {
+    if (($t['espacio'] ?? 'karaoke') !== $espacio) continue;
+    $clave = ($t['pedida'] ?? null) ?? ('__solo__' . ($t['id'] ?? $i));
+    $rondaDeEste = $vistos[$clave] ?? 0;
+    $vistos[$clave] = $rondaDeEste + 1;
+    if ($rondaDeEste > $miRonda) return $i;
+  }
+  return count($cola);
 }
 
 function pista_desde(array $v, ?string $quien = null, string $espacio = 'karaoke'): array {
@@ -470,7 +513,25 @@ $resultado = modificar_estado($BD, function (array $e) use ($in, $accion, $invit
         error_json('En esta fiesta cada canción suena una vez. Elige otra y seguimos.', 409);
       }
 
-      $e['cola'][] = pista_desde($v, $quien !== '' ? $quien : null, $espacio);
+      $pista = pista_desde($v, $quien !== '' ? $quien : null, $espacio);
+
+      /* La rotación por turnos (v1.3) es un concepto del Karaoke, no de
+         la Cabina DJ: allí no hay actuaciones que turnar, es una lista
+         y punto — MODELO.md ya la trata como algo aparte por eso mismo. */
+      $modoOrden = in_array($cfg['orden_cola'] ?? 'rotacion', ['fifo', 'rotacion', 'manual'], true)
+                 ? $cfg['orden_cola'] : 'rotacion';
+      if ($espacio === 'karaoke' && $modoOrden === 'rotacion') {
+        $indice = indice_por_turno($e['cola'], $espacio, $pista['pedida']);
+        /* Para que pedir.php pueda decir «te hemos guardado el turno»
+           en vez de «añadida al final», solo cuando de verdad se ha
+           colocado antes del final por respetar el turno de otros. No
+           se guarda en la pista: es información de esta respuesta, no
+           un dato permanente, igual que `_varias` más abajo. */
+        if ($indice < count($e['cola'])) $e['_turno'] = ['respetado' => true];
+        array_splice($e['cola'], $indice, 0, [$pista]);
+      } else {
+        $e['cola'][] = $pista;
+      }
 
       /* Caso 3: varias personas han elegido lo mismo. No se impide nada
          —eso es una fiesta funcionando— pero se dice, porque a quien

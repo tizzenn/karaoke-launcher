@@ -65,7 +65,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       case 'estado_limpio':
         modificar_estado('estado', function ($e) {
           $e['cola'] = []; $e['historial'] = [];
-          $e['evento'] = evento_inicial();
+          /* evento_inicial() vive en api/estado.php, que qa.php no
+             carga -solo api/comun.php-. Repetido aquí en vez de
+             incluir ese archivo entero, que ejecutaría su propia
+             lógica de petición HTTP con efectos secundarios que aquí
+             no pintan nada. Mismo array exacto que devuelve
+             evento_inicial(); si esa función cambia, cambiar aquí
+             también. Bug real (2026-08-04): esta acción llevaba desde
+             que se escribió lanzando "Call to undefined function
+             evento_inicial()" en silencio -el catch de más abajo lo
+             convertía en un $hecho = 'ERROR: ...' que nadie miró-, así
+             que nunca había vaciado nada de verdad. */
+          $e['evento'] = ['estado' => 'ESPERA', 'pistaId' => null, 'recien' => null,
+                           'desde' => 0, 'segundos' => 0, 'n' => 0];
           $e['calentamiento'] = 0;
           return $e;
         });

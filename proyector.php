@@ -85,6 +85,7 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 </head>
 <body data-lado="der" data-escena="ESPERA">
 
+<script src="js/idioma.js"></script>
 <script src="js/simbolos.js"></script>
 
 <div id="escena">
@@ -95,6 +96,22 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 <div id="halo" class="no"></div>
 <div id="barras"></div>
 
+<!-- Lenguaje visual escénico (2026-08-04): un instante antes de que
+     aparezca el vídeo, no de la lista al vídeo de golpe. Solo en
+     Karaoke —en Cabina DJ no hay a quién presentar, ver escenas.js—, y
+     no retrasa nada del control del operador: es la pantalla PÚBLICA
+     la que se toma un momento, no la máquina de estados. -->
+<div id="presentando" class="oculto">
+  <div class="ppTxt" data-i18n="presentando_txt">Preparando escenario…</div>
+  <div class="ppQuien" id="ppQuien"></div>
+  <div class="ppTitulo" id="ppTitulo"></div>
+</div>
+
+<!-- Un destello muy corto cada vez que entra una petición nueva desde
+     el móvil — "un pequeño acontecimiento", no una fiesta de confeti
+     cada vez, eso queda para los aplausos. Ver escenas.js. -->
+<div id="destello" aria-hidden="true"></div>
+
 <!-- El "blackout" teatral: tapa el instante en que el vídeo se corta en
      seco al terminar una actuación, como se apagan un poco las luces de
      un escenario antes del siguiente número. Detrás ya está montada la
@@ -104,70 +121,70 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 
 <!-- ═══ CALENTAMIENTO ═══ -->
 <div class="escena oculto" id="calent">
-  <div class="marca"><svg class="ic"><use href="#ic-microfono"></use></svg> <span id="marcaTxt">Karaoke</span></div>
+  <div class="marca"><svg class="ic"><use href="#ic-microfono"></use></svg> <span id="marcaTxt" data-i18n="marca_karaoke">Karaoke</span></div>
   <div class="reloj" id="reloj"></div>
 
   <!-- 1 · Cómo pedir, en tres pasos -->
   <div class="panel on" data-k="pedir">
-    <h1>Pide tu canción <span class="ac">desde el móvil</span></h1>
+    <h1 data-i18n-html="pedir_h1">Pide tu canción <span class="ac">desde el móvil</span></h1>
     <div class="pasos">
       <div class="paso">
         <span class="num">1</span>
         <div class="pic" id="picWifi"><svg class="ic"><use href="#ic-wifi"></use></svg></div>
-        <div class="tit" id="tWifi">Conéctate al wifi</div>
-        <div class="txt" id="dWifi">Apunta con la cámara y acepta la red</div>
+        <div class="tit" id="tWifi" data-i18n="paso1_tit">Conéctate al wifi</div>
+        <div class="txt" id="dWifi" data-i18n="paso1_txt">Apunta con la cámara y acepta la red</div>
       </div>
       <div class="flecha">›</div>
       <div class="paso">
         <span class="num">2</span>
         <div class="pic" id="picPedir"><svg class="ic"><use href="#ic-qr"></use></svg></div>
-        <div class="tit">Escanea esto</div>
-        <div class="txt" id="dPedir">Se abre solo. No hay que instalar nada</div>
+        <div class="tit" data-i18n="paso2_tit">Escanea esto</div>
+        <div class="txt" id="dPedir" data-i18n="paso2_txt">Se abre solo. No hay que instalar nada</div>
       </div>
       <div class="flecha">›</div>
       <div class="paso">
         <span class="num">3</span>
         <div class="pic"><svg class="ic"><use href="#ic-buscar"></use></svg></div>
-        <div class="tit">Busca y envía</div>
-        <div class="txt" id="dEnviar">Tu canción entra en la cola</div>
+        <div class="tit" data-i18n="paso3_tit">Busca y envía</div>
+        <div class="txt" id="dEnviar" data-i18n="paso3_txt">Tu canción entra en la cola</div>
       </div>
     </div>
   </div>
 
   <!-- 2 · La cola, llenándose en directo -->
   <div class="panel" data-k="cola">
-    <h1>La cola <span class="ac">ahora mismo</span></h1>
+    <h1 data-i18n-html="cola_h1">La cola <span class="ac">ahora mismo</span></h1>
     <div class="sub" id="colaSub"></div>
     <div class="cola" id="colaLista"></div>
   </div>
 
   <!-- 3 · Cómo funciona esto por dentro -->
   <div class="panel" data-k="funciona">
-    <h1>Cómo <span class="ac">funciona</span></h1>
+    <h1 data-i18n-html="funciona_h1">Cómo <span class="ac">funciona</span></h1>
     <div class="circuito">
       <div class="nodo"><svg class="ic"><use href="#ic-movil"></use></svg>
-        <span class="q">Tú pides</span><span class="d">desde tu móvil</span></div>
+        <span class="q" data-i18n="nodo1_q">Tú pides</span><span class="d" data-i18n="nodo1_d">desde tu móvil</span></div>
       <div class="flecha">›</div>
       <div class="nodo vivo"><svg class="ic"><use href="#ic-musica"></use></svg>
-        <span class="q">A la cola</span><span class="d" id="nodoCola">esperando turno</span></div>
+        <span class="q" data-i18n="nodo2_q">A la cola</span><span class="d" id="nodoCola" data-i18n="nodo2_d">esperando turno</span></div>
       <div class="flecha">›</div>
       <div class="nodo"><svg class="ic"><use href="#ic-tv"></use></svg>
-        <span class="q">A la pantalla</span><span class="d">con la letra</span></div>
+        <span class="q" data-i18n="nodo3_q">A la pantalla</span><span class="d" data-i18n="nodo3_d">con la letra</span></div>
       <div class="flecha">›</div>
       <div class="nodo"><svg class="ic"><use href="#ic-microfono"></use></svg>
-        <span class="q">Cantas</span><span class="d">y aplaudimos</span></div>
+        <span class="q" data-i18n="nodo4_q">Cantas</span><span class="d" data-i18n="nodo4_d">y aplaudimos</span></div>
     </div>
-    <div class="consejo">Nadie tiene que buscar nada en YouTube ni pasarle el móvil a nadie.
+    <div class="consejo" data-i18n="funciona_consejo">Nadie tiene que buscar nada en YouTube ni pasarle el móvil a nadie.
     Se encadenan solas, una detrás de otra.</div>
   </div>
 
   <!-- 4 · Datos y consejos -->
   <div class="panel" data-k="datos">
-    <h1>Antes de <span class="ac">empezar</span></h1>
+    <h1 data-i18n-html="datos_h1">Antes de <span class="ac">empezar</span></h1>
     <div class="datos">
-      <div class="dato"><div class="g" id="dCola">0</div><div class="p">en la cola</div></div>
-      <div class="dato"><div class="g" id="dBib">0</div><div class="p">en la biblioteca</div></div>
-      <div class="dato"><div class="g" id="dMin">—</div><div class="p">de música ya pedida</div></div>
+      <div class="dato"><div class="g" id="dCola">0</div><div class="p" data-i18n="dato_cola">en la cola</div></div>
+      <div class="dato"><div class="g" id="dBib">0</div><div class="p" data-i18n="dato_bib">en la biblioteca</div></div>
+      <div class="dato"><div class="g" id="dMin">—</div><div class="p" data-i18n="dato_min">de música ya pedida</div></div>
     </div>
     <div class="consejo" id="consejo"></div>
   </div>
@@ -177,8 +194,8 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
 
 <!-- ═══ ESPERA / PREPARADA ═══ -->
 <div class="escena oculto" id="espera">
-  <h1 id="esperaTit">🎤 Karaoke</h1>
-  <div class="sub" id="esperaSub">Elige una canción en el ordenador y empieza la fiesta.</div>
+  <h1 id="esperaTit">🎤 <span data-i18n="marca_karaoke">Karaoke</span></h1>
+  <div class="sub" id="esperaSub" data-i18n="espera_sub">Elige una canción en el ordenador y empieza la fiesta.</div>
   <div class="cola" id="esperaLista" style="width:64vw;max-height:38vh"></div>
   <!-- El termómetro. No dice cuántas canciones hay: dice cómo va la
        fiesta. Quien lo lee no sabe que hay una aplicación detrás y no
@@ -191,13 +208,13 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
      operador para quien va a salir y se queda hasta que la quita, porque
      el reto tiene que poder leerse mientras se canta. -->
 <div id="carta" class="oculto">
-  <div class="et">Reto</div>
+  <div class="et" data-i18n="carta_reto_et">Reto</div>
   <div class="txt" id="cartaTxt"></div>
 </div>
 
 <!-- ═══ LLAMADA ═══ -->
 <div class="escena oculto" id="llamada">
-  <div class="et">Ahora canta</div>
+  <div class="et" data-i18n="llamada_et">Ahora canta</div>
   <div class="quien" id="llamQuien"></div>
   <div class="tit" id="llamTit"></div>
   <div class="num" id="llamNum">5</div>
@@ -209,14 +226,14 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
        esta escena (js/proyector/escenas.js, lanzarConfeti()). Vacío en
        reposo: nada que limpiar si la fiesta lleva horas encendida. -->
   <div id="confeti" aria-hidden="true"></div>
-  <h1>👏 <span class="ac">¡Bien!</span></h1>
+  <h1>👏 <span class="ac" data-i18n="aplausos_bien">¡Bien!</span></h1>
   <div class="sub" id="finQue"></div>
   <div class="sub" style="font-size:2.6vw;color:var(--txt)" id="finSig"></div>
 </div>
 
 <!-- ═══ Encima del vídeo ═══ -->
 <div id="franja" class="fuera oculto">
-  <div class="et">Suena ahora</div>
+  <div class="et" data-i18n="franja_et">Suena ahora</div>
   <div class="canta" id="quien">—</div>
   <div class="tema" id="tema"></div>
 </div>
@@ -230,19 +247,19 @@ $conClave = (string)$cfg['clave_fiesta'] !== '';
        pregunta de quien lo monta por primera vez es cuál va a la tele.
        Contestarla aquí ahorra la llamada de teléfono. -->
   <div class="quien">
-    <div class="et">Esta ventana es</div>
-    <div class="nom"><svg class="ic"><use href="#ic-tv"></use></svg> LA PANTALLA DEL PÚBLICO</div>
-    <div class="don">Arrástrala a la televisión o al proyector y ponla a pantalla completa con <b>F</b>.<br>
+    <div class="et" data-i18n="arranque_et">Esta ventana es</div>
+    <div class="nom"><svg class="ic"><use href="#ic-tv"></use></svg> <span data-i18n="arranque_nom">LA PANTALLA DEL PÚBLICO</span></div>
+    <div class="don" data-i18n-html="arranque_don">Arrástrala a la televisión o al proyector y ponla a pantalla completa con <b>F</b>.<br>
       La otra ventana —la de la cola y los botones— se queda en el ordenador.</div>
   </div>
-  <button class="b" id="empezar">Encender la pantalla</button>
+  <button class="b" id="empezar" data-i18n="arranque_boton">Encender la pantalla</button>
   <div class="p">
-    Pulsa una vez y ya se queda. El navegador no deja que suene el vídeo
-    hasta que alguien toca la pantalla.<br><br>
+    <span data-i18n="arranque_p">Pulsa una vez y ya se queda. El navegador no deja que suene el vídeo
+    hasta que alguien toca la pantalla.</span><br><br>
     <span id="quienSuena"></span>
   </div>
   <label><input type="checkbox" id="conMicro" checked>
-    Que la pantalla reaccione al ruido de la sala</label>
+    <span data-i18n="arranque_micro">Que la pantalla reaccione al ruido de la sala</span></label>
 </div>
 
 <script src="js/cancion.js"></script>

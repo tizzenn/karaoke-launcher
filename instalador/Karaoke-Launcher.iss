@@ -18,7 +18,7 @@
 ; ═══════════════════════════════════════════════════════════════════
 
 #define MyAppName "Karaoke Launcher"
-#define MyAppVersion "1.1"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "tizzenn"
 #define MyAppURL "https://github.com/tizzenn/karaoke-launcher"
 
@@ -29,11 +29,23 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
-DefaultDirName={autopf}\KaraokeLauncher
+; NO Program Files (2026-08-05, bug urgente): la app escribe en su propia
+; carpeta data\ cada vez que alguien guarda Ajustes o llega una petición
+; nueva, y lo hace como usuario normal — pero Program Files está protegido
+; y un proceso no elevado no puede escribir ahí, aunque el INSTALADOR sí
+; pudiera por ir con permisos de administrador. Resultado real, con un
+; usuario real: "No he podido escribir en la carpeta data." la primera vez
+; que se guardaban los ajustes. {localappdata}\Programs es la carpeta que
+; Windows reserva justo para esto — programas propios de un usuario, sin
+; tocar zonas de sistema — y evita el problema de raíz en vez de parchear
+; permisos con icacls después.
+DefaultDirName={localappdata}\Programs\KaraokeLauncher
 DefaultGroupName=Karaoke Launcher
 DisableProgramGroupPage=yes
 ; Admin SOLO para la regla de cortafuegos — ver la nota de arriba. El
-; propio instalador no escribe nada fuera de su carpeta.
+; propio instalador no escribe nada fuera de su carpeta, y ahora que esa
+; carpeta ya no es Program Files, ni siquiera hace falta para eso: se
+; queda en admin únicamente porque `netsh advfirewall` lo exige.
 PrivilegesRequired=admin
 OutputDir=..\..\dist
 OutputBaseFilename=Karaoke-Launcher-Setup

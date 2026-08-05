@@ -16,6 +16,8 @@
    inercia, no por necesidad. */
 (function () {
 
+const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
+
 /* Extrae el ID de youtube.com/watch?v=, youtu.be/, /embed/, /shorts/ o
    de un ID pegado tal cual. Devuelve null si no es ninguna de esas.
 
@@ -58,7 +60,7 @@ async function resolveAll(force){
               { title:v.title, channel:v.channel, thumb:v.thumb });
     }catch(e){}
   }
-  toast('Títulos actualizados');
+  toast(T('toast_titulos_actualizados', 'Títulos actualizados'));
 }
 
 /* La búsqueda anterior se CANCELA, no solo se ignora.

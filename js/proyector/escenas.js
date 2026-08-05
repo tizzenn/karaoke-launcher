@@ -97,6 +97,57 @@ function destelloBlackout(){
   blackoutT2 = setTimeout(() => b.classList.remove('on', 'desvanece'), 700);
 }
 
+/* ---- Preparando escenario --------------------------------------------
+   Un momento entre "sale de la lista" y "aparece el vídeo", solo en
+   Karaoke: le da tiempo al cantante a mirar la pantalla antes de que
+   empiece a sonar. No retrasa el vídeo de verdad -ya se está cargando
+   por debajo, ver poner()- solo tapa el instante en que aparecería de
+   golpe, igual que el blackout tapa el corte al terminar. */
+let presentandoT1 = null, presentandoT2 = null;
+function presentarEscenario(t){
+  const caja = $('#presentando');
+  if(!caja || !efectosOn) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  clearTimeout(presentandoT1); clearTimeout(presentandoT2);
+  $('#ppQuien').textContent = KL.Actuacion.rotulo(t);
+  $('#ppTitulo').textContent = KL.Actuacion.quien(t) ? KL.Actuacion.titulo(t) : '';
+  caja.classList.remove('oculto', 'ppSale');
+  presentandoT1 = setTimeout(() => caja.classList.add('ppSale'), 700);
+  presentandoT2 = setTimeout(() => caja.classList.add('oculto'), 1050);
+}
+
+/* ---- Un destello cuando entra una petición ----------------------------
+   "Un pequeño acontecimiento" cada vez que alguien pide algo desde el
+   móvil, no solo cuando termina una actuación — item 3 de [[19]]. Muy
+   corto y muy suave a propósito: se ejecuta cada vez que alguien pide
+   algo, que en una fiesta viva puede ser cada pocos segundos, así que
+   tiene que poder repetirse toda la noche sin cansar. Sin confeti aquí
+   —eso se queda reservado para los aplausos, que es un momento más
+   raro y se merece ser más grande. */
+let idsConocidos = null;
+let nuevasIds = new Set();
+function detectarPeticionNueva(cola){
+  const actuales = new Set(cola.map(t => t.id));
+  if(idsConocidos === null){ idsConocidos = actuales; nuevasIds = new Set(); return; }
+  nuevasIds = new Set();
+  for(const id of actuales) if(!idsConocidos.has(id)) nuevasIds.add(id);
+  idsConocidos = actuales;
+  if(nuevasIds.size) destelloPeticion();
+}
+
+let destelloT = null;
+function destelloPeticion(){
+  const caja = $('#destello');
+  if(!caja || !efectosOn) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  clearTimeout(destelloT);
+  caja.classList.remove('on');
+  void caja.offsetWidth;
+  caja.classList.add('on');
+  destelloT = setTimeout(() => caja.classList.remove('on'), 700);
+}
+
 function pintarProximas(cola, desdeId){
   const i = cola.findIndex(t => t.id === desdeId);
   const sig = (i >= 0 ? cola.slice(i + 1) : cola).slice(0, 3);
@@ -105,7 +156,7 @@ function pintarProximas(cola, desdeId){
   caja.classList.remove('oculto');
   const cab = KL.TEXTOS.de(document.documentElement.dataset.tema || 'clasico', 'proximas');
   caja.innerHTML = '<div class="cab">' + esc(cab) + '</div>' + sig.map((t, n) =>
-    `<div class="f"><span class="n">${n+1}</span><span class="t">${esc(KL.Actuacion.titulo(t))}</span></div>`).join('');
+    `<div class="f${nuevasIds.has(t.id) ? ' entraFila' : ''}"><span class="n">${n+1}</span><span class="t">${esc(KL.Actuacion.titulo(t))}</span></div>`).join('');
 }
 
 /* ---- La carta de reto del Modo Show ----------------------------------
@@ -164,6 +215,7 @@ function pintar(e, forzar){
      la Cabina DJ, están contando cosas distintas delante de la gente. */
   const donde = e.espacio || 'karaoke';
   const cola = (e.cola || []).filter(t => (t.espacio || 'karaoke') === donde);
+  detectarPeticionNueva(cola);
   const ev = e.evento || {estado:'ESPERA'};
   /* Qué toca enseñar sale de la tabla de js/estados.js, la misma que usa
      el operador. Incluida la columna `calienta`, que dice si el
@@ -246,7 +298,7 @@ function pintar(e, forzar){
     const desde = preparada ? cola.findIndex(t => t.id === preparada.id) + 1 : 0;
     const restan = cola.slice(desde, desde + 6);
     $('#esperaLista').innerHTML = restan.map((t, n) =>
-      `<div class="f"><span class="n">${n+1}</span><span class="t">${esc(KL.Actuacion.titulo(t))}</span></div>`).join('');
+      `<div class="f${nuevasIds.has(t.id) ? ' entraFila' : ''}"><span class="n">${n+1}</span><span class="t">${esc(KL.Actuacion.titulo(t))}</span></div>`).join('');
     return;
   }
 
@@ -265,6 +317,20 @@ function pintar(e, forzar){
     $('#franja').classList.remove('fuera');
     clearTimeout(pintar.t);
     pintar.t = setTimeout(() => $('#franja').classList.add('fuera'), 12000);
+
+    /* Cabina DJ: aquí no hay celebración, hay continuidad — la lista
+       ES la música (MODELO.md), así que el cambio de canción se lee
+       como quien va pasando temas en Spotify, no como el fin de una
+       actuación. Un fundido corto en la franja, sin confeti ni rebote:
+       el contraste con Karaoke es a propósito, ver [[19]]. */
+    if(donde === 'dj'){
+      const franja = $('#franja');
+      franja.classList.remove('djCambia');
+      void franja.offsetWidth;
+      franja.classList.add('djCambia');
+    } else {
+      presentarEscenario(hoy);
+    }
   }
 }
 

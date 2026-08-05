@@ -56,6 +56,7 @@ KL.evento = (function () {
 
   const S  = KL.estado;
   const EV = KL.EV;
+  const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
 
   /* Transiciones permitidas. Cualquier otra es un error de programación,
      no un caso que haya que tolerar en silencio. */
@@ -196,7 +197,7 @@ KL.evento = (function () {
         el navegador no la concede de otra manera. */
   function arrancar(id){
     const t = qGet(id) || qGet(S.evento.pistaId) || cola()[0];
-    if(!t){ toast('La cola está vacía'); return false; }
+    if(!t){ toast(T('toast_cola_vacia_ev', 'La cola está vacía')); return false; }
     pararCuenta();
     pedirPantallaCompleta();
 
@@ -238,7 +239,7 @@ KL.evento = (function () {
     pararLlamada();
     const t = qGet(S.evento.pistaId);
     t ? preparar(t.id) : espera();
-    toast('Cancelado. Sigue preparada.');
+    toast(T('toast_cancelado', 'Cancelado. Sigue preparada.'));
     return true;
   }
 
@@ -362,7 +363,7 @@ KL.evento = (function () {
   function panico(){
     soltarPantallaCompleta();
     espera();
-    toast('Todo parado. El micro es tuyo.');
+    toast(T('toast_todo_parado', 'Todo parado. El micro es tuyo.'));
   }
 
   /* ---- Pantalla completa ---------------------------------------------

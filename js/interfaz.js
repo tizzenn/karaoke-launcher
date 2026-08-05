@@ -37,6 +37,7 @@
 
 const S = KL.estado;
 const { $, $$, uid, fmt, iso, esc, unesc, icono, EV } = KL;
+const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
 
 const load         = KL.prefs.cargar;
 const guardarPrefs = KL.prefs.guardar;
@@ -129,7 +130,12 @@ function aplicar(e){
      valores llegan con el estado y así cambian sin recargar esta. */
   if(e.ambiente   !== undefined){
     S.ambiente = e.ambiente;
-    if(KL.ambiente) KL.ambiente.aplicar(e.ambiente);
+    /* La fuente "dj" no trae su propia lista desde el servidor: usa la
+       cola de verdad de la Cabina DJ, que ya tenemos aquí mismo recién
+       actualizada (línea de arriba). Así ambiente.js no necesita saber
+       nada de colas ni de espacios, solo recibe la lista de vídeos. */
+    if(KL.ambiente) KL.ambiente.aplicar(Object.assign({}, e.ambiente,
+      { colaDj: colaDe('dj').map(t => t.videoId) }));
     if(KL.pintarCabinaDJ) KL.pintarCabinaDJ();
   }
   if(e.calentamiento !== undefined){
@@ -169,8 +175,8 @@ function dibujarAhora(){
   const f = KL.fase.de(KL.fase.delEstado(S));
   document.body.dataset.fase = f.id;
   const ic = $('#faseIcono'); if(ic) ic.textContent = f.icono;
-  const nb = $('#faseNombre'); if(nb) nb.textContent = f.nombre;
-  const ps = $('#fasePista');  if(ps) ps.textContent = f.pista;
+  const nb = $('#faseNombre'); if(nb) nb.textContent = T('fase_' + f.id + '_nombre', f.nombre);
+  const ps = $('#fasePista');  if(ps) ps.textContent = T('fase_' + f.id + '_pista', f.pista);
 
   /* AHORA: quien canta. Si no canta nadie, la que esta preparada — que
      es «quien va a cantar», la misma pregunta un momento antes. */
@@ -351,8 +357,8 @@ function aplicarModo(m){
   if(bAuto){
     bAuto.disabled = !!e.encadena;
     bAuto.title = e.encadena
-      ? 'En la Cabina DJ la lista siempre encadena sola'
-      : 'Al terminar una canción, dejar la siguiente preparada (no la arranca)';
+      ? T('bAuto_dj_title', 'En la Cabina DJ la lista siempre encadena sola')
+      : T('bAuto_title', 'Al terminar una canción, dejar la siguiente preparada (no la arranca)');
   }
 
   guardarPrefs();
@@ -442,10 +448,10 @@ function setLibCol(on){
 function modo(){
   const b = $('#modo');
   b.style.display = S.conClave ? 'none' : '';
-  b.textContent = S.conClave ? 'YouTube' : 'Configura tu clave';
+  b.textContent = S.conClave ? 'YouTube' : T('modo_configura_clave', 'Configura tu clave');
   b.className = 'badge ' + (S.conClave ? 'live' : 'demo');
-  b.title = S.conClave ? 'Clave configurada en el servidor'
-                       : 'Sin clave: pega enlaces de YouTube, o pulsa aquí para configurarla';
+  b.title = S.conClave ? T('modo_clave_configurada_title', 'Clave configurada en el servidor')
+                       : T('modo_sin_clave_title', 'Sin clave: pega enlaces de YouTube, o pulsa aquí para configurarla');
   b.style.cursor = S.conClave ? 'default' : 'pointer';
   b.onclick = S.conClave ? null : () => location.href = 'ajustes.php';
 }
@@ -538,8 +544,8 @@ function tituloPestana(){
 function drawNP(){
   tituloPestana();
   const t = S.curId && qGet(S.curId);
-  $('#npT').textContent = t ? KL.Actuacion.titulo(t) : 'Nada en reproducción';
-  $('#npC').textContent = t ? KL.Actuacion.canal(t) : 'Busca una canción para empezar';
+  $('#npT').textContent = t ? KL.Actuacion.titulo(t) : T('np_nada', 'Nada en reproducción');
+  $('#npC').textContent = t ? KL.Actuacion.canal(t) : T('np_busca', 'Busca una canción para empezar');
   $('#npImg').src = t ? KL.Actuacion.caratula(t) : '';
   $('#npImg').style.visibility = t ? 'visible' : 'hidden';
   if(!t) KL.cronometro.limpiar();

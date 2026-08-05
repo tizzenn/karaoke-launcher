@@ -35,6 +35,20 @@ $defecto = [
   /* Canciones seguidas que puede tener cada invitado en la cola. */
   'limite_por_invitado' => 3,
 
+  /* A qué posición va una canción nueva, en Karaoke (en Cabina DJ no
+     aplica nunca: ahí no hay actuaciones que turnar, es una lista y ya
+     está — ver anadir_cola en estado.php).
+
+     'rotacion' (recomendado, por defecto): nadie canta dos veces antes
+     de que todos los que esperan hayan cantado una. Si Ana pide tres
+     canciones seguidas, la segunda y la tercera se colocan después del
+     turno de quien ya esperaba, no detrás de la primera.
+     'fifo': orden de llegada, tal cual, como toda la vida.
+     'manual': igual que fifo al añadir (al final), pero pensado para
+     quien va a reordenar todo a mano y no quiere que nada se mueva
+     solo. */
+  'orden_cola' => 'rotacion',
+
   /* Ruta a yt-dlp. 'yt-dlp' basta si está en el PATH. */
   'yt_dlp' => 'yt-dlp',
 
@@ -147,29 +161,30 @@ $defecto = [
      Ponla si el PC va a estar accesible desde la wifi de la fiesta. */
   'clave_ajustes' => '',
 
-  /* ---- Cabina DJ: qué suena cuando no canta nadie -------------------
+  /* ---- Música ambiente: qué suena cuando no canta nadie en Karaoke ---
      El silencio entre canciones es lo que apaga una fiesta. Esto se
      configura una vez y no se vuelve a tocar en toda la noche.
 
-     `ambiente_fuente`  'youtube' | 'carpeta' | 'no'
-     `ambiente_lista`   una lista de reproducción de YouTube, o un canal.
-                        Se acepta la dirección entera, el identificador
-                        suelto o la del canal: el programa lo normaliza.
+     `ambiente_fuente`  'dj' | 'carpeta' | 'no'
+
+     Hasta 2026-08-04 aquí había además `ambiente_lista`, una lista de
+     YouTube configurada aparte. Se quitó (2026-08-05) porque era una
+     segunda verdad sobre lo mismo que ya resuelve la Cabina DJ: con
+     `ambiente_fuente = 'dj'`, el hueco entre canciones de karaoke lo
+     rellena la cola de verdad de la Cabina DJ —la música que la fiesta
+     ya está pidiendo desde el móvil—, sin tocarla ni consumirla; ver
+     js/ambiente.js. Si la Cabina DJ está vacía, no suena nada hasta que
+     entre la primera canción, en vez de caer a una lista fija.
+
      `ambiente_carpeta` ruta a una carpeta con mp3/m4a, para cuando no
                         hay internet o se prefiere música propia.
      `ambiente_volumen` 0-100. Por debajo de la voz, siempre: es fondo,
-                        no es el espectáculo.
-
-     Por defecto va la lista de **DJ Noize**, que publica mezclas de trap
-     y hip hop todas las semanas. Se eligió una lista que se actualiza
-     sola a propósito: una lista fija se queda vieja y a los tres meses
-     suena siempre lo mismo. */
+                        no es el espectáculo. */
   /* APAGADA de fábrica, y a conciencia. Que el programa empiece a sonar
      solo, la primera vez que se abre, en el ordenador de alguien que
      todavía está montando la fiesta, es una sorpresa desagradable. Se
      enciende cuando el dueño decide que quiere música. */
   'ambiente_fuente'  => 'no',
-  'ambiente_lista'   => 'https://www.youtube.com/channel/UCAj9nn-gOcKuD4ropg44HCw',
   'ambiente_carpeta' => '',
 
   /* ¿Vuelve sola después de cada canción? **No.** El silencio es el

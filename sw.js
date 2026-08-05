@@ -36,7 +36,7 @@
    filtrando por diferencia y no por prefijo. Si filtrara por prefijo, la
    `karaoke-v6` de todo el mundo se quedaría ocupando disco para siempre y
    nadie lo notaría nunca. */
-const CACHE = 'okc-v15';
+const CACHE = 'okc-v27';
 
 const BASE = [
   './', './index.html', './pedir.php', './proyector.php',
@@ -44,7 +44,7 @@ const BASE = [
   './css/base.css', './css/operador.css', './css/ahora.css', './css/interpretacion.css',
   './css/proyector.css', './css/temas.css',
 
-  './js/simbolos.js', './js/qr.js', './js/estados.js', './js/nucleo.js',
+  './js/simbolos.js', './js/qr.js', './js/estados.js', './js/nucleo.js', './js/idioma.js',
   './js/senales.js', './js/cancion.js', './js/actuacion.js',
   './js/almacen-servidor.js', './js/comandos.js', './js/interfaz.js', './js/filtro.js', './js/fase.js',
   './js/busqueda.js', './js/cola.js', './js/reproductor.js',
@@ -52,7 +52,7 @@ const BASE = [
   './js/termometro.js', './js/mc.js', './js/diagnostico.js', './js/paneles.js', './js/instalar.js', './js/ambiente.js', './js/textos.js', './js/show.js',
   /* Las cartas de reto son un archivo de datos, pero se cachea igual: sin
      él, con el router caído el Modo Show se queda sin botón. */
-  './retos.json', './ejemplos.json', './mc.json',
+  './retos.json', './ejemplos.json', './mc.json', './idiomas/en.json',
   /* Los sonidos del maestro de ceremonias. Se cachean porque su momento
      es justo el hueco entre dos canciones, que es cuando peor va la red
      —el vídeo siguiente se está cargando— y un aplauso que llega dos

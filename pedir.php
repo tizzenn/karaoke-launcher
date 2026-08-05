@@ -151,15 +151,30 @@ h2{font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--tx
 #termometro[data-nivel="4"] .tmEstado{color:var(--tm-4,#ff9f43)}
 
 @media (prefers-reduced-motion: reduce){ * { transition:none !important; animation:none !important } }
+
+/* ---- Selector de idioma -------------------------------------------------
+   Arriba a la derecha, siempre a la vista, nunca abre nada: un clic y
+   ya está. Por dispositivo (ver js/idioma.js) — el móvil de cada
+   invitado recuerda su propio idioma. */
+#idiomaSel{position:fixed;top:14px;right:14px;z-index:40;display:flex;gap:4px;
+ background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:3px}
+#idiomaSel button{border:none;background:none;color:var(--txt3);font-size:12px;
+ font-weight:800;padding:6px 11px;border-radius:999px;cursor:pointer}
+#idiomaSel button.on{background:var(--ac);color:#fff}
 </style>
 </head>
 <body>
 
+<div id="idiomaSel">
+  <button type="button" class="idiomaBtn" data-idioma="es">ES</button>
+  <button type="button" class="idiomaBtn" data-idioma="en">EN</button>
+</div>
+
 <div id="bienvenida">
   <div class="emoji">🎤</div>
-  <h2>¿Te animas a cantar?</h2>
-  <p>Busca una canción y añádela a la fiesta.</p>
-  <button id="bEmpezar">Empezar</button>
+  <h2 data-i18n="bienvenida_h2">¿Te animas a cantar?</h2>
+  <p data-i18n="bienvenida_p">Busca una canción y añádela a la fiesta.</p>
+  <button id="bEmpezar" data-i18n="bienvenida_boton">Empezar</button>
 </div>
 
 <div id="app">
@@ -172,27 +187,27 @@ h2{font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--tx
   <div id="aviso"></div>
 
   <div id="selEspacio">
-    <button type="button" data-esp="karaoke">🎤 Karaoke</button>
-    <button type="button" data-esp="dj">🎧 Música ambiente</button>
+    <button type="button" data-esp="karaoke" data-i18n="esp_karaoke">🎤 Karaoke</button>
+    <button type="button" data-esp="dj" data-i18n="esp_dj">🎧 Música ambiente</button>
   </div>
 
   <div id="pantallaBusqueda">
     <div class="buscadorCaja">
-      <label for="q">¿Qué te apetece cantar?</label>
+      <label for="q" data-i18n="buscar_label">¿Qué te apetece cantar?</label>
       <input id="q" type="text" placeholder="Busca una canción o un artista…"
-             enterkeyhint="search" autocomplete="off">
-      <button class="b" id="buscar">Buscar</button>
+             data-i18n-ph="buscar_ph" enterkeyhint="search" autocomplete="off">
+      <button class="b" id="buscar" data-i18n="buscar_boton">Buscar</button>
     </div>
 
     <div class="quienCaja">
-      <label>¿Cómo te llamas?</label>
-      <input id="quien" type="text" placeholder="Tu nombre" autocomplete="nickname" maxlength="24">
+      <label data-i18n="nombre_label">¿Cómo te llamas?</label>
+      <input id="quien" type="text" placeholder="Tu nombre" data-i18n-ph="nombre_ph" autocomplete="nickname" maxlength="24">
     </div>
 
 <?php if ($pideClave): ?>
     <div class="quienCaja">
-      <label>Contraseña de la fiesta</label>
-      <input id="clave" type="password" placeholder="La que te han dicho" autocomplete="off">
+      <label data-i18n="clave_label">Contraseña de la fiesta</label>
+      <input id="clave" type="password" placeholder="La que te han dicho" data-i18n-ph="clave_ph" autocomplete="off">
     </div>
 <?php endif; ?>
 
@@ -206,16 +221,34 @@ h2{font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--tx
        hace falta que pida algo. Nunca dice «hay 4 en la cola». -->
   <div id="termometro" class="oculto"></div>
 
-  <h2>Lo que viene</h2>
-  <div id="cola" class="load">Cargando…</div>
+  <h2 data-i18n="viene_h2">Lo que viene</h2>
+  <div id="cola" class="load" data-i18n="cargando">Cargando…</div>
 </div>
 </div>
 
+<script src="js/idioma.js"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const PIDE_CLAVE = <?= $pideClave ? 'true' : 'false' ?>;
+
+/* T('clave', 'texto en español') devuelve la traducción si el idioma
+   activo es inglés y existe esa clave, o el texto español tal cual en
+   cualquier otro caso — así el inglés se añade sin duplicar nada del
+   lado español ni arriesgarse a que una clave que falte deje un hueco
+   en blanco. Las traducciones viven en idiomas/en.json, no aquí. */
+const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
+
+/* data-i18n cubre el HTML estático solo; título/subtítulo y la cola ya
+   pintada los genera JS (dependen del espacio, no solo del idioma), así
+   que al cambiar de idioma hay que volver a pintarlos, no solo dejar
+   que aplicar() haga su pasada normal por el DOM. */
+$$('.idiomaBtn').forEach(b => b.addEventListener('click', async () => {
+  await KL.idioma.cambiar(b.dataset.idioma);
+  pintarSelector();
+  pintarColaDesdeCache();
+}));
 
 /* La bienvenida se ve una vez por pestaña, no una vez por móvil: volver
    a abrir el enlace media hora después para pedir otra no tiene que
@@ -254,9 +287,9 @@ async function api(url, cuerpo){
   try{
     r = await fetch(url, o);
   }catch(err){
-    throw new Error('No llego al karaoke. Comprueba que sigues en la misma wifi de la casa.');
+    throw new Error(T('sin_conexion', 'No llego al karaoke. Comprueba que sigues en la misma wifi de la casa.'));
   }
-  const j = await r.json().catch(()=>({ok:false,error:'el servidor no responde bien'}));
+  const j = await r.json().catch(()=>({ok:false,error:T('servidor_no_responde', 'el servidor no responde bien')}));
   if(!j.ok) throw new Error(j.error || ('error '+r.status));
   return j;
 }
@@ -265,7 +298,7 @@ async function buscar(){
   const q = $('#q').value.trim();
   if(!q){ $('#q').focus(); return; }
   aviso('');
-  $('#res').innerHTML = '<div class="load">🎵 Buscando canciones…</div>';
+  $('#res').innerHTML = `<div class="load">${esc(T('buscando', '🎵 Buscando canciones…'))}</div>`;
   try{
     const j = await api('api/buscar.php?q='+encodeURIComponent(q));
     pintar(j.items || []);
@@ -277,9 +310,10 @@ async function buscar(){
 
 function pintar(items){
   if(!items.length){
-    $('#res').innerHTML = '<div class="vacio">😅 No encontramos esa canción.<br>Prueba con otro artista o una palabra diferente.</div>';
+    $('#res').innerHTML = `<div class="vacio">${T('sin_resultados', '😅 No encontramos esa canción.<br>Prueba con otro artista o una palabra diferente.')}</div>`;
     return;
   }
+  const cantar = esc(T('cantar_boton', '🎤 Cantar'));
   $('#res').innerHTML = items.map((v,i)=>`
     <div class="r">
       <div class="fila">
@@ -289,7 +323,7 @@ function pintar(items){
           <div class="c">${esc(v.channel)}</div>
         </div>
       </div>
-      <button data-i="${i}">🎤 Cantar</button>
+      <button data-i="${i}">${cantar}</button>
     </div>`).join('');
 
   $('#res').querySelectorAll('button').forEach(b=>{
@@ -306,9 +340,9 @@ function mostrarConfirmacion(texto){
   c.style.display = '';
   c.innerHTML = `
     <div class="emoji">🎉</div>
-    <h3>¡Perfecto!</h3>
+    <h3>${esc(T('confirmacion_titulo', '¡Perfecto!'))}</h3>
     <p>${esc(texto)}</p>
-    <button id="bOtra">Buscar otra</button>`;
+    <button id="bOtra">${esc(T('confirmacion_boton', 'Buscar otra'))}</button>`;
   $('#bOtra').addEventListener('click', () => {
     c.style.display = 'none';
     $('#pantallaBusqueda').style.display = '';
@@ -318,7 +352,7 @@ function mostrarConfirmacion(texto){
 
 async function pedir(v, boton){
   const quien = $('#quien').value.trim();
-  if(!quien){ aviso('Escribe tu nombre primero, para saber de quién es la canción.','e');
+  if(!quien){ aviso(T('falta_nombre', 'Escribe tu nombre primero, para saber de quién es la canción.'),'e');
               $('#quien').focus(); return; }
   boton.disabled = true; boton.textContent = '…';
   const esp = espacioVista();
@@ -336,6 +370,12 @@ async function pedir(v, boton){
        saberlo. */
     const varias = r && r._varias && r._varias.videoId === v.videoId
                    ? r._varias.cuantas : 0;
+    /* La rotación por turnos (v1.3): si ya tenías una canción esperando,
+       la nueva no va detrás sin más — se coloca después de que canten
+       los demás, para que nadie cante dos veces antes de que todos
+       hayan cantado una. Nunca se oculta esto: decirlo es lo que hace
+       que la espera se sienta justa en vez de un fallo. */
+    const turnoRespetado = !!(r && r._turno && r._turno.respetado);
     /* El texto de confirmación depende de a qué lista se ha mandado —la
        elegida, no siempre la activa—: en Karaoke hay alguien esperando su
        turno delante del micro, en Cabina DJ no hay actuación que anunciar
@@ -345,19 +385,21 @@ async function pedir(v, boton){
     const paraLuego = esp !== espacioActivo;
     const texto = esp === 'dj'
       ? (paraLuego
-          ? 'Apuntada para la música ambiente. Sonará cuando se active esa lista.'
-          : 'Tu canción ya suena en la sesión. Entrará en su turno.')
+          ? T('dj_para_luego', 'Apuntada para la música ambiente. Sonará cuando se active esa lista.')
+          : T('dj_ahora', 'Tu canción ya suena en la sesión. Entrará en su turno.'))
       : (paraLuego
-          ? 'Apuntada para el karaoke. Entrará en la cola cuando se active ese espacio.'
-          : varias >= 2
-            ? 'Tu canción ya forma parte de la fiesta. Esta también la ha elegido otra persona — cada versión será distinta.'
-            : 'Tu canción ya forma parte de la fiesta. Te avisamos cuando te toque.');
+          ? T('karaoke_para_luego', 'Apuntada para el karaoke. Entrará en la cola cuando se active ese espacio.')
+          : turnoRespetado
+            ? T('turno_respetado', 'Tu canción ya forma parte de la fiesta. La hemos colocado después de que canten los demás, para que todos tengan su turno.')
+            : varias >= 2
+              ? T('varias_elegida', 'Tu canción ya forma parte de la fiesta. Esta también la ha elegido otra persona — cada versión será distinta.')
+              : T('confirmacion_default', 'Tu canción ya forma parte de la fiesta. Te avisamos cuando te toque.'));
     mostrarConfirmacion(texto);
     $('#res').innerHTML = ''; $('#q').value = '';
     cargarCola();
   }catch(e){
     aviso(e.message,'e');
-    boton.disabled = false; boton.textContent = '🎤 Cantar';
+    boton.disabled = false; boton.textContent = T('cantar_boton', '🎤 Cantar');
   }
 }
 
@@ -378,8 +420,10 @@ function espacioVista(){ return espacioElegido || espacioActivo; }
 
 function textosEspacio(esp){
   return esp === 'dj'
-    ? { titulo:'🎧 Añade música', sub:'Se añade a la lista que suena ahora. Entra sola, sin turnos.' }
-    : { titulo:'🎤 Pide tu canción', sub:'Se añade a la cola del karaoke. El operador la lanza cuando te toque.' };
+    ? { titulo:T('titulo_dj', '🎧 Añade música'),
+        sub:T('subtitulo_dj', 'Se añade a la lista que suena ahora. Entra sola, sin turnos.') }
+    : { titulo:T('titulo_karaoke', '🎤 Pide tu canción'),
+        sub:T('subtitulo_karaoke', 'Se añade a la cola del karaoke. El operador la lanza cuando te toque.') };
 }
 
 function pintarSelector(){
@@ -423,7 +467,7 @@ function pintarCola(e){
   if(window.KL && KL.termometro){
     KL.termometro.pintar($('#termometro'), c.length, e.tema, e.termometro);
   }
-  if(!c.length){ $('#cola').className='vacio'; $('#cola').textContent='La cola está vacía. Estrénala tú.'; return; }
+  if(!c.length){ $('#cola').className='vacio'; $('#cola').textContent=T('cola_vacia', 'La cola está vacía. Estrénala tú.'); return; }
   $('#cola').className='';
   $('#cola').innerHTML = c.map((t,i)=>`
     <div class="q ${t.id===e.sonando?'now':''}">
@@ -435,7 +479,7 @@ function pintarCola(e){
 
 async function cargarCola(){
   try{ pintarCola(await api('api/estado.php?quien=movil')); }
-  catch(e){ $('#cola').className='vacio'; $('#cola').textContent='No hay conexión con el karaoke.'; }
+  catch(e){ $('#cola').className='vacio'; $('#cola').textContent=T('sin_conexion_cola', 'No hay conexión con el karaoke.'); }
 }
 
 /* La cola se refresca sola cuando alguien pide algo.

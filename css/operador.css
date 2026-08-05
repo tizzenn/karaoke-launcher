@@ -633,6 +633,13 @@ header .soy{ font-size:11px; font-weight:700; color:var(--txt3);
   border-left:1px solid var(--line); padding-left:12px; white-space:nowrap }
 @media (max-width:1400px){ header .soy{ display:none } }
 
+/* Selector de idioma: por dispositivo, así que vive junto a los demás
+   botones de la cabecera y no como una insignia de la fiesta. */
+#idiomaSel{display:flex;gap:2px;border:1px solid var(--line);border-radius:8px;padding:2px}
+#idiomaSel button{border:none;background:none;color:var(--txt3);font-size:11px;
+  font-weight:700;padding:4px 7px;border-radius:6px;cursor:pointer}
+#idiomaSel button.on{background:var(--ac);color:#fff}
+
 /* La Cabina DJ, encendida. El resto de botones de esa fila son acciones;
    este es un interruptor y tiene que decir en qué posición está sin
    pasar el ratón por encima. */

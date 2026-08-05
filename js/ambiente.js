@@ -1,10 +1,23 @@
 /* ═══════════════════════════════════════════════════════════════════
    ambiente.js — música ambiente: que no haya silencios en el karaoke
 
-   OJO CON EL NOMBRE. Esto **no** es la Cabina DJ. La Cabina DJ es un
-   espacio: otra fiesta, una en la que nadie canta y la lista la hacéis
+   OJO CON EL NOMBRE. Esto **no** es la Cabina DJ como espacio: la Cabina
+   DJ es otra fiesta, una en la que nadie canta y la lista la hacéis
    entre todos desde el móvil. Lo de este archivo es el hilo de fondo del
-   karaoke.
+   karaoke — pero desde 2026-08-05 SUENA la cola de esa Cabina DJ, no una
+   lista aparte.
+
+   ── Por qué ya no hay una lista de YouTube configurada a mano ────────
+   La había, con su propio canal por defecto (DJ Noize) y su propio campo
+   en Ajustes. Y era una tontería: si ya existe la Cabina DJ —una lista
+   de música real que la propia fiesta va llenando desde el móvil—,
+   configurar una SEGUNDA lista aparte para el mismo propósito («que
+   suene algo cuando no canta nadie») es mantener dos verdades sobre lo
+   mismo, y eso es justo lo que este proyecto intenta no hacer en ningún
+   otro sitio (MODELO §6). Ahora el hueco entre canciones de karaoke lo
+   rellena la MISMA cola que ya suena en la Cabina DJ, en un reproductor
+   aparte y en silencio de fondo — sin tocar ni consumir esa cola real:
+   solo la escucha.
 
    Las dos cosas se llamaron «Cabina DJ» durante meses y esa palabra
    acabó significando dos cosas incompatibles: «la música que se aparta
@@ -50,10 +63,15 @@ KL.ambiente = (function () {
   /* Cada página pone esto a su manera. Por defecto, no. */
   let doySonido = () => false;
 
-  let ajustes = { fuente: 'no', lista: '', carpeta: false, volumen: 35, auto: false };
+  let ajustes = { fuente: 'no', colaDj: [], carpeta: false, volumen: 35, auto: false };
   let yt = null, listo = false, sonando = false, hubGesto = false;
   let audio = null, locales = [], iLocal = 0;
   let fundido = null;
+  /* Si la cola de la Cabina DJ cambia MIENTRAS suena de fondo, no se
+     recarga en el acto —eso se oiría como un corte—: se espera a que se
+     apague sola (empieza una actuación) y se recoloca la lista en ese
+     silencio, que es cuando nadie lo puede notar. */
+  let pendienteDj = false;
 
   /* ---- El fundido, y por qué es largo ---------------------------------
      Novecientos milisegundos era técnicamente un fundido y a efectos
@@ -75,12 +93,17 @@ KL.ambiente = (function () {
 
   /* ---- El reproductor de fondo -----------------------------------------
      Un segundo iframe de YouTube, sin vídeo visible y a un volumen que
-     deja hablar. No se reutiliza el del karaoke a propósito: cargar la
-     lista de ambiente ahí borraría la canción que está preparada, y
+     deja hablar. No se reutiliza el del karaoke a propósito: cargar aquí
+     la cola de la Cabina DJ borraría la canción que está preparada, y
      preparar existe precisamente para que el vídeo esté listo antes de
-     que nadie pulse nada. */
+     que nadie pulse nada.
+
+     Tampoco se toca la cola REAL de la Cabina DJ: esto es una copia de
+     sus identificadores, en un reproductor aparte que solo escucha. Ese
+     hilo de fondo no hace avanzar ni consume nada de lo que de verdad
+     está esperando su turno cuando alguien abra la Cabina DJ en serio. */
   function crearYT() {
-    if (yt || !ajustes.lista) return;
+    if (yt || !ajustes.colaDj || !ajustes.colaDj.length) return;
     const hueco = document.createElement('div');
     hueco.id = 'ytAmbiente';
     hueco.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:0';
@@ -90,17 +113,20 @@ KL.ambiente = (function () {
       yt = new YT.Player('ytAmbiente', {
         host: 'https://www.youtube-nocookie.com',
         playerVars: {
-          listType: 'playlist', list: ajustes.lista,
           autoplay: 0, controls: 0, playsinline: 1,
           origin: location.origin
         },
         events: {
           onReady: () => {
             listo = true;
-            try { yt.setVolume(ajustes.volumen); yt.setShuffle(true); } catch (e) {}
+            try {
+              yt.setVolume(ajustes.volumen);
+              yt.cuePlaylist({ playlist: ajustes.colaDj, index: 0 });
+              yt.setShuffle(true);
+            } catch (e) {}
             revisar();
           },
-          /* Si un vídeo de la lista está caído, YouTube se para en seco.
+          /* Si un vídeo de la cola está caído, YouTube se para en seco.
              Aquí no hay nadie mirando: se pasa al siguiente y ya. */
           onError: () => { try { yt.nextVideo(); } catch (e) {} }
         }
@@ -115,6 +141,15 @@ KL.ambiente = (function () {
         arrancar();
       };
     }
+  }
+
+  /* Cuando la cola de la Cabina DJ cambia y es seguro hacerlo (no está
+     sonando de fondo ahora mismo), se pone al día sin recrear el
+     reproductor entero. */
+  function refrescarListaDj() {
+    pendienteDj = false;
+    if (!yt || !listo || ajustes.fuente !== 'dj') return;
+    try { yt.cuePlaylist({ playlist: ajustes.colaDj, index: 0 }); } catch (e) {}
   }
 
   /* ---- Carpeta del ordenador ------------------------------------------- */
@@ -216,6 +251,9 @@ KL.ambiente = (function () {
     volumenA(0, () => {
       if (audio) audio.pause();
       else if (yt) try { yt.pauseVideo(); } catch (e) {}
+      /* El silencio recién llegado es el único momento en que se puede
+         recolocar la cola de la Cabina DJ sin que nadie lo note. */
+      if (pendienteDj) refrescarListaDj();
     });
   }
 
@@ -238,6 +276,7 @@ KL.ambiente = (function () {
        elige el dueño en los ajustes, el interruptor lo maneja el operador
        en mitad de la fiesta, y quién da el sonido depende del aparato. */
     if (ajustes.fuente === 'no') return false;
+    if (ajustes.fuente === 'dj' && !(ajustes.colaDj && ajustes.colaDj.length)) return false;
     if (!KL.estado.ambienteOn) return false;
     if (!doySonido()) return false;
     /* Y una cuarta, que no es de dueño sino de concepto: en la Cabina DJ
@@ -287,19 +326,29 @@ KL.ambiente = (function () {
   /* ---- Ajustes que llegan del servidor ---------------------------------- */
   function aplicar(nuevos) {
     if (!nuevos) return;
-    const antes = ajustes.lista + '|' + ajustes.fuente;
+    const fuenteAntes = ajustes.fuente;
+    const djAntes = (ajustes.colaDj || []).join(',');
     ajustes = Object.assign({}, ajustes, nuevos);
+    const djDespues = (ajustes.colaDj || []).join(',');
 
-    /* Cambiar la lista en caliente obliga a rehacer el reproductor. Pasa
-       una vez, al configurarlo, y no en mitad de una fiesta. */
-    if (antes !== ajustes.lista + '|' + ajustes.fuente && yt) {
+    /* Cambiar de FUENTE obliga a rehacer el reproductor entero — pasa una
+       vez, al configurarlo, no en mitad de una fiesta. Que la cola de la
+       Cabina DJ gane o pierda una canción, en cambio, es continuo toda la
+       noche: eso NO destruye nada, se recoloca en caliente (ver
+       refrescarListaDj) y con cuidado de no cortar lo que ya suena. */
+    if (fuenteAntes !== ajustes.fuente && yt) {
       try { yt.destroy(); } catch (e) {}
       yt = null; listo = false; sonando = false;
       const h = document.getElementById('ytAmbiente');
       if (h) h.remove();
     }
-    if (ajustes.fuente === 'youtube') crearYT();
+    if (ajustes.fuente === 'dj') crearYT();
     else if (ajustes.fuente === 'carpeta') cargarLocales();
+
+    if (djAntes !== djDespues) {
+      if (sonando) pendienteDj = true;
+      else refrescarListaDj();
+    }
     if (!sonando && listo) revisar();
     else if (sonando) volumenA(ajustes.volumen);
   }

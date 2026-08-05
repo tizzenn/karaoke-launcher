@@ -18,6 +18,8 @@ window.KL = KL;
 
 (function () {
 
+const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
+
 /* ---- QR para las peticiones -------------------------------------------
    Generado aquí mismo, sin salir a internet, y siempre con la dirección
    de red del servidor: la de la barra del navegador es `localhost` y
@@ -70,7 +72,7 @@ function pintarTemas(){
     pintarTemas();
     try{
       await KL.api('api/tema.php', { tema:nuevo });
-      toast('Tema: ' + (TEMAS_UI.find(x => x.id === nuevo) || {}).nombre);
+      toast(T('toast_tema_prefijo', 'Tema: ') + (TEMAS_UI.find(x => x.id === nuevo) || {}).nombre);
     }catch(e){ toast('⚠ ' + e.message); }
     cerrar('#ovTema');
   }));

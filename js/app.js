@@ -25,6 +25,8 @@
 
 (function () {
 
+const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
+
 /* ---- El almacén: de dónde vienen y adónde van los datos --------------- */
 KL.almacen.iniciar({ aplicar, aviso: m => toast(m) });
 
@@ -140,7 +142,7 @@ KL.reproductor.iniciar({
   onRedFloja: () => { S.cortes++; proponerDescargas(); },
   onRecuperado: () => showBuf(false),
 
-  onRendicion: () => toast('⚠ La conexión no aguanta este vídeo. Dejo lista la siguiente.'),
+  onRendicion: () => toast('⚠ ' + T('toast_rendicion', 'La conexión no aguanta este vídeo. Dejo lista la siguiente.')),
 
   onError: codigo => {
     /* Un fallo de reproducción NO puede resolverse solo con un aviso que
@@ -202,7 +204,11 @@ function pintarDJ(){
 
 $('#bDJ').addEventListener('click', () => {
   if(!S.ambiente || S.ambiente.fuente === 'no'){
-    toast('No hay ninguna lista configurada. Ponla en Ajustes → Música ambiente.');
+    toast(T('toast_sin_lista_ambiente', 'La música ambiente está apagada. Enciéndela en Ajustes → Música ambiente.'));
+    return;
+  }
+  if(S.ambiente.fuente === 'dj' && !colaDe('dj').length){
+    toast(T('toast_dj_sin_canciones', 'Todavía no hay canciones en la Cabina DJ. En cuanto entre alguna, suena de fondo.'));
     return;
   }
   S.ambienteOn = !S.ambienteOn;
@@ -211,9 +217,9 @@ $('#bDJ').addEventListener('click', () => {
   pintarDJ();
   toast(S.ambienteOn
     ? (S.ambiente.auto
-        ? 'Música ambiente encendida. Se callará en cada canción y volverá al terminar.'
-        : 'Música ambiente encendida. Se callará al empezar la próxima canción.')
-    : 'Música ambiente apagada');
+        ? T('toast_ambiente_on_auto', 'Música ambiente encendida. Se callará en cada canción y volverá al terminar.')
+        : T('toast_ambiente_on', 'Música ambiente encendida. Se callará al empezar la próxima canción.'))
+    : T('toast_ambiente_off', 'Música ambiente apagada'));
 });
 
 /* ---- Los dos espacios --------------------------------------------------
@@ -295,8 +301,8 @@ $('#bFiltroX').addEventListener('click', () => {
    que no se nota. */
 $('#bFiltroGuardar').addEventListener('click', () => {
   const filtro = $('#filtro').value.trim();
-  if(!filtro){ toast('Escribe primero el filtro que quieras guardar'); return; }
-  const nombre = (prompt('¿Cómo se llama este perfil?\n\n' + filtro) || '').trim();
+  if(!filtro){ toast(T('toast_escribe_filtro', 'Escribe primero el filtro que quieras guardar')); return; }
+  const nombre = (prompt(T('prompt_nombre_perfil', '¿Cómo se llama este perfil?\n\n') + filtro) || '').trim();
   if(!nombre) return;
   S.perfiles = S.perfiles || {};
   const lista = (S.perfiles[S.modo] || []).filter(p => p.nombre !== nombre);
@@ -304,22 +310,22 @@ $('#bFiltroGuardar').addEventListener('click', () => {
   S.perfiles[S.modo] = lista;
   guardarPrefs();
   KL.pintarPerfiles();
-  toast('Perfil «' + nombre + '» guardado');
+  toast(T('toast_perfil_guardado', 'Perfil «') + nombre + T('toast_perfil_guardado_fin', '» guardado'));
 });
 
 /* ---- Búsqueda --------------------------------------------------------- */
 $('#q').addEventListener('keydown', e => { if(e.key === 'Enter') KL.busqueda.buscar(); });
 $('#bAddSel').addEventListener('click', () => {
-  if(S.sel === null){ toast('Selecciona antes un vídeo'); return; }
+  if(S.sel === null){ toast(T('toast_selecciona_video', 'Selecciona antes un vídeo')); return; }
   KL.cola.anadir(S.results[S.sel]); cerrar('#ovRes');
 });
 
 /* ---- Biblioteca ------------------------------------------------------- */
 $('#fLib').addEventListener('input', e => { S.filterLib = e.target.value; KL.cola.pintarBiblioteca(); });
-$('#bFix').addEventListener('click', () => { toast('Pidiendo títulos a YouTube…'); KL.busqueda.titulos(true); });
+$('#bFix').addEventListener('click', () => { toast(T('toast_pidiendo_titulos', 'Pidiendo títulos a YouTube…')); KL.busqueda.titulos(true); });
 $('#bAddAll').addEventListener('click', () => {
   const a = KL.cola.items();
-  if(!a.length){ toast('No hay nada que añadir'); return; }
+  if(!a.length){ toast(T('toast_nada_anadir', 'No hay nada que añadir')); return; }
   a.forEach(t => KL.cola.anadir(t, true));
   toast(`${a.length} canciones a la cola`);
 });
@@ -351,7 +357,7 @@ $('#bShuffleQ').addEventListener('click', () => {
   S.queue = S.queue.map(t => (t.espacio || 'karaoke') === S.modo ? mezclado[k++] : t);
   draw();
   KL.comandos.ordenarLaCola(S.queue.map(x => x.id));
-  toast('Cola mezclada');
+  toast(T('toast_cola_mezclada', 'Cola mezclada'));
 });
 $('#bDescargarCola').addEventListener('click', KL.cola.descargarCola);
 $('#bHist').addEventListener('click', () => { abrir('#ovHist'); KL.cola.pintarHistorial(); });
@@ -372,7 +378,7 @@ $('#bDelAll').addEventListener('click', KL.cola.borrarTodas);
 $('#bPlay').addEventListener('click', () => {
   const e = KL.evento.estado();
   if(e === KL.EV.INTERPRETACION){
-    toast('Mientras se canta no se pausa: descuadraría la tele. Usa Terminar o Ctrl+.');
+    toast(T('toast_no_pausar', 'Mientras se canta no se pausa: descuadraría la tele. Usa Terminar o Ctrl+.'));
     return;
   }
   /* Durante la cuenta atrás, el botón se la salta: a veces el cantante ya
@@ -401,9 +407,9 @@ KL.senales.oir('evento:cambio', ev => {
      cambia la palabra según el espacio (auditoría UX, 2026-08-03). */
   const esDJ = S.modo === 'dj';
   $('#bPlay').title = cantando
-    ? 'Se está cantando. Pausar aquí descuadraría la tele: usa Terminar o Ctrl+.'
-    : (esDJ ? 'Empezar la canción preparada (Espacio)'
-            : 'Empezar la actuación preparada (Espacio)');
+    ? T('bPlay_cantando_title', 'Se está cantando. Pausar aquí descuadraría la tele: usa Terminar o Ctrl+.')
+    : (esDJ ? T('bPlay_dj_title', 'Empezar la canción preparada (Espacio)')
+            : T('bPlay_title', 'Empezar la actuación preparada (Espacio)'));
 });
 
 $('#bNext').addEventListener('click', () => KL.evento.siguiente());
@@ -420,7 +426,21 @@ $('#sk').addEventListener('click', ev => {
   const d = KL.reproductor.duracion();
   if(!d) return;
   const r = ev.currentTarget.getBoundingClientRect();
-  KL.reproductor.buscar(d * ((ev.clientX - r.left) / r.width));
+  const pos = d * ((ev.clientX - r.left) / r.width);
+  KL.reproductor.buscar(pos);
+  /* Sin esto la pantalla del público nunca se entera de un salto manual:
+     `t0` —el instante en que la canción estaba en el segundo cero— solo
+     se publica UNA vez por canción (evento.js, al empezar a sonar), así
+     que adelantar o atrasar aquí no lo tocaba y la tele seguía
+     corrigiéndose sola hacia el minuto de ANTES del salto (2026-08-05,
+     bug real reportado: "si adelanto a mano no se entera la tele").
+     Republicar t0 con la nueva posición es exactamente lo mismo que hace
+     evento.js al arrancar, solo que disparado por el salto en vez de por
+     el primer fotograma. */
+  if(KL.evento.estado() === KL.EV.INTERPRETACION){
+    S.evento = Object.assign({}, S.evento, { t0: Date.now() - Math.round(pos * 1000) });
+    KL.comandos.publicarEvento(S.evento);
+  }
 });
 
 /* ---- Vistas y ventana de vídeo ---------------------------------------- */
@@ -490,12 +510,12 @@ $('#bFalloSalir').addEventListener('click', () => { ocultarFallo(); KL.evento.pa
 $('#vbFull').addEventListener('click', () => {
   if(document.fullscreenElement){ document.exitFullscreen(); return; }
   $('#vb').classList.remove('hide');
-  $('#vb').requestFullscreen().catch(() => toast('Tu navegador no me deja poner la pantalla completa'));
+  $('#vb').requestFullscreen().catch(() => toast(T('toast_sin_pantalla_completa', 'Tu navegador no me deja poner la pantalla completa')));
 });
 $('#bYT').addEventListener('click', () => {
   const t = S.curId && qGet(S.curId);
   t ? window.open('https://www.youtube.com/watch?v=' + t.videoId, '_blank')
-    : toast('No hay nada en reproducción');
+    : toast(T('toast_nada_reproduccion', 'No hay nada en reproducción'));
 });
 
 /* ---- Dos pantallas: el PC manda, la tele suena ------------------------
@@ -508,15 +528,15 @@ function pintarMudo(){
   b.innerHTML = icono(mudo ? 'silencio' : 'volumen');
   b.classList.toggle('est-no', mudo);
   b.title = mudo
-    ? 'Este PC está en SILENCIO. Pulsa para devolverle el sonido.'
-    : 'Este PC da el sonido. Pulsa para silenciarlo (si suena por la tele).';
+    ? T('vbMudo_on_title', 'Este PC está en SILENCIO. Pulsa para devolverle el sonido.')
+    : T('vbMudo_off_title', 'Este PC da el sonido. Pulsa para silenciarlo (si suena por la tele).');
   /* Que se vea sin abrir nada: si el PC está mudo y encima es quien
      debería sonar, eso es un problema y no un detalle. */
   const av = $('#avisoMudo');
   if(av) av.classList.toggle('on', mudo && S.sonidoEn === 'pc');
 }
 $('#bDesmutear').addEventListener('click', () => {
-  KL.reproductor.mudo(false); pintarMudo(); toast('Sonido devuelto a este PC');
+  KL.reproductor.mudo(false); pintarMudo(); toast(T('toast_sonido_devuelto', 'Sonido devuelto a este PC'));
 });
 $('#vbMudo').addEventListener('click', () => {
   KL.reproductor.mudo(!KL.reproductor.estaMudo());
@@ -626,7 +646,7 @@ function mandarPaneles(lista){
 $('#bRotar').addEventListener('click', () => mandarPaneles(CARTELONES.map(c => c.k)));
 $('#bCerrarPaneles').addEventListener('click', () => {
   document.body.classList.add('paneles-ocultos');
-  toast('Mando oculto. Vuelve a pulsar el botón del calentamiento para verlo.');
+  toast(T('toast_mando_oculto', 'Mando oculto. Vuelve a pulsar el botón del calentamiento para verlo.'));
 });
 
 /* ---- Pestañas (móvil) -------------------------------------------------- */
@@ -640,6 +660,15 @@ $$('#tabs button').forEach(b => b.addEventListener('click', () => {
 /* ---- Modales ----------------------------------------------------------- */
 $$('.ov').forEach(o => o.addEventListener('click', ev => {
   if(ev.target === o || ev.target.hasAttribute('data-x')) o.classList.remove('on');
+}));
+
+/* ---- Idioma (por dispositivo, ver js/idioma.js) -------------------------
+   aplicar() solo repinta lo marcado con data-i18n en el HTML estático;
+   lo que se genera en JS (nombre de la fase, el botón Empezar…) necesita
+   que se le pida un repintado normal para que se entere del cambio. */
+$$('.idiomaBtn').forEach(b => b.addEventListener('click', async () => {
+  await KL.idioma.cambiar(b.dataset.idioma);
+  draw();
 }));
 
 /* ---- Ajustes ----------------------------------------------------------- */
@@ -684,7 +713,7 @@ $('#bSaveCfg').addEventListener('click', () => {
   KL.reproductor.calidad(S.quality);
   guardarPrefs();
   cerrar('#ovCfg');
-  toast('Ajustes guardados');
+  toast(T('toast_ajustes_guardados', 'Ajustes guardados'));
 });
 
 /* El panel de diagnóstico vive en `js/diagnostico.js`. Aquí solo se
@@ -701,7 +730,7 @@ $('#bExp').addEventListener('click', () => {
   a.download = 'karaoke-copia.json';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  toast('Copia descargada');
+  toast(T('toast_copia_descargada', 'Copia descargada'));
 });
 $('#bImp').addEventListener('click', () => $('#file').click());
 $('#file').addEventListener('change', ev => {
@@ -713,8 +742,8 @@ $('#file').addEventListener('change', ev => {
       const d = JSON.parse(rd.result);
       if(Array.isArray(d.library)) KL.comandos.reemplazarLaBiblioteca(d.library);
       cerrar('#ovCfg');
-      toast('Copia importada');
-    }catch(e){ toast('⚠ El archivo no es válido'); }
+      toast(T('toast_copia_importada', 'Copia importada'));
+    }catch(e){ toast('⚠ ' + T('toast_archivo_no_valido', 'El archivo no es válido')); }
   };
   rd.readAsText(f);
   ev.target.value = '';

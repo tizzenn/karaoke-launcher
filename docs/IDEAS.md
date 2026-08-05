@@ -707,8 +707,8 @@ y con la fiesta pasado mañana no es el momento** (ver más abajo).
 | Extra | "Blackout" teatral (300-500ms) | 🟢 bajo — una capa oscura con fundido, un solo sitio | 🟡 media — se nota, pero es un matiz sobre el punto 1, no algo que se eche en falta si no está | 🟢 bajo — puramente visual, no toca estados |
 | 2 | Inicio de actuación ("Preparando escenario…") | 🟡 medio — nueva pantalla intermedia, hay que encajarla en la máquina de estados (LLAMADA o un paso nuevo) sin romper la cuenta atrás que ya existe | 🟡 media — bonito, pero el hueco que resuelve (arranque brusco) es menos molesto que el del punto 1 | 🟡 medio — toca el flujo de estados, no solo el pintado |
 | 3 | Pantalla pública: celebración por cada canción nueva pedida | 🟡 medio — varias piezas (destello, fila que entra deslizándose, recolocar la cola) | 🟡 media — refuerza la sensación de fiesta viva, pero es frecuente y hay que vigilar que no canse | 🟡 medio — se ejecuta muy seguido (cada petición), más superficie para que algo desentone |
-| 4 | Calentamiento: animación lenta de fondo | 🟡 medio — hay que diseñar un movimiento que no se note como movimiento, eso cuesta más de lo que parece | 🔴 baja — el calentamiento ya funciona bien, esto es pulido puro | 🟢 bajo — pantalla estática hoy, poco que romper |
-| 5 | Cabina DJ: transiciones tipo Spotify (sin teatralidad) | 🟡 medio — es una familia de transiciones nueva, distinta de Karaoke, con su propio criterio | 🟡 media — DJ es el espacio menos usado hasta ahora (según lo hablado en la sesión) | 🟢 bajo — más sobrio que lo de Karaoke, menos que pueda ir mal |
+| 4 | Calentamiento: animación lenta de fondo — **HECHO, 2026-08-04** | 🟡 medio | 🔴 baja | 🟢 bajo |
+| 5 | Cabina DJ: transiciones tipo Spotify (sin teatralidad) — **HECHO, 2026-08-04** | 🟡 medio | 🟡 media | 🟢 bajo |
 | 6 | Karaoke: más teatralidad en general (marco que junta 1+2+3) | 🔴 alto — es la suma de las piezas de arriba, coordinadas | 🟢 alta — es el efecto conjunto que da la sensación de "espectáculo cuidado" | 🟡 medio — cuantas más piezas se combinan, más fácil que alguna quede floja |
 
 Lectura rápida: **1 y el blackout son los candidatos claros** para una
@@ -716,6 +716,35 @@ próxima sesión corta — esfuerzo bajo, riesgo bajo, y 1 ya tiene medio
 camino andado. El resto (2, 3, 4, 5) son mejoras reales pero de peor
 relación esfuerzo/riesgo por separado; 6 no es una pieza suelta, es la
 suma de las demás.
+
+**4 y 5 — HECHO, v1.3, 2026-08-04.** Al retomar v1.3 se hicieron los dos
+de menor riesgo primero, dejando 2 y 3 para después.
+
+- **Calentamiento**: el icono del micro de la cabecera "respira"
+  (`calentRespira`, escala 1→1.12, 6s) y un degradado radial detrás de
+  todo se expande y se atenúa muy despacio (`calentGradiente`, 28s,
+  opacidad .5→1) — con el color de acento del tema, así que cambia solo
+  con Clásico/Fiesta/Peques/Show sin tocar esta pieza. Nada que compita
+  con la cola llenándose ni con los pasos para pedir, que es lo que de
+  verdad importa en esta pantalla. `prefers-reduced-motion` respetado.
+- **Cabina DJ**: al cambiar de canción, el texto de la franja ("Suena
+  ahora" / título / canal) hace un fundido corto con un desplazamiento
+  pequeño hacia arriba (`djTexto`, .5s) — sin confeti, sin rebote, el
+  contraste deliberado con Karaoke que pedía la propuesta. Solo se
+  dispara con `donde === 'dj'` (nunca en Karaoke) y solo cuando la
+  canción cambia de verdad (`hoy.id !== sonandoId`), no en cada sondeo.
+  No hay carátula que animar —la franja no tiene imagen hoy—, así que
+  "cambio de portada" quedó fuera; "desplazamiento de información" sí
+  está cubierto.
+
+Probado en vivo: las tres animaciones (`calentRespira`, `calentGradiente`,
+`djTexto`) están bien definidas en la hoja de estilos —comprobado
+recorriendo `document.styleSheets`, sin errores de sintaxis— y la clase
+`djCambia` se aplica sin errores de consola. No se pudieron ver
+*en movimiento* en este entorno: fuerza `prefers-reduced-motion:reduce`
+a nivel de sistema, así que el propio `@media` las desactiva aquí — eso
+es el comportamiento correcto, no un fallo; en un navegador normal se
+verán.
 
 **1. Fin de actuación (1-2s).** Secuencia en vez de corte: vídeo se
 desvanece (150-250ms) → celebración (el confeti que ya existe, [[12]]) →
@@ -777,6 +806,46 @@ es añadir un adorno encima de lo de siempre. Respeta
 `prefers-reduced-motion` igual que el confeti. Probado en vivo: la
 secuencia de tiempos exacta (opaco→350ms→desvanece→700ms→limpio) y que
 `efectosOn:false` desactiva las dos cosas sin romper la escena.
+
+**Puntos 2 y 3 — HECHO, v1.3, 2026-08-04.** Cierran la categoría entera
+—quedaba el punto 6, que no era una pieza suelta, era la suma de las
+demás.
+
+- **Punto 2, "Preparando escenario…".** Nueva capa `#presentando` en
+  `proyector.php`, solo en Karaoke (en Cabina DJ no hay a quién
+  presentar — usa en su lugar el fundido del punto 5). Aparece con el
+  nombre de quien canta (o el título, si nadie lo pidió) y el título
+  debajo, 700ms visible, empieza a desvanecerse y queda oculta a los
+  1050ms — probado en vivo con la secuencia exacta. Importante: **no
+  añade ningún retraso real** al vídeo, que se sigue cargando por
+  debajo igual que siempre (`poner()` en `js/proyector/reproductor.js`
+  no se toca) — es la pantalla PÚBLICA la que se toma el momento, no el
+  control del operador ni la máquina de estados.
+- **Punto 3, celebración por cada petición.** Dos piezas, deliberadamente
+  contenidas por el propio aviso de la propuesta ("no convertir esto en
+  una feria"): un destello radial muy suave (`#destello`, 700ms,
+  `radial-gradient` con el acento del tema) cada vez que aparece un id
+  nuevo en la cola del espacio activo — comparando contra el último
+  pintado conocido (`idsConocidos`, módulo de `escenas.js`), nunca en el
+  primer pintado de la pantalla; y la fila de esa canción nueva, tanto
+  en "Próximas" (durante una canción) como en la lista de espera, entra
+  con un deslizamiento corto (`.entraFila`, .4s) en vez de aparecer de
+  golpe. **Sin confeti aquí a propósito** — se queda reservado para los
+  aplausos, que es un momento más raro y se lo merece más; usarlo en
+  cada petición (que en una fiesta viva puede ser cada pocos segundos)
+  habría sido justo el "convertirlo en una feria" que la propia
+  propuesta pedía evitar.
+
+Las cuatro piezas (2, 3, 4, 5) respetan `efectosOn` (el mismo
+interruptor "Efectos escénicos" de Ajustes) y `prefers-reduced-motion`.
+Probado en vivo: el destello no se dispara en el primer pintado
+(confirmado forzando `idsConocidos=null` y comparando dos pintados
+sucesivos) y sí en el segundo cuando aparece un id nuevo; la fila nueva
+queda correctamente marcada con su texto real. Sin errores de consola
+en ningún caso.
+
+Con esto, la sección 19 queda cerrada del todo salvo el punto 6
+(el marco conjunto, que ya está — es la suma de 1+2+3, todas hechas).
 
 ## 20 · Guardar y Volver flotantes en Ajustes — HECHO, 2026-08-04
 
@@ -854,14 +923,132 @@ el mensaje de confirmación explicaría por qué no va justo detrás
 tengan su turno") en vez de "añadida al final", para que la espera se
 sienta justa y no como un fallo.
 
-**Aplazada, no ejecutada.** Es una idea sólida — la rotación por
-cantante es práctica habitual en karaokes de verdad — pero es un
-cambio en el orden real de la cola, y prácticamente todo el motor
-depende de que ese orden ya sea el de reproducción: `evento.js`
-(`pistaTrasId()`, `cuentaAtras()` decidiendo "la siguiente"), el
-arrastre manual de la cola, y la escaleta "Ahora/Después/Luego" de
-hoy mismo ([[10]]) que pinta la cola asumiendo que el orden guardado
-es el orden real. Cambiarlo en mitad de una QA para estabilizar antes
-de una fiesta pasado mañana es justo el tipo de cambio con más
-probabilidad de esconder un bug sutil hasta que ya esté sonando
-delante de la gente. Retomar con calma después de la fiesta.
+**HECHO — v1.3, 2026-08-04 (aplazada el mismo día de la QA por el
+motivo de abajo, retomada al empezar v1.3).**
+
+Implementación final, deliberadamente distinta de "reordenar la cola
+por rondas": en vez de recalcular el orden entero cada vez —que habría
+deshecho cualquier arrastre manual del operador y habría podido mover
+la canción que ya está sonando o preparada—, **solo se decide dónde
+entra la canción nueva**. Todo lo que ya había en la cola se queda
+exactamente donde estaba.
+
+Algoritmo (`indice_por_turno()` en `api/estado.php`): cada persona
+tiene una "ronda" — su primera canción es ronda 0, la segunda ronda 1,
+etc. La nueva entra justo antes de la primera canción existente cuya
+ronda sea mayor que la que le toca a la nueva. Sin arrastrar nada,
+sin recalcular nada más. Solo aplica en **Karaoke**: en Cabina DJ no
+hay actuaciones que turnar (mismo criterio que ya se usó para el
+apagón/confeti y la música ambiente, [[12]]), así que ahí siempre es
+FIFO puro pase lo que pase.
+
+Tres modos en Ajustes → "Quién canta después" (`orden_cola`):
+`rotacion` (nuevo por defecto), `fifo` (como toda la vida), `manual`
+(idéntico a fifo al insertar, para quien no quiere que nada se mueva
+solo — existe por claridad de intención, no por lógica distinta).
+
+`pedir.php` avisa explícitamente cuando la rotación ha colocado la
+canción antes del final ("la hemos colocado después de que canten los
+demás, para que todos tengan su turno") — nunca se oculta, tal como
+pedía la propuesta original.
+
+**Probado en vivo, los cinco casos:**
+1. El ejemplo exacto de la propuesta (Ana×3, Luis, Marta) reproduce
+   node por nodo el resultado esperado: Ana, Luis, Marta, Ana, Ana.
+2. Cabina DJ con las mismas peticiones se queda en FIFO puro — Ana×2
+   seguidas, sin rotar.
+3. Un arrastre manual (`ordenar_cola`) sobrevive intacto a una petición
+   nueva que dispara rotación — la nueva se inserta, lo demás no se
+   toca.
+4. Modo `fifo` explícito: Ana×2 seguidas, Luis al final, tal cual.
+5. `_turno.respetado` en la respuesta refleja correctamente si hubo
+   inserción real (no en el propio final) — confirmado con las
+   comprobaciones anteriores.
+
+**Bug real encontrado de paso, sin relación con la rotación:**
+`qa.php` → "Vaciar cola e historial" llevaba rota desde que se
+escribió — llamaba a `evento_inicial()`, una función que vive en
+`api/estado.php` y que `qa.php` nunca carga (solo `api/comun.php`).
+El error quedaba atrapado en silencio (el propio `catch` de `qa.php`
+lo convertía en un `$hecho = 'ERROR: ...'` que nadie leía en la
+pantalla) — esa acción **nunca había vaciado nada de verdad**.
+Arreglado repitiendo el mismo array que devuelve `evento_inicial()`
+directamente en `qa.php`, sin cargar el archivo entero (que ejecutaría
+su propia lógica de petición HTTP). Detectado porque una prueba de
+rotación en Cabina DJ devolvía datos de una prueba anterior que
+"estado_limpio" decía haber borrado.
+
+## 23 · Ajustes de claves API: 3 filas, sin "Nombre" — HECHO, 2026-08-04
+
+Reportado en vivo. Tres cambios en el pool de claves de `ajustes.php`:
+
+- **De 5 filas a 3.** Con una fiesta normal sobran de largo (~99
+  búsquedas al día por clave), y cinco eran más scroll que utilidad.
+- **Fuera el campo "Nombre".** Dos campos de texto casi iguales al
+  lado del otro (nombre / propietario) — se quita el redundante. El
+  dato sigue existiendo por dentro (algún mensaje de validación lo usa
+  para señalar una clave concreta), pero ahora sale solo del
+  propietario, o de "Clave N" si no hay ninguno puesto — nada lo pide
+  ya en el formulario.
+- **El icono ✕ de borrar, mal cuadrado.** Le faltaba `display:flex` +
+  `justify-content:center` para centrar el símbolo dentro de su caja
+  de 26×26 — confirmado con captura real, comprobado el tamaño exacto
+  tras el arreglo.
+
+**Bug real encontrado y arreglado de paso, más importante que los tres
+anteriores:** "aunque pongas la API sigue apareciendo el cartel que la
+pide". `$e['con_clave']` en `api/estado.php` solo miraba
+`$cfg['api_key']` (la clave suelta de antes del pool) — el formulario
+lleva desde el pool de claves ([[10]]) sin escribir ahí nunca, así que
+quien configuraba su clave por el único camino que existe hoy (las
+filas del pool) veía "Configura tu clave" para siempre, aunque la
+clave funcionara perfectamente para buscar. Arreglado usando
+`claves_lista($cfg)` (que ya sabe fusionar pool + clave suelta de
+respaldo) en vez de mirar el campo viejo a pelo.
+
+Probado en vivo, la secuencia completa: sin ninguna clave →
+`con_clave:false` confirmado · clave guardada por el pool →
+`con_clave:true` confirmado · el cartel "Configura tu clave" del
+operador desaparece de verdad (`display:none`, texto pasa a
+"YouTube"). Sandbox limpiado después.
+
+## 24 · Traducción al inglés — v1.3, arrancada 2026-08-04
+
+**Infraestructura nueva: `js/idioma.js`.** Distinto de `textos.js` a
+propósito — `textos.js` varía el TONO según el tema de la fiesta
+(todos ven el mismo idioma); esto varía el IDIOMA según quien mira la
+pantalla, por dispositivo (`localStorage`, no el estado compartido —
+un invitado inglés en su móvil y el operador español en su portátil,
+cada uno el suyo). Se adivina por el idioma del navegador si nunca se
+ha elegido nada, sin imponer.
+
+Cómo se usa: `data-i18n="clave"` en el HTML sustituye el texto,
+`data-i18n-ph` el placeholder, `data-i18n-title` el title — una pasada
+por el DOM al cargar y al cambiar. Para el texto que genera JS (no
+vive en el HTML: mensajes de confirmación, errores, resultados de
+búsqueda), `KL.idioma.t('clave')` devuelve la traducción o `null` si
+toca español — de ahí el patrón `T('clave', 'texto español')` que
+devuelve el español tal cual si la clave no existe o si el idioma es
+español, para no duplicar nada ni arriesgar un hueco en blanco.
+
+**Cobertura de hoy: `pedir.php` entera — la pantalla que de verdad
+puede necesitar un invitado que no habla español.** Selector ES/EN fijo
+arriba a la derecha, por dispositivo, con lo elegido persistiendo entre
+visitas. Traducido de verdad, no solo el HTML estático: también los
+textos que genera JS según el espacio (título/subtítulo), los mensajes
+de búsqueda ("buscando…", sin resultados), las cinco variantes del
+texto de confirmación (incluida la de rotación de turnos, [[22]], y la
+de "para luego" cuando se pide a un espacio que no es el activo), y los
+errores de conexión.
+
+**`index.html` (el operador) queda sin traducir, a propósito, por
+ahora** — es mucho más grande (cientos de cadenas repartidas por HTML y
+35 archivos JS) y lo usa siempre la misma persona que monta la fiesta,
+que ya lee español. La infraestructura ya está lista para extenderlo
+cuando toque; sería repetir el mismo patrón, no inventar uno nuevo.
+`proyector.php` y `ajustes.php` tampoco se han tocado todavía.
+
+Probado en vivo: cambio ES→EN→ES sin recargar (estático y generado por
+JS, incluidos los resultados vacíos y la confirmación), persistencia
+tras recarga real de página, sin errores de consola en ningún punto.
+`js/idioma.js` añadido a la caché del service worker (`okc-v16`).

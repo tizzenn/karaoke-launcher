@@ -106,6 +106,21 @@ body[data-efecto="ninguno"] #halo,body[data-efecto="ninguno"] #barras{display:no
 #franja .tema{font-size:1.9vw;color:var(--txt2);margin-top:.8vh;font-weight:600;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+/* Cabina DJ: fundido corto en el texto al cambiar de canción, sin
+   confeti ni rebote — ver escenas.js, "donde === 'dj'". El deslizamiento
+   pequeño hacia arriba es lo que aporta "desplazamiento de información"
+   sin necesitar una carátula que la franja hoy no tiene. */
+#franja.djCambia .canta,
+#franja.djCambia .tema{ animation:djTexto .5s ease-out both }
+@keyframes djTexto{
+  0%  { opacity:0; transform:translateY(.6vh) }
+  100%{ opacity:1; transform:translateY(0) }
+}
+@media (prefers-reduced-motion: reduce){
+  #franja.djCambia .canta,
+  #franja.djCambia .tema{ animation:none }
+}
+
 /* ---- Las próximas tres, discretas y recolocables ----
    Recolocables porque en cada casa la tele tiene delante una lámpara, un
    sofá o la cabeza de alguien en un sitio distinto. */
@@ -152,7 +167,33 @@ body[data-lado="abajo"]  #proximas .f{max-width:56vw}
 #calent .reloj b{color:var(--ac);font-size:2.2vw}
 #calent .marca{position:absolute;top:3vh;left:3vw;display:flex;align-items:center;gap:.8vw;
  font-size:1.6vw;font-weight:800;color:var(--txt2)}
-#calent .marca .ic{width:2.2vw;height:2.2vw;color:var(--ac)}
+#calent .marca .ic{width:2.2vw;height:2.2vw;color:var(--ac);
+ animation:calentRespira 6s ease-in-out infinite}
+@keyframes calentRespira{
+  0%,100%{ transform:scale(1); opacity:.85 }
+  50%    { transform:scale(1.12); opacity:1 }
+}
+
+/* Lenguaje visual escénico (2026-08-04): el calentamiento dura minutos,
+   a veces media hora, y sin ningún movimiento se lee como una pantalla
+   colgada — nadie confía en que la app siga viva. No se mueve NADA que
+   distraiga de la cola o de los pasos para pedir: solo un degradado
+   radial detrás de todo, larguísimo (28s) y muy tenue, que respira con
+   el mismo ritmo que el icono de arriba. */
+#calent::before{
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(circle at 50% 30%, rgba(var(--ac-rgb),.10), transparent 60%);
+  animation:calentGradiente 28s ease-in-out infinite;
+}
+@keyframes calentGradiente{
+  0%,100%{ opacity:.5; transform:scale(1) }
+  50%    { opacity:1; transform:scale(1.15) }
+}
+@media (prefers-reduced-motion: reduce){
+  #calent .marca .ic{ animation:none }
+  #calent::before{ animation:none }
+}
+
 .panel{display:none;flex-direction:column;align-items:center;gap:2.4vh;width:100%}
 .panel.on{display:flex;animation:entra .5s ease-out}
 
@@ -347,6 +388,68 @@ body[data-lado="abajo"]  #proximas .f{max-width:56vw}
 @media (prefers-reduced-motion: reduce){
   #aplausos h1{ animation:none }
   .confeti-p{ animation:none; display:none }
+}
+
+/* ═══ Preparando escenario: inicio de actuación (2026-08-04) ═══
+   Se muestra sola, un momento, encima de todo lo demás (z-index alto,
+   ni el vídeo ni la franja se ven detrás mientras dura). Se retira ella
+   sola por JS —ver escenas.js— nunca por un clic; nadie tiene que hacer
+   nada para que desaparezca. */
+#presentando{
+  position:fixed; inset:0; z-index:60;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1.6vh; background:var(--bg);
+  animation:ppEntra .35s ease-out both;
+}
+#presentando.oculto{ display:none }
+#presentando.ppSale{ animation:ppSale .35s ease-in both }
+#presentando .ppTxt{
+  font-size:1.6vw; letter-spacing:.3vw; text-transform:uppercase;
+  color:var(--txt3); font-weight:800;
+}
+#presentando .ppQuien{
+  font-size:5vw; font-weight:900; color:var(--ac); line-height:1.05;
+  text-align:center; max-width:88vw;
+}
+#presentando .ppTitulo{
+  font-size:2.2vw; color:var(--txt2); font-weight:600; text-align:center; max-width:80vw;
+}
+@keyframes ppEntra{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes ppSale{ from{ opacity:1 } to{ opacity:0 } }
+@media (prefers-reduced-motion: reduce){
+  #presentando, #presentando.ppSale{ animation:none }
+}
+
+/* ═══ Destello: entra una petición nueva ═══
+   Un halo suave desde los bordes, no un flash blanco en la cara de
+   todo el mundo — esto puede pasar cada pocos segundos en una fiesta
+   viva. z-index alto pero pointer-events:none: nunca tapa ni bloquea
+   nada, solo se ve. */
+#destello{
+  position:fixed; inset:0; z-index:55; pointer-events:none;
+  background:radial-gradient(circle at 50% 50%, transparent 55%, rgba(var(--ac-rgb),.16) 100%);
+  opacity:0;
+}
+#destello.on{ animation:destelloPulso .7s ease-out both }
+@keyframes destelloPulso{
+  0%  { opacity:0 }
+  30% { opacity:1 }
+  100%{ opacity:0 }
+}
+@media (prefers-reduced-motion: reduce){
+  #destello.on{ animation:none }
+}
+
+/* La fila que acaba de entrar en "Ya cantan"/"Próximas": un deslizamiento
+   corto desde la derecha, para que se note cuál es la nueva sin tener
+   que leer toda la lista otra vez. */
+.f.entraFila{ animation:filaEntra .4s ease-out both }
+@keyframes filaEntra{
+  from{ opacity:0; transform:translateX(2vw) }
+  to  { opacity:1; transform:translateX(0) }
+}
+@media (prefers-reduced-motion: reduce){
+  .f.entraFila{ animation:none }
 }
 
 /* ═══ Termómetro de fiesta ═══

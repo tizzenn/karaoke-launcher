@@ -37,15 +37,15 @@
       <!-- Cuál de las ventanas es esta. Parece de más hasta que alguien
            monta esto por primera vez con tres abiertas y no sabe en cuál
            tiene que buscar los botones. -->
-      <span class="soy">Operador · esta pantalla es la tuya</span>
+      <span class="soy" data-i18n="soy">Operador · esta pantalla es la tuya</span>
       <span class="edicion" id="edicion"></span>
     </div>
 
     <!-- En qué espacio estás. El color solo no bastaba: quien abre esto por
          primera vez ve verde o morado y no deduce nada. -->
     <div id="espacios" role="tablist" aria-label="Espacio">
-      <button class="esp" data-esp="karaoke" title="🎤 Empezar karaoke: canciones con letra para cantar"><svg class="ic"><use href="#ic-microfono"></use></svg>Karaoke</button>
-      <button class="esp" data-esp="dj" title="🎧 Música ambiente: una fiesta sin karaoke, la lista la hacéis entre todos desde el móvil"><svg class="ic"><use href="#ic-plato"></use></svg>Cabina DJ</button>
+      <button class="esp" data-esp="karaoke" title="🎤 Empezar karaoke: canciones con letra para cantar" data-i18n-title="esp_karaoke_title"><svg class="ic"><use href="#ic-microfono"></use></svg><span data-i18n="esp_karaoke_btn">Karaoke</span></button>
+      <button class="esp" data-esp="dj" title="🎧 Música ambiente: una fiesta sin karaoke, la lista la hacéis entre todos desde el móvil" data-i18n-title="esp_dj_title"><svg class="ic"><use href="#ic-plato"></use></svg><span data-i18n="esp_dj_btn">Cabina DJ</span></button>
     </div>
     <!-- Dos campos porque son dos preguntas distintas: QUÉ busco (arriba)
          y CÓMO lo acoto (abajo). El de abajo era hasta ahora un «sufijo»
@@ -55,20 +55,20 @@
         <span class="mg"><svg class="ic" aria-hidden="true"><use href="#ic-buscar"></use></svg></span>
         <!-- La barra hace de botón: escribir y pulsar Intro. El botón
              «Buscar en YouTube» que había aquí decía lo mismo dos veces. -->
-        <input id="q" type="text" placeholder="Buscar karaokes, o pegar un enlace de YouTube…" autocomplete="off" enterkeyhint="search">
+        <input id="q" type="text" placeholder="Buscar karaokes, o pegar un enlace de YouTube…" data-i18n-ph="buscador_ph" autocomplete="off" enterkeyhint="search">
       </div>
       <div class="sbox fbox">
-        <span class="mg" title="Filtro"><svg class="ic" aria-hidden="true"><use href="#ic-embudo"></use></svg></span>
+        <span class="mg" title="Filtro" data-i18n-title="filtro_title"><svg class="ic" aria-hidden="true"><use href="#ic-embudo"></use></svg></span>
         <input id="filtro" type="text" autocomplete="off" enterkeyhint="search" list="perfiles"
                aria-describedby="filtroPie"
-               title="Se añade a cada búsqueda. Acepta AND, OR y «-» para excluir.">
+               title="Se añade a cada búsqueda. Acepta AND, OR y «-» para excluir." data-i18n-title="filtro_input_title">
         <!-- Los perfiles: el mismo campo, con nombre. Un <datalist> y no
              un menú propio porque el navegador ya sabe hacer esto, se
              puede seguir escribiendo a mano encima, y funciona con el
              teclado sin que yo escriba una línea de accesibilidad. -->
         <datalist id="perfiles"></datalist>
-        <button class="ib mini" id="bFiltroGuardar" title="Guardar este filtro como perfil"><svg class="ic"><use href="#ic-estrella-borde"></use></svg></button>
-        <button class="ib mini" id="bFiltroX" title="Quitar el filtro" hidden><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
+        <button class="ib mini" id="bFiltroGuardar" title="Guardar este filtro como perfil" data-i18n-title="filtro_guardar_title"><svg class="ic"><use href="#ic-estrella-borde"></use></svg></button>
+        <button class="ib mini" id="bFiltroX" title="Quitar el filtro" data-i18n-title="filtro_quitar_title" hidden><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
       </div>
       <!-- Lo que de verdad se va a buscar, mientras se escribe. Es la
            única manera de que alguien aprenda la sintaxis sin leer nada:
@@ -79,16 +79,22 @@
          pestaña de arriba; repetirlo aquí solo robaba sitio al buscador. -->
     <div id="espacio"></div>
     <!-- Solo se ve cuando falta la clave, que es cuando hay algo que hacer. -->
-    <span class="badge demo" id="modo">Configura tu clave</span>
-    <button class="ib" id="bCal" title="🎉 Preparar la fiesta: la tele explica cómo pedir canciones y enseña la cola en directo. Se quita sola al empezar la primera"><svg class="ic"><use href="#ic-fuego"></use></svg></button>
-    <button class="ib" id="bQR" title="Unirse a la fiesta: los códigos para conectarse y pedir canciones"><svg class="ic"><use href="#ic-movil-envia"></use></svg></button>
-    <button class="ib" id="bProy" title="Mandar a la otra pantalla: abre la ventana del televisor"><svg class="ic"><use href="#ic-segunda-pantalla"></use></svg></button>
-    <button class="ib" id="bView" title="Disposición: completa → compacta → mini  (tecla V)"><svg class="ic"><use href="#ic-disposicion"></use></svg></button>
+    <span class="badge demo" id="modo" data-i18n="modo_configura_clave">Configura tu clave</span>
+    <button class="ib" id="bCal" title="🎉 Preparar la fiesta: la tele explica cómo pedir canciones y enseña la cola en directo. Se quita sola al empezar la primera" data-i18n-title="bCal_title"><svg class="ic"><use href="#ic-fuego"></use></svg></button>
+    <button class="ib" id="bQR" title="Unirse a la fiesta: los códigos para conectarse y pedir canciones" data-i18n-title="bQR_title"><svg class="ic"><use href="#ic-movil-envia"></use></svg></button>
+    <button class="ib" id="bProy" title="Mandar a la otra pantalla: abre la ventana del televisor" data-i18n-title="bProy_title"><svg class="ic"><use href="#ic-segunda-pantalla"></use></svg></button>
+    <button class="ib" id="bView" title="Disposición: completa → compacta → mini  (tecla V)" data-i18n-title="bView_title"><svg class="ic"><use href="#ic-disposicion"></use></svg></button>
     <!-- El tema, a la vista. Estaba solo dentro de ajustes.php y en la
          práctica eso significaba que no existía: nadie va a buscar una
          función que no sabe que hay. -->
-    <button class="ib" id="bTema" title="Cómo se ve y cómo habla: Clásico, Fiesta, Peques o Show"><svg class="ic"><use href="#ic-paleta"></use></svg></button>
-    <button class="ib" id="bCfg" title="⚙ Ajustes"><svg class="ic"><use href="#ic-ajustes"></use></svg></button>
+    <button class="ib" id="bTema" title="Cómo se ve y cómo habla: Clásico, Fiesta, Peques o Show" data-i18n-title="bTema_title"><svg class="ic"><use href="#ic-paleta"></use></svg></button>
+    <button class="ib" id="bCfg" title="⚙ Ajustes" data-i18n-title="bCfg_title"><svg class="ic"><use href="#ic-ajustes"></use></svg></button>
+    <!-- Por dispositivo, no por fiesta: cada portátil/móvil que abra esto
+         elige su idioma sin afectar a los demás. Ver js/idioma.js. -->
+    <div id="idiomaSel">
+      <button type="button" class="idiomaBtn" data-idioma="es">ES</button>
+      <button type="button" class="idiomaBtn" data-idioma="en">EN</button>
+    </div>
   </header>
 
   <!-- Modo Show: el botón de las cartas de reto. Solo se ve con el tema
@@ -101,7 +107,7 @@
        que es donde el operador mira el 95 % del tiempo. -->
   <details id="mc">
     <summary><svg class="ic sm"><use href="#ic-microfono"></use></svg>
-      Maestro de ceremonias</summary>
+      <span data-i18n="mc_titulo">Maestro de ceremonias</span></summary>
     <div id="panelMC"></div>
   </details>
 
@@ -121,10 +127,10 @@
        Es el MISMO botón, con el mismo id, mudado de sitio. No hay dos
        —eso ya pasó una vez— y la prueba que lo vigila sigue en verde. -->
   <section id="ahora">
-    <div id="faseCaja" title="En qué momento de la noche estamos">
+    <div id="faseCaja" title="En qué momento de la noche estamos" data-i18n-title="faseCaja_title">
       <span id="faseIcono">🔥</span>
       <div>
-        <div id="faseNombre">Calentamiento</div>
+        <div id="faseNombre" data-i18n="fase_calentamiento">Calentamiento</div>
         <div id="fasePista"></div>
       </div>
       <!-- Los testigos. No son controles: son para no tener que
@@ -136,53 +142,53 @@
 
     <div id="ahoraFilas">
       <div class="af" id="afAhora">
-        <span class="et">Ahora</span>
+        <span class="et" data-i18n="af_ahora">Ahora</span>
         <div class="qui" id="afAhoraQuien">—</div>
         <div class="tit" id="afAhoraTit"></div>
       </div>
 
       <div class="af sig" id="afSig">
-        <span class="et">Después</span>
+        <span class="et" data-i18n="af_despues">Después</span>
         <div class="qui" id="afSigQuien">—</div>
         <div class="tit" id="afSigTit"></div>
       </div>
 
       <div id="afAccion">
-        <button class="cb big" id="bPlay" title="Empezar la actuación preparada (Espacio)"><svg class="ic"><use href="#ic-play"></use></svg><span>Empezar</span></button>
+        <button class="cb big" id="bPlay" title="Empezar la actuación preparada (Espacio)" data-i18n-title="bPlay_title"><svg class="ic"><use href="#ic-play"></use></svg><span data-i18n="bPlay_texto">Empezar</span></button>
       </div>
     </div>
   </section>
 
   <div id="tabs">
-    <button data-p="lib" class="on"><svg class="ic sm"><use href="#ic-estrella"></use></svg> Canciones</button>
-    <button data-p="que"><svg class="ic sm"><use href="#ic-musica"></use></svg> Cola</button>
+    <button data-p="lib" class="on"><svg class="ic sm"><use href="#ic-estrella"></use></svg> <span data-i18n="tab_canciones">Canciones</span></button>
+    <button data-p="que"><svg class="ic sm"><use href="#ic-musica"></use></svg> <span data-i18n="tab_cola">Cola</span></button>
   </div>
 
   <main>
     <!-- BIBLIOTECA RÁPIDA -->
     <section class="pane act" id="pLib">
       <div class="ph">
-        <button id="bLibCol" title="Plegar la biblioteca"><svg class="ic"><use href="#ic-estrella"></use></svg></button>
+        <button id="bLibCol" title="Plegar la biblioteca" data-i18n-title="bLibCol_title"><svg class="ic"><use href="#ic-estrella"></use></svg></button>
         <span id="libCount">0</span>
-        <h2>Canciones</h2>
+        <h2 data-i18n="lib_h2">Canciones</h2>
         <span class="n" id="nLib">0</span>
-        <button class="lnk" id="bFix" title="Volver a pedir títulos y carátulas a YouTube">Reparar títulos</button>
-        <button class="lnk" id="bAddAll">Añadir todo</button>
+        <button class="lnk" id="bFix" title="Volver a pedir títulos y carátulas a YouTube" data-i18n-title="bFix_title" data-i18n="bFix_texto">Reparar títulos</button>
+        <button class="lnk" id="bAddAll" data-i18n="bAddAll_texto">Añadir todo</button>
       </div>
-      <div class="fbox"><input id="fLib" type="text" placeholder="Filtrar en la biblioteca…" autocomplete="off"></div>
+      <div class="fbox"><input id="fLib" type="text" placeholder="Filtrar en la biblioteca…" data-i18n-ph="fLib_ph" autocomplete="off"></div>
       <div class="scroll" id="lib"></div>
     </section>
 
     <!-- COLA -->
     <section class="pane" id="pQue">
       <div class="ph">
-        <h2><svg class="ic sm"><use href="#ic-musica"></use></svg> Cola</h2>
+        <h2><svg class="ic sm"><use href="#ic-musica"></use></svg> <span data-i18n="tab_cola">Cola</span></h2>
         <span class="n" id="nQue">0</span>
-        <button class="lnk" id="bShuffleQ"><svg class="ic sm"><use href="#ic-barajar"></use></svg> Mezclar</button>
-        <button class="lnk" id="bHist" title="Ver lo ya cantado esta fiesta"><svg class="ic sm"><use href="#ic-repetir"></use></svg> Ya cantadas</button>
-        <button class="lnk" id="bDescargarCola" title="Descargar toda la cola, para preparar la fiesta con antelación sin depender de la wifi"><svg class="ic sm"><use href="#ic-descargar"></use></svg></button>
-        <button class="lnk" id="bDelAll" title="Borrar todos los vídeos descargados del disco"><svg class="ic sm"><use href="#ic-borrar-todo"></use></svg></button>
-        <button class="lnk d" id="bClearQ">Vaciar</button>
+        <button class="lnk" id="bShuffleQ"><svg class="ic sm"><use href="#ic-barajar"></use></svg> <span data-i18n="bShuffleQ_texto">Mezclar</span></button>
+        <button class="lnk" id="bHist" title="Ver lo ya cantado esta fiesta" data-i18n-title="bHist_title"><svg class="ic sm"><use href="#ic-repetir"></use></svg> <span data-i18n="bHist_texto">Ya cantadas</span></button>
+        <button class="lnk" id="bDescargarCola" title="Descargar toda la cola, para preparar la fiesta con antelación sin depender de la wifi" data-i18n-title="bDescargarCola_title"><svg class="ic sm"><use href="#ic-descargar"></use></svg></button>
+        <button class="lnk" id="bDelAll" title="Borrar todos los vídeos descargados del disco" data-i18n-title="bDelAll_title"><svg class="ic sm"><use href="#ic-borrar-todo"></use></svg></button>
+        <button class="lnk d" id="bClearQ" data-i18n="bClearQ_texto">Vaciar</button>
       </div>
       <!-- El mismo termómetro que ve la sala, aquí en pequeño. No es
            decoración: el operador escribe esas frases en Ajustes y nunca
@@ -200,19 +206,19 @@
     <div id="np">
       <img id="npImg" alt="">
       <div style="min-width:0">
-        <div class="t" id="npT">Nada en reproducción</div>
-        <div class="c" id="npC">Busca una canción para empezar</div>
+        <div class="t" id="npT" data-i18n="np_nada">Nada en reproducción</div>
+        <div class="c" id="npC" data-i18n="np_busca">Busca una canción para empezar</div>
       </div>
     </div>
     <div id="ct">
       <div class="crow">
-        <button class="cb" id="bPrev" title="Anterior (←)"><svg class="ic"><use href="#ic-anterior"></use></svg></button>
+        <button class="cb" id="bPrev" title="Anterior (←)" data-i18n-title="bPrev_title"><svg class="ic"><use href="#ic-anterior"></use></svg></button>
         <!-- El botón de Empezar estaba aquí. Se ha MUDADO a la tarjeta
              «Ahora», arriba: es el que más se pulsa de toda la aplicación
              y aquí abajo, del tamaño de sus vecinos, había que buscarlo.
              Es el mismo botón con el mismo id, no uno nuevo. -->
-        <button class="cb" id="bNext" title="Siguiente (→)"><svg class="ic"><use href="#ic-siguiente"></use></svg></button>
-        <button class="cb on" id="bAuto" title="Al terminar una canción, dejar la siguiente preparada (no la arranca)"><svg class="ic"><use href="#ic-repetir"></use></svg></button>
+        <button class="cb" id="bNext" title="Siguiente (→)" data-i18n-title="bNext_title"><svg class="ic"><use href="#ic-siguiente"></use></svg></button>
+        <button class="cb on" id="bAuto" title="Al terminar una canción, dejar la siguiente preparada (no la arranca)" data-i18n-title="bAuto_title"><svg class="ic"><use href="#ic-repetir"></use></svg></button>
       </div>
       <div class="brow">
         <span id="tc">0:00</span>
@@ -229,9 +235,9 @@
            Ojo con el nombre: esto NO es la Cabina DJ. La Cabina DJ es un
            espacio, otra fiesta distinta. Esto es la música de fondo del
            karaoke. Se llamaron igual durante meses y confundía. -->
-      <button class="cb" id="bDJ" title="Música ambiente: lo que suena entre actuaciones"><svg class="ic"><use href="#ic-musica"></use></svg></button>
-      <button class="cb" id="bVid" title="Mostrar / ocultar vídeo"><svg class="ic"><use href="#ic-tv"></use></svg></button>
-      <button class="cb" id="bYT" title="Abrir en YouTube"><svg class="ic"><use href="#ic-abrir-fuera"></use></svg></button>
+      <button class="cb" id="bDJ" title="Música ambiente: lo que suena entre actuaciones" data-i18n-title="bDJ_title"><svg class="ic"><use href="#ic-musica"></use></svg></button>
+      <button class="cb" id="bVid" title="Mostrar / ocultar vídeo" data-i18n-title="bVid_title"><svg class="ic"><use href="#ic-tv"></use></svg></button>
+      <button class="cb" id="bYT" title="Abrir en YouTube" data-i18n-title="bYT_title"><svg class="ic"><use href="#ic-abrir-fuera"></use></svg></button>
     </div>
   </div>
 
@@ -240,8 +246,8 @@
        avisoRed —se calla un cuarto de hora si se descarta— pero para
        algo bien distinto: no un fallo, un silencio. -->
   <div id="avisoCopiloto"></div>
-  <div id="avisoMudo">Este PC está en <b>silencio</b> y es el que tiene que sonar &nbsp;
-    <button class="btn" id="bDesmutear">Devolver el sonido</button></div>
+  <div id="avisoMudo"><span data-i18n-html="avisoMudo_texto">Este PC está en <b>silencio</b> y es el que tiene que sonar</span> &nbsp;
+    <button class="btn" id="bDesmutear" data-i18n="bDesmutear_texto">Devolver el sonido</button></div>
   <div id="redbar"></div>
 </div>
 
@@ -250,13 +256,13 @@
 <div id="menuPaneles">
   <div class="cab">
     <svg class="ic sm"><use href="#ic-tv"></use></svg>
-    <b>Cartelones de la tele</b>
-    <button class="ib" id="bCerrarPaneles" title="Ocultar este mando"><svg class="ic sm"><use href="#ic-cerrar"></use></svg></button>
+    <b data-i18n="paneles_titulo">Cartelones de la tele</b>
+    <button class="ib" id="bCerrarPaneles" title="Ocultar este mando" data-i18n-title="bCerrarPaneles_title"><svg class="ic sm"><use href="#ic-cerrar"></use></svg></button>
   </div>
   <div id="listaPaneles"></div>
   <div class="pie">
     <span id="pieRotacion"></span>
-    <button class="btn g" id="bRotar">Rotar todos</button>
+    <button class="btn g" id="bRotar" data-i18n="bRotar_texto">Rotar todos</button>
   </div>
 </div>
 
@@ -265,33 +271,33 @@
 
 <!-- Siempre visible durante una actuación: el iframe de YouTube se traga
      el ratón, así que no puede depender de ningún gesto. -->
-<button id="salirInterp"><svg class="ic"><use href="#ic-stop"></use></svg> Volver al operador · Esc</button>
+<button id="salirInterp"><svg class="ic"><use href="#ic-stop"></use></svg> <span data-i18n="salirInterp_texto">Volver al operador · Esc</span></button>
 
 <!-- Cuando el vídeo no arranca. Con botones, no con un mensaje. -->
 <div id="falloVideo">
   <svg class="ic"><use href="#ic-aviso"></use></svg>
-  <h3>Este vídeo no arranca</h3>
+  <h3 data-i18n="falloVideo_h3">Este vídeo no arranca</h3>
   <p id="falloTxt"></p>
   <div class="bots">
-    <button class="btn" id="bFalloReintentar">Reintentar</button>
-    <button class="btn g" id="bFalloYT">Abrir en YouTube</button>
-    <button class="btn g" id="bFalloSaltar">Saltar a la siguiente</button>
-    <button class="btn g" id="bFalloSalir">Volver al operador</button>
+    <button class="btn" id="bFalloReintentar" data-i18n="bFalloReintentar_texto">Reintentar</button>
+    <button class="btn g" id="bFalloYT" data-i18n="bFalloYT_texto">Abrir en YouTube</button>
+    <button class="btn g" id="bFalloSaltar" data-i18n="bFalloSaltar_texto">Saltar a la siguiente</button>
+    <button class="btn g" id="bFalloSalir" data-i18n="bFalloSalir_texto">Volver al operador</button>
   </div>
 </div>
 
 <div id="vb" class="hide nx-der">
   <div class="vh">
-    <b id="vbT">Vídeo</b>
-    <button class="ib" id="vbMudo" title="Silenciar este PC (el sonido sale de la tele)"><svg class="ic"><use href="#ic-volumen"></use></svg></button>
-    <button class="ib" id="vbFull" title="Pantalla completa solo del vídeo"><svg class="ic"><use href="#ic-pantalla-completa"></use></svg></button>
+    <b id="vbT" data-i18n="vbT_texto">Vídeo</b>
+    <button class="ib" id="vbMudo" title="Silenciar este PC (el sonido sale de la tele)" data-i18n-title="vbMudo_title"><svg class="ic"><use href="#ic-volumen"></use></svg></button>
+    <button class="ib" id="vbFull" title="Pantalla completa solo del vídeo" data-i18n-title="vbFull_title"><svg class="ic"><use href="#ic-pantalla-completa"></use></svg></button>
     <button class="ib" id="vbX"><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
   </div>
   <div id="vzona">
     <div id="yt"></div>
     <video id="vlocal" style="display:none;width:100%;aspect-ratio:16/9;background:#000" playsinline></video>
     <div id="vnext">
-      <div class="e">Después canta</div>
+      <div class="e" data-i18n="vnext_despues">Después canta</div>
       <div class="q" id="vnextQ"></div>
       <div class="t" id="vnextT"></div>
     </div>
@@ -302,15 +308,15 @@
 <div class="ov" id="ovRes">
   <div class="md">
     <div class="mh">
-      <h3>Resultados</h3>
-      <span class="hi">Doble clic = a la cola</span>
+      <h3 data-i18n="ovRes_h3">Resultados</h3>
+      <span class="hi" data-i18n="ovRes_hi">Doble clic = a la cola</span>
       <button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
     </div>
     <div class="mb"><div id="res"></div></div>
     <div class="mf">
       <span class="hi" id="resF"></span>
-      <button class="btn g" data-x>Cerrar</button>
-      <button class="btn" id="bAddSel">Añadir a la cola</button>
+      <button class="btn g" data-x data-i18n="cerrar_texto">Cerrar</button>
+      <button class="btn" id="bAddSel" data-i18n="bAddSel_texto">Añadir a la cola</button>
     </div>
   </div>
 </div>
@@ -319,15 +325,15 @@
 <div class="ov" id="ovHist">
   <div class="md">
     <div class="mh">
-      <h3>Ya cantadas</h3>
-      <span class="hi">Lo que ha sonado esta fiesta</span>
+      <h3 data-i18n="bHist_texto">Ya cantadas</h3>
+      <span class="hi" data-i18n="ovHist_hi">Lo que ha sonado esta fiesta</span>
       <button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button>
     </div>
     <div class="mb"><div id="hist"></div></div>
     <div class="mf">
       <span class="hi" id="histF"></span>
-      <button class="lnk d" id="bVaciarHist">Vaciar historial</button>
-      <button class="btn g" data-x>Cerrar</button>
+      <button class="lnk d" id="bVaciarHist" data-i18n="bVaciarHist_texto">Vaciar historial</button>
+      <button class="btn g" data-x data-i18n="cerrar_texto">Cerrar</button>
     </div>
   </div>
 </div>
@@ -335,7 +341,7 @@
 <!-- AJUSTES -->
 <div class="ov" id="ovCfg">
   <div class="md" style="width:min(560px,100%)">
-    <div class="mh"><h3>Ajustes</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
+    <div class="mh"><h3 data-i18n="ovCfg_h3">Ajustes</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
     <div class="mb" style="padding:18px 22px">
 
       <!-- ── Cómo está organizado esto, y por qué ────────────────────
@@ -357,7 +363,7 @@
            sobraba el de dentro — sobre todo con el filtro, que se cambia
            EN MITAD de una fiesta y estaba a tres clics. -->
       <div class="grupo">
-        <h4>Este aparato</h4>
+        <h4 data-i18n="grupo_aparato_h4">Este aparato</h4>
         <div class="fld">
           <label>Calidad de vídeo</label>
           <select id="cQual">
@@ -384,7 +390,7 @@
       </div>
 
       <div class="grupo">
-        <h4>El ritmo</h4>
+        <h4 data-i18n="grupo_ritmo_h4">El ritmo</h4>
         <div class="fld">
           <label>Cuenta atrás antes de empezar</label>
           <input id="cSegLlam" type="number" min="0" max="15" step="1" value="0">
@@ -407,7 +413,7 @@
       </div>
 
       <div class="grupo">
-        <h4>La tele</h4>
+        <h4 data-i18n="grupo_tele_h4">La tele</h4>
         <div class="fld">
           <label>Efecto con el sonido de la sala</label>
           <select id="cEfecto">
@@ -451,7 +457,7 @@
            monta la fiesta por gusto, esto lo toca quien está arreglando
            un problema concreto. Grupo aparte. -->
       <div class="grupo">
-        <h4>Avanzado</h4>
+        <h4 data-i18n="grupo_avanzado_h4">Avanzado</h4>
         <!-- Escondido a propósito. Antes esto era «Retraso de la pantalla
              pública» y estaba a la vista porque hacía falta. Ya no: la
              pantalla del cantante publica en qué instante estaba en el
@@ -477,7 +483,7 @@
       </div>
 
       <div class="grupo">
-        <h4>¿Está todo bien?</h4>
+        <h4 data-i18n="grupo_estado_h4">¿Está todo bien?</h4>
         <div id="poderes"></div>
         <!-- Esto mira si la FIESTA va bien: la tele, el sonido, la red.
              Lo que no puede mirar es si la MÁQUINA puede correr esto
@@ -498,25 +504,25 @@
              noche — la clave de YouTube, el tema, la wifi, quién puede
              pedir—, y eso es la fiesta, no el servidor. -->
         <div style="display:flex;gap:9px;margin-top:16px">
-          <a class="btn" href="ajustes.php" style="flex:1;text-align:center;text-decoration:none;line-height:1.6">Ajustes de la fiesta</a>
+          <a class="btn" href="ajustes.php" style="flex:1;text-align:center;text-decoration:none;line-height:1.6" data-i18n="ajustes_fiesta_texto">Ajustes de la fiesta</a>
           <button class="btn g" id="bExp" style="flex:1"
-                  title="Incluye la biblioteca y las colas de Karaoke y de Cabina DJ, las dos">
-            <svg class="ic sm"><use href="#ic-descargar"></use></svg> Exportar copia</button>
+                  title="Incluye la biblioteca y las colas de Karaoke y de Cabina DJ, las dos" data-i18n-title="bExp_title">
+            <svg class="ic sm"><use href="#ic-descargar"></use></svg> <span data-i18n="bExp_texto">Exportar copia</span></button>
           <button class="btn g" id="bImp" style="flex:1"
-                  title="Sustituye tu biblioteca por la del archivo. La cola no se toca.">
-            <svg class="ic sm" style="transform:rotate(180deg)"><use href="#ic-descargar"></use></svg> Importar copia</button>
+                  title="Sustituye tu biblioteca por la del archivo. La cola no se toca." data-i18n-title="bImp_title">
+            <svg class="ic sm" style="transform:rotate(180deg)"><use href="#ic-descargar"></use></svg> <span data-i18n="bImp_texto">Importar copia</span></button>
         </div>
       </div>
 
     </div>
-    <div class="mf"><button class="btn g" data-x>Cancelar</button><button class="btn" id="bSaveCfg">Guardar</button></div>
+    <div class="mf"><button class="btn g" data-x data-i18n="cancelar_texto">Cancelar</button><button class="btn" id="bSaveCfg" data-i18n="guardar_texto">Guardar</button></div>
   </div>
 </div>
 
 <div id="buf">
   <div class="sp"></div>
-  <b id="bufT">Recuperando la reproducción…</b>
-  <span id="bufS">La conexión ha bajado</span>
+  <b id="bufT" data-i18n="bufT_texto">Recuperando la reproducción…</b>
+  <span id="bufS" data-i18n="bufS_texto">La conexión ha bajado</span>
 </div>
 
 <!-- ═══ TEMA ═══
@@ -525,11 +531,11 @@
      que además desaparece el QR y cambian todos los mensajes. -->
 <div class="ov" id="ovTema">
   <div class="md" style="width:min(560px,100%)">
-    <div class="mh"><h3>Cómo se ve y cómo habla</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
+    <div class="mh"><h3 data-i18n="ovTema_h3">Cómo se ve y cómo habla</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
     <div class="mb" id="temaLista" style="padding:16px;display:grid;gap:10px"></div>
     <div class="mf">
-      <span style="flex:1;font-size:12.5px;color:var(--txt3)">El tema es de la fiesta, no de este aparato: la tele se pone igual sola.</span>
-      <button class="btn" data-x>Cerrar</button>
+      <span style="flex:1;font-size:12.5px;color:var(--txt3)" data-i18n="ovTema_pie">El tema es de la fiesta, no de este aparato: la tele se pone igual sola.</span>
+      <button class="btn" data-x data-i18n="cerrar_texto">Cerrar</button>
     </div>
   </div>
 </div>
@@ -545,9 +551,9 @@
      conecta es peor que ninguno. -->
 <div class="ov" id="ovQR">
   <div class="md" style="width:min(700px,100%)">
-    <div class="mh"><h3>Unirse a la fiesta</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
+    <div class="mh"><h3 data-i18n="ovQR_h3">Unirse a la fiesta</h3><button class="ib" data-x><svg class="ic"><use href="#ic-cerrar"></use></svg></button></div>
     <div class="mb" id="qrCuerpo" style="padding:22px"></div>
-    <div class="mf"><button class="btn" data-x>Cerrar</button></div>
+    <div class="mf"><button class="btn" data-x data-i18n="cerrar_texto">Cerrar</button></div>
   </div>
 </div>
 
@@ -567,6 +573,7 @@
 
      Para la versión Lite se cambia la segunda línea por
      js/almacen-local.js y no hay que tocar nada más. -->
+<script src="js/idioma.js"></script>
 <script src="js/qr.js"></script>
 <script src="js/estados.js"></script>
 <script src="js/termometro.js"></script>

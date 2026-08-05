@@ -111,6 +111,59 @@ KL.TEXTOS = (function () {
 
   const TODOS = { clasico: CLASICO, fiesta: FIESTA, kids: KIDS, show: SHOW };
 
+  /* ── Versión inglesa de cada tema ────────────────────────────────────
+     Mismo reparto, mismas reglas —nada de valorar cómo canta nadie en
+     Peques/Kids—, solo el idioma. Vive aquí y no en idiomas/en.json
+     porque esto no es contenido de UI por dispositivo: es el TONO de la
+     fiesta, compartido por todas las pantallas, igual que su versión en
+     español. Si falta una fila, de() cae al español antes que dejar un
+     hueco en blanco — ver de() más abajo. */
+  const CLASICO_EN = {
+    esperaTitulo:  '🎤 Karaoke',
+    esperaSub:     'Choose a song on the computer and start the party.',
+    esperaVacia:   'Scan the QR and request yours.',
+    ahoraCanta:    'Now <span class="ac">singing</span>',
+    alMicro:       '  ·  at the mic',
+    finTitulo:     '👏 <span class="ac">Nice!</span>',
+    aContinuacion: 'Up next: ',
+    seAcabo:       'That\'s the whole queue',
+    proximas:      'Up next'
+  };
+
+  const FIESTA_EN = Object.assign({}, CLASICO_EN, {
+    esperaTitulo:  '🎉 <span class="ac">Party</span>',
+    esperaSub:     'You choose the next song.',
+    ahoraCanta:    'At the mic <span class="ac">now</span>',
+    finTitulo:     '🎉 <span class="ac">Ovation!</span>',
+    proximas:      'Coming up'
+  });
+
+  const KIDS_EN = {
+    esperaTitulo:  '🎤 <span class="ac">Sing time!</span>',
+    esperaSub:     'Choose a song.',
+    esperaVacia:   'Find a grown-up and ask them to type it for you.',
+    ahoraCanta:    '🎶 Now singing',
+    alMicro:       '',
+    finTitulo:     '🌟 <span class="ac">Thanks for sharing your song!</span>',
+    aContinuacion: 'Now singing: ',
+    seAcabo:       'We\'ve sung them all!',
+    proximas:      'Singing next'
+  };
+
+  const SHOW_EN = Object.assign({}, CLASICO_EN, {
+    esperaTitulo:  '🏆 <span class="ac">The Show</span>',
+    esperaSub:     'Bring on the next act.',
+    esperaVacia:   'Scan the QR and enter the contest.',
+    ahoraCanta:    'On <span class="ac">stage</span>',
+    alMicro:       '  ·  their turn',
+    finTitulo:     '🏆 <span class="ac">What an act!</span>',
+    aContinuacion: 'Next act: ',
+    seAcabo:       'End of the show',
+    proximas:      'Coming up next'
+  });
+
+  const TODOS_EN = { clasico: CLASICO_EN, fiesta: FIESTA_EN, kids: KIDS_EN, show: SHOW_EN };
+
   /* ── Las preguntas de «¿seguro?» ────────────────────────────────────
      Estas NO cambian con el tema, y durante un tiempo ese fue el motivo
      que me di para dejarlas sueltas en el código. Era un mal motivo:
@@ -152,20 +205,56 @@ KL.TEXTOS = (function () {
       `La cola y la biblioteca no se tocan, solo se olvida quién ha cantado ya.`
   };
 
+  const PREGUNTAS_EN = {
+    vaciarCola: d =>
+      `Clear the ${d.espacio} queue?\n\n` +
+      `That's ${d.cuantas} songs. The other space isn't touched.`,
+
+    borrarDescarga: d =>
+      `Delete the downloaded file for «${d.titulo}»?\n\n` +
+      `The song stays in the list; it'll play from YouTube again.`,
+
+    yaEstaEnLaCola: d =>
+      `«${d.titulo}» is already in the queue.\n\n` +
+      `If it's for someone else, go ahead: two performances of the same song ` +
+      `are two performances. Add it again?`,
+
+    borrarTodasLasDescargas: () =>
+      `Delete ALL downloaded videos?\n\n` +
+      `The songs aren't lost: they'll play from YouTube again.`,
+
+    vaciarHistorial: () =>
+      `Clear the history of what's been sung tonight?\n\n` +
+      `The queue and the library aren't touched, only who's already sung is forgotten.`
+  };
+
+  /* Por dispositivo, igual que idioma.js — cada aparato lee su propio
+     idioma para este mismo tono compartido de fiesta. */
+  function idiomaActual() {
+    return (window.KL && KL.idioma && KL.idioma.actual()) || 'es';
+  }
+
   /* Si alguien pide una pregunta que no existe, se ve. Devolver «¿Seguro?»
      en silencio dejaría un diálogo genérico delante de un borrado, que es
      el peor sitio posible para un texto de relleno. */
   function pregunta(clave, datos) {
-    const f = PREGUNTAS[clave];
+    const dicc = idiomaActual() === 'en' ? PREGUNTAS_EN : PREGUNTAS;
+    const f = dicc[clave] || PREGUNTAS[clave];
     if (!f) return '¿Seguro? (falta el texto «' + clave + '» en textos.js)';
     return f(datos || {});
   }
 
   /* Si falta una fila se cae al Clásico en vez de quedarse en blanco: un
-     tema a medias tiene que verse raro, no vacío. */
+     tema a medias tiene que verse raro, no vacío. Y si falta la versión
+     inglesa de una fila concreta, cae al español antes que al Clásico:
+     mejor una frase en el idioma que no toca que un hueco en blanco. */
   function de(tema, clave) {
     const t = TODOS[tema] || CLASICO;
-    return t[clave] !== undefined ? t[clave] : CLASICO[clave];
+    const base = t[clave] !== undefined ? t[clave] : CLASICO[clave];
+    if (idiomaActual() !== 'en') return base;
+    const tEn = TODOS_EN[tema] || CLASICO_EN;
+    return tEn[clave] !== undefined ? tEn[clave]
+         : (CLASICO_EN[clave] !== undefined ? CLASICO_EN[clave] : base);
   }
 
   return { de, pregunta, TODOS, PREGUNTAS };

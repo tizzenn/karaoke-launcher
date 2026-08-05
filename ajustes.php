@@ -8,6 +8,31 @@ $archivo = DIR_DATOS . '/ajustes.json';
 $aviso   = null;
 $tipo    = 'o';
 
+/* ---- Idioma de esta página, por dispositivo -------------------------
+   ajustes.php se pinta en el servidor, así que no puede leer el
+   localStorage del navegador como hace idioma.js en las demás páginas.
+   En su lugar usa una cookie propia (?idioma=en la escribe, dura un año)
+   — el mismo espíritu, «por aparato», solo que aquí el aparato se lo
+   dice al servidor con una cookie en vez de con localStorage. Va al
+   principio del todo porque los avisos de contraseña/guardado que vienen
+   más abajo ya necesitan T() disponible. */
+if (isset($_GET['idioma']) && in_array($_GET['idioma'], ['es', 'en'], true)) {
+  setcookie('karaoke_idioma_srv', $_GET['idioma'], time() + 31536000, '/');
+  $_COOKIE['karaoke_idioma_srv'] = $_GET['idioma'];
+}
+$idiomaAj = ($_COOKIE['karaoke_idioma_srv'] ?? 'es') === 'en' ? 'en' : 'es';
+$DICC_AJ = [];
+if ($idiomaAj === 'en') {
+  $j = @file_get_contents(__DIR__ . '/idiomas/en.json');
+  $DICC_AJ = $j ? (json_decode($j, true) ?: []) : [];
+}
+/* Igual que KL.idioma.t() en JS: null/ausente cae al español que ya
+   está escrito a mano, nunca deja un hueco en blanco. */
+function T(string $clave, string $es): string {
+  global $DICC_AJ;
+  return $DICC_AJ[$clave] ?? $es;
+}
+
 /* ---- puerta con contraseña, si la hay ------------------------------- */
 $claveAjustes = (string)$cfg['clave_ajustes'];
 session_start();
@@ -18,7 +43,7 @@ if (!$entrado && ($_POST['entrar'] ?? '') !== '') {
     $_SESSION['ajustes_ok'] = true;
     $entrado = true;
   } else {
-    $aviso = 'Contraseña incorrecta.';
+    $aviso = T('aj_msg_contrasena_mal', 'Contraseña incorrecta.');
     $tipo  = 'e';
   }
 }
@@ -36,14 +61,19 @@ if ($entrado && ($_POST['guardar'] ?? '') !== '') {
       foreach (($_POST['apik_key'] ?? []) as $i => $key) {
         $key = trim((string)$key);
         if ($key === '') continue;
+        $propietario = trim(mb_substr((string)($_POST['apik_propietario'][$i] ?? ''), 0, 30));
         $out[] = [
-          'nombre'      => trim(mb_substr((string)($_POST['apik_nombre'][$i] ?? ''), 0, 30)) ?: 'Sin nombre',
+          /* El campo "nombre" suelto sobraba (2026-08-04): dos campos de
+             texto casi iguales uno al lado del otro. "nombre" se sigue
+             guardando -algún mensaje lo usa para señalar una clave
+             concreta, ver ajustes.php:134- pero ahora sale solo del
+             propietario, o de la posición si no hay ninguno puesto. */
+          'nombre'      => $propietario ?: ('Clave ' . ($i + 1)),
           'key'         => $key,
           'activa'      => isset($_POST['apik_activa'][$i]),
-          /* Quién es su dueño, no cómo se llama la clave: distinto del
-             "nombre" de arriba. Sirve para saber de un vistazo que la
+          /* Quién es su dueño. Sirve para saber de un vistazo que la
              tercera es "la del bar" o "la de Marta" cuando hay varias. */
-          'propietario' => trim(mb_substr((string)($_POST['apik_propietario'][$i] ?? ''), 0, 30)),
+          'propietario' => $propietario,
         ];
       }
       return $out;
@@ -75,6 +105,9 @@ if ($entrado && ($_POST['guardar'] ?? '') !== '') {
     'repetidas'           => in_array($_POST['repetidas'] ?? 'siempre',
                                       ['siempre','avisar','no'], true)
                              ? $_POST['repetidas'] : 'siempre',
+    'orden_cola'          => in_array($_POST['orden_cola'] ?? 'rotacion',
+                                      ['fifo','rotacion','manual'], true)
+                             ? $_POST['orden_cola'] : 'rotacion',
     'efectos_escenicos'   => isset($_POST['efectos_escenicos']),
     'termometro'          => isset($_POST['termometro']),
     'termometro_niveles'  => (function () use ($cfg) {
@@ -109,12 +142,9 @@ if ($entrado && ($_POST['guardar'] ?? '') !== '') {
     })(),
     'wifi_ssid'           => trim((string)($_POST['wifi_ssid'] ?? '')),
     'wifi_clave'          => (string)($_POST['wifi_clave'] ?? ''),
-    'ambiente_fuente'     => in_array($_POST['ambiente_fuente'] ?? 'youtube',
-                                      ['youtube','carpeta','no'], true)
-                             ? $_POST['ambiente_fuente'] : 'youtube',
-    /* Se guarda LO QUE ESCRIBIÓ, no lo normalizado: si mañana se cambia
-       cómo se reconoce una dirección, el texto original sigue ahí. */
-    'ambiente_lista'      => trim((string)($_POST['ambiente_lista'] ?? '')),
+    'ambiente_fuente'     => in_array($_POST['ambiente_fuente'] ?? 'no',
+                                      ['dj','carpeta','no'], true)
+                             ? $_POST['ambiente_fuente'] : 'no',
     'ambiente_carpeta'    => trim((string)($_POST['ambiente_carpeta'] ?? '')),
     'ambiente_auto'       => isset($_POST['ambiente_auto']),
     'tema'                => in_array($_POST['tema'] ?? 'clasico',
@@ -128,8 +158,7 @@ if ($entrado && ($_POST['guardar'] ?? '') !== '') {
     if (!preg_match('/^AIza[A-Za-z0-9_\-]{30,}$/', $c['key'])) { $claveInvalida = $c; break; }
   }
   if ($claveInvalida) {
-    $aviso = 'La clave «' . $claveInvalida['nombre'] . '» no tiene pinta de ser válida: '
-           . 'las de Google empiezan por «AIza».';
+    $aviso = T('aj_msg_clave_invalida_1', 'La clave «') . $claveInvalida['nombre'] . T('aj_msg_clave_invalida_2', '» no tiene pinta de ser válida: las de Google empiezan por «AIza».');
     $tipo  = 'e';
   } else {
     /* Temporal + rename: escribir encima del archivo bueno significa que
@@ -137,10 +166,10 @@ if ($entrado && ($_POST['guardar'] ?? '') !== '') {
        perdidos, la clave de la API incluida. */
     $ok = guardar_json_atomico($archivo, $nuevo);
     if ($ok === false) {
-      $aviso = 'No he podido escribir en la carpeta data. Comprueba los permisos.';
+      $aviso = T('aj_msg_no_escribir', 'No he podido escribir en la carpeta data. Comprueba los permisos.');
       $tipo  = 'e';
     } else {
-      $aviso = 'Guardado. Ya puedes volver al karaoke.';
+      $aviso = T('aj_msg_guardado', 'Guardado. Ya puedes volver al karaoke.');
       $cfg   = require __DIR__ . '/api/config.php';
     }
   }
@@ -152,37 +181,37 @@ if ($entrado && ($_POST['guardar'] ?? '') !== '') {
    por el mismo motivo: para saber si vale la pena guardarla antes de
    guardarla. */
 if ($entrado && ($_POST['probar'] ?? '') !== '') {
-  $nombres = $_POST['apik_nombre'] ?? [];
+  $propietarios = $_POST['apik_propietario'] ?? [];
   $llaves  = $_POST['apik_key'] ?? [];
   $lineas  = [];
   $huboMal = false;
   foreach ($llaves as $i => $k) {
     $k = trim((string)$k);
     if ($k === '') continue;
-    $nombre = trim((string)($nombres[$i] ?? '')) ?: 'Sin nombre';
+    $nombre = trim((string)($propietarios[$i] ?? '')) ?: (T('aj_apik_clave_n', 'Clave ') . ($i + 1));
     $r = traer('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video'
                . '&maxResults=1&q=karaoke&key=' . rawurlencode($k));
     $j = $r ? json_decode($r, true) : null;
     if ($j === null) {
-      $lineas[] = "✗ $nombre: no he podido conectar con Google.";
+      $lineas[] = "✗ $nombre: " . T('aj_probar_sin_conectar', 'no he podido conectar con Google.');
       $huboMal = true;
     } elseif (isset($j['error'])) {
       $motivo = $j['error']['errors'][0]['reason'] ?? '';
       $texto = match ($motivo) {
-        'quotaExceeded'       => 'válida, pero la cuota de hoy está agotada.',
-        'keyInvalid'          => 'no vale. Revísala en Google Cloud.',
-        'accessNotConfigured' => 'falta habilitar «YouTube Data API v3» en ese proyecto.',
-        'ipRefererBlocked'    => 'tiene restricciones que bloquean a este servidor.',
-        default               => 'Google dice: ' . ($j['error']['message'] ?? 'error'),
+        'quotaExceeded'       => T('aj_probar_cuota_agotada', 'válida, pero la cuota de hoy está agotada.'),
+        'keyInvalid'          => T('aj_probar_no_vale', 'no vale. Revísala en Google Cloud.'),
+        'accessNotConfigured' => T('aj_probar_falta_habilitar', 'falta habilitar «YouTube Data API v3» en ese proyecto.'),
+        'ipRefererBlocked'    => T('aj_probar_restricciones', 'tiene restricciones que bloquean a este servidor.'),
+        default               => T('aj_probar_google_dice', 'Google dice: ') . ($j['error']['message'] ?? 'error'),
       };
       $lineas[] = ($motivo === 'quotaExceeded' ? '⚠ ' : '✗ ') . "$nombre: $texto";
       if ($motivo !== 'quotaExceeded') $huboMal = true;
     } else {
-      $lineas[] = "✓ $nombre: correcta.";
+      $lineas[] = "✓ $nombre: " . T('aj_probar_correcta', 'correcta.');
     }
   }
   if (!$lineas) {
-    $aviso = 'Escribe al menos una clave antes de probarla.'; $tipo = 'e';
+    $aviso = T('aj_msg_escribe_clave', 'Escribe al menos una clave antes de probarla.'); $tipo = 'e';
   } else {
     $aviso = implode("\n", $lineas);
     $tipo  = $huboMal ? 'e' : 'o';
@@ -191,7 +220,7 @@ if ($entrado && ($_POST['probar'] ?? '') !== '') {
 
 $v = fn(string $k, $d = '') => htmlspecialchars((string)($cfg[$k] ?? $d), ENT_QUOTES, 'UTF-8');
 ?><!DOCTYPE html>
-<html lang="es">
+<html lang="<?= $idiomaAj ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -262,7 +291,14 @@ h2{scroll-margin-top:60px}
 </head>
 <body>
 
-<header><div class="w"><h1>⚙ Ajustes <small>OpenKaraoke Center v1.1</small></h1></div></header>
+<header><div class="w" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+  <h1>⚙ <?= T('aj_h1', 'Ajustes') ?> <small>OpenKaraoke Center v1.1</small></h1>
+  <!-- Por dispositivo, vía cookie: ver T() arriba del todo del archivo. -->
+  <div style="display:flex;gap:4px;border:1px solid var(--line);border-radius:8px;padding:2px">
+    <a href="?idioma=es<?= isset($_GET['idioma']) ? '' : '' ?>" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;color:<?= $idiomaAj === 'es' ? '#fff' : 'var(--txt3)' ?>;background:<?= $idiomaAj === 'es' ? 'var(--ac)' : 'none' ?>">ES</a>
+    <a href="?idioma=en" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;color:<?= $idiomaAj === 'en' ? '#fff' : 'var(--txt3)' ?>;background:<?= $idiomaAj === 'en' ? 'var(--ac)' : 'none' ?>">EN</a>
+  </div>
+</div></header>
 
 <div class="w">
 
@@ -276,12 +312,12 @@ h2{scroll-margin-top:60px}
      a configurar el servidor»: piensa «voy a poner la wifi». Los nombres
      son lo que la gente viene a hacer. -->
 <nav id="indice">
-  <a href="#g-la-fiesta">La fiesta</a>
-  <a href="#g-invitados">Invitados</a>
-  <a href="#repetidas">Coincidencias</a>
-  <a href="#g-musica">Música</a>
-  <a href="#g-video">Vídeo</a>
-  <a href="#g-avanzado">Avanzado</a>
+  <a href="#g-la-fiesta"><?= T('aj_nav_fiesta', 'La fiesta') ?></a>
+  <a href="#g-invitados"><?= T('aj_nav_invitados', 'Invitados') ?></a>
+  <a href="#repetidas"><?= T('aj_nav_coincidencias', 'Coincidencias') ?></a>
+  <a href="#g-musica"><?= T('aj_nav_musica', 'Música') ?></a>
+  <a href="#g-video"><?= T('aj_nav_video', 'Vídeo') ?></a>
+  <a href="#g-avanzado"><?= T('aj_nav_avanzado', 'Avanzado') ?></a>
 </nav>
 <?php endif; ?>
 
@@ -291,14 +327,14 @@ h2{scroll-margin-top:60px}
 
 <?php if (!$entrado): ?>
 
-  <h2>// Contraseña</h2>
+  <h2>// <?= T('aj_h2_contrasena', 'Contraseña') ?></h2>
   <div class="card">
     <form method="post">
       <div class="f">
-        <label>Estos ajustes están protegidos</label>
-        <input type="password" name="clave" autofocus placeholder="Contraseña">
+        <label><?= T('aj_protegidos', 'Estos ajustes están protegidos') ?></label>
+        <input type="password" name="clave" autofocus placeholder="<?= T('aj_contrasena_ph', 'Contraseña') ?>">
       </div>
-      <div class="btns"><button class="p" name="entrar" value="1">Entrar</button></div>
+      <div class="btns"><button class="p" name="entrar" value="1"><?= T('aj_entrar', 'Entrar') ?></button></div>
     </form>
   </div>
 
@@ -306,16 +342,16 @@ h2{scroll-margin-top:60px}
 
   <form method="post">
 
-    <div class="seccion" id="g-la-fiesta"><h3 class="gtit">La fiesta</h3></div>
-    <h2 id="la-fiesta">// Tema — cómo se ve y cómo habla</h2>
+    <div class="seccion" id="g-la-fiesta"><h3 class="gtit"><?= T('aj_nav_fiesta', 'La fiesta') ?></h3></div>
+    <h2 id="la-fiesta">// <?= T('aj_h2_tema', 'Tema — cómo se ve y cómo habla') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Cómo se ve y cómo habla</label>
+        <label><?= T('aj_tema_label', 'Cómo se ve y cómo habla') ?></label>
         <select name="tema">
-          <?php foreach (['clasico' => 'Clásico — oscuro y sobrio, para adultos',
-                          'fiesta'  => 'Fiesta — más color, más contraste',
-                          'kids'    => 'Peques — claro, letras grandes, sin QR',
-                          'show'    => 'Show — estética de concurso, con cartas de reto'] as $k => $t): ?>
+          <?php foreach (['clasico' => T('aj_tema_clasico', 'Clásico — oscuro y sobrio, para adultos'),
+                          'fiesta'  => T('aj_tema_fiesta', 'Fiesta — más color, más contraste'),
+                          'kids'    => T('aj_tema_kids', 'Peques — claro, letras grandes, sin QR'),
+                          'show'    => T('aj_tema_show', 'Show — estética de concurso, con cartas de reto')] as $k => $t): ?>
             <option value="<?= $k ?>" <?= ($cfg['tema'] ?? 'clasico') === $k ? 'selected' : '' ?>><?= $t ?></option>
           <?php endforeach; ?>
         </select>
@@ -337,12 +373,12 @@ h2{scroll-margin-top:60px}
       </div>
     </div>
 
-    <h2 id="edicion">// Rótulo de la cabecera</h2>
+    <h2 id="edicion">// <?= T('aj_h2_rotulo', 'Rótulo de la cabecera') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Marca de esta edición</label>
+        <label><?= T('aj_edicion_label', 'Marca de esta edición') ?></label>
         <input type="text" name="edicion" value="<?= $v('edicion') ?>" maxlength="40"
-               placeholder="Vacío = título normal">
+               placeholder="<?= T('aj_edicion_ph', 'Vacío = título normal') ?>">
         <div class="h">
           Si escribes algo aquí, sustituye el título de la esquina superior
           izquierda por un rótulo de espray con ese texto — útil para una
@@ -353,16 +389,16 @@ h2{scroll-margin-top:60px}
       </div>
     </div>
 
-    <div class="seccion" id="g-invitados"><h3 class="gtit">Invitados</h3></div>
-    <h2 id="repetidas">// Cuando dos personas eligen lo mismo</h2>
+    <div class="seccion" id="g-invitados"><h3 class="gtit"><?= T('aj_nav_invitados', 'Invitados') ?></h3></div>
+    <h2 id="repetidas">// <?= T('aj_h2_coincidencias', 'Cuando dos personas eligen lo mismo') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Si alguien pide una canción que ya ha elegido otra persona</label>
+        <label><?= T('aj_repetidas_label', 'Si alguien pide una canción que ya ha elegido otra persona') ?></label>
         <select name="repetidas">
           <?php foreach ([
-            'siempre' => 'Permitir siempre — dos personas pueden cantar la misma',
-            'avisar'  => 'Permitir, pero decir que ya la había elegido alguien',
-            'no'      => 'No permitir: cada canción suena una vez'] as $k => $t): ?>
+            'siempre' => T('aj_repetidas_siempre', 'Permitir siempre — dos personas pueden cantar la misma'),
+            'avisar'  => T('aj_repetidas_avisar', 'Permitir, pero decir que ya la había elegido alguien'),
+            'no'      => T('aj_repetidas_no', 'No permitir: cada canción suena una vez')] as $k => $t): ?>
             <option value="<?= $k ?>" <?= ($cfg['repetidas'] ?? 'siempre') === $k ? 'selected' : '' ?>><?= $t ?></option>
           <?php endforeach; ?>
         </select>
@@ -387,12 +423,41 @@ h2{scroll-margin-top:60px}
       </div>
     </div>
 
-    <h2 id="efectos">// Efectos escénicos</h2>
+    <h2 id="orden">// <?= T('aj_h2_orden', 'Quién canta después') ?></h2>
+    <div class="card">
+      <div class="f">
+        <label><?= T('aj_orden_label', 'Cuando entra una canción nueva, en Karaoke') ?></label>
+        <select name="orden_cola">
+          <?php foreach ([
+            'rotacion' => T('aj_orden_rotacion', 'Por turnos — nadie canta dos veces antes de que todos hayan cantado una (recomendado)'),
+            'fifo'     => T('aj_orden_fifo', 'Por orden de llegada — cada canción, al final de la cola'),
+            'manual'   => T('aj_orden_manual', 'Solo el operador ordena — nada se mueve solo, se arrastra a mano')] as $k => $t): ?>
+            <option value="<?= $k ?>" <?= ($cfg['orden_cola'] ?? 'rotacion') === $k ? 'selected' : '' ?>><?= $t ?></option>
+          <?php endforeach; ?>
+        </select>
+        <div class="h">
+          <b>Con turnos:</b> si alguien pide tres canciones seguidas, la
+          segunda y la tercera se colocan después de quien ya estaba
+          esperando — no detrás de la primera. Nadie deja de cantar,
+          simplemente no le toca dos veces antes de que le toque a los
+          demás una. Se avisa siempre en el móvil de quien pide, para
+          que la espera se entienda y no parezca un fallo.
+          <br><br>
+          No afecta a la <b>Cabina DJ</b>: ahí no hay actuaciones que
+          turnar, es una lista que suena sola.
+          <br><br>
+          No reordena lo que ya está en la cola — un arrastre manual del
+          operador nunca se deshace solo al entrar la siguiente petición.
+        </div>
+      </div>
+    </div>
+
+    <h2 id="efectos">// <?= T('aj_h2_efectos', 'Efectos escénicos') ?></h2>
     <div class="card">
       <div class="f">
         <label class="sw">
           <input type="checkbox" name="efectos_escenicos" <?= ($cfg['efectos_escenicos'] ?? true) ? 'checked' : '' ?>>
-          Apagón y confeti en la pantalla pública al terminar cada actuación
+          <?= T('aj_efectos_label', 'Apagón y confeti en la pantalla pública al terminar cada actuación') ?>
         </label>
         <div class="h">
           Un instante en negro —como se apagan un poco las luces de un
@@ -403,12 +468,12 @@ h2{scroll-margin-top:60px}
       </div>
     </div>
 
-    <h2 id="termometro">// Termómetro de fiesta</h2>
+    <h2 id="termometro">// <?= T('aj_h2_termometro', 'Termómetro de fiesta') ?></h2>
     <div class="card">
       <div class="f">
         <label class="sw">
           <input type="checkbox" name="termometro" <?= ($cfg['termometro'] ?? true) ? 'checked' : '' ?>>
-          Enseñar el termómetro en la tele y en el móvil
+          <?= T('aj_termometro_label', 'Enseñar el termómetro en la tele y en el móvil') ?>
         </label>
         <div class="h">
           La pantalla del público <b>nunca habla de la aplicación</b>. No dice
@@ -426,7 +491,7 @@ h2{scroll-margin-top:60px}
       </div>
 
       <div class="f">
-        <label>Qué se dice en cada momento</label>
+        <label><?= T('aj_termometro_niveles_label', 'Qué se dice en cada momento') ?></label>
         <div class="h" style="margin-bottom:10px">
           <b>Desde</b> es a partir de cuántas canciones esperando se enseña esa
           frase. <b>Momento</b> es el nombre corto que se ve en la etiqueta
@@ -445,17 +510,17 @@ h2{scroll-margin-top:60px}
           <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
             <input type="number" name="tm_desde[<?= $i ?>]" min="0" max="999"
                    value="<?= (int)($n['desde'] ?? 0) ?>"
-                   style="width:80px" title="Desde cuántas canciones">
+                   style="width:80px" title="<?= T('aj_tm_desde_title', 'Desde cuántas canciones') ?>">
             <input type="text" name="tm_icono[<?= $i ?>]" maxlength="4"
                    value="<?= htmlspecialchars((string)($n['icono'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                   style="width:64px;text-align:center;font-size:19px" title="Un emoji">
+                   style="width:64px;text-align:center;font-size:19px" title="<?= T('aj_tm_icono_title', 'Un emoji') ?>">
             <input type="text" name="tm_estado[<?= $i ?>]" maxlength="22"
                    value="<?= htmlspecialchars((string)($n['estado'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                   style="width:130px" placeholder="Momento"
-                   title="El nombre corto del momento: Empezando, En marcha, A tope…">
+                   style="width:130px" placeholder="<?= T('aj_tm_estado_ph', 'Momento') ?>"
+                   title="<?= T('aj_tm_estado_title', 'El nombre corto del momento: Empezando, En marcha, A tope…') ?>">
             <input type="text" name="tm_texto[<?= $i ?>]" maxlength="60"
                    value="<?= htmlspecialchars((string)($n['texto'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                   style="flex:1" placeholder="Qué se dice a partir de ahí">
+                   style="flex:1" placeholder="<?= T('aj_tm_texto_ph', 'Qué se dice a partir de ahí') ?>">
           </div>
         <?php endforeach; ?>
         <div class="h">
@@ -467,7 +532,7 @@ h2{scroll-margin-top:60px}
       </div>
     </div>
 
-    <h2 id="invitados">// Wifi — para que se conecten</h2>
+    <h2 id="invitados">// <?= T('aj_h2_wifi', 'Wifi — para que se conecten') ?></h2>
     <div class="card">
       <div class="f">
         <div class="h" style="margin-bottom:12px">
@@ -483,10 +548,10 @@ h2{scroll-margin-top:60px}
       </div>
       <div class="f">
         <?php $detectado = ssid_actual(); ?>
-        <label>Nombre de la red (SSID)</label>
+        <label><?= T('aj_ssid_label', 'Nombre de la red (SSID)') ?></label>
         <input type="text" id="wifiSsid" name="wifi_ssid" value="<?= $v('wifi_ssid') ?>"
                placeholder="<?= $detectado
-                 ? htmlspecialchars('Detectada: ' . $detectado, ENT_QUOTES, 'UTF-8')
+                 ? htmlspecialchars(T('aj_ssid_detectada_prefijo', 'Detectada: ') . $detectado, ENT_QUOTES, 'UTF-8')
                  : 'MiWifi_5G' ?>">
         <?php if ($detectado): ?>
           <!-- Volver a detectar es recargar: `netsh` se ejecuta al pintar la
@@ -494,12 +559,12 @@ h2{scroll-margin-top:60px}
                falta poder hacerlo: en mitad de una fiesta alguien cambia de
                red, o se mueve el equipo de sitio. -->
           <div class="h" style="margin-top:8px">
-            Detectada ahora mismo: <b><?= htmlspecialchars($detectado, ENT_QUOTES, 'UTF-8') ?></b>
+            <?= T('aj_ssid_detectada_ahora', 'Detectada ahora mismo:') ?> <b><?= htmlspecialchars($detectado, ENT_QUOTES, 'UTF-8') ?></b>
             &nbsp;·&nbsp;
             <a href="#" onclick="document.getElementById('wifiSsid').value=
-               <?= htmlspecialchars(json_encode($detectado), ENT_QUOTES, 'UTF-8') ?>;return false">usar esta</a>
+               <?= htmlspecialchars(json_encode($detectado), ENT_QUOTES, 'UTF-8') ?>;return false"><?= T('aj_ssid_usar_esta', 'usar esta') ?></a>
             &nbsp;·&nbsp;
-            <a href="?#invitados" onclick="location.reload();return false">volver a detectar</a>
+            <a href="?#invitados" onclick="location.reload();return false"><?= T('aj_ssid_volver_detectar', 'volver a detectar') ?></a>
           </div>
         <?php endif; ?>
         <div class="h">
@@ -508,9 +573,9 @@ h2{scroll-margin-top:60px}
         </div>
       </div>
       <div class="f">
-        <label>Contraseña de la red</label>
+        <label><?= T('aj_wifi_clave_label', 'Contraseña de la red') ?></label>
         <input type="text" name="wifi_clave" value="<?= $v('wifi_clave') ?>"
-               placeholder="Vacío = no se enseña el QR de wifi">
+               placeholder="<?= T('aj_wifi_clave_ph', 'Vacío = no se enseña el QR de wifi') ?>">
         <div class="h">
           Esta hay que escribirla a mano <b>siempre</b>. Windows no la entrega
           sin permisos de administrador, y pedirte que arranques el karaoke como
@@ -523,32 +588,32 @@ h2{scroll-margin-top:60px}
         </div>
       </div>
     </div>
-    <h2 id="peticiones">// Peticiones — quién puede pedir</h2>
+    <h2 id="peticiones">// <?= T('aj_h2_peticiones', 'Peticiones — quién puede pedir') ?></h2>
     <div class="card">
       <div class="f">
         <label class="sw">
           <input type="checkbox" name="peticiones" <?= $cfg['peticiones'] ? 'checked' : '' ?>>
-          Dejar que los invitados pidan canciones con el QR
+          <?= T('aj_peticiones_label', 'Dejar que los invitados pidan canciones con el QR') ?>
         </label>
-        <div class="h">Escanean el QR, buscan y su canción entra en la cola sola.</div>
+        <div class="h"><?= T('aj_peticiones_h', 'Escanean el QR, buscan y su canción entra en la cola sola.') ?></div>
       </div>
       <div class="f">
-        <label>Contraseña de la fiesta</label>
-        <input type="text" name="clave_fiesta" value="<?= $v('clave_fiesta') ?>" placeholder="Vacío = cualquiera puede pedir">
-        <div class="h">Útil si la wifi la comparte más gente de la que has invitado.</div>
+        <label><?= T('aj_clave_fiesta_label', 'Contraseña de la fiesta') ?></label>
+        <input type="text" name="clave_fiesta" value="<?= $v('clave_fiesta') ?>" placeholder="<?= T('aj_clave_fiesta_ph', 'Vacío = cualquiera puede pedir') ?>">
+        <div class="h"><?= T('aj_clave_fiesta_h', 'Útil si la wifi la comparte más gente de la que has invitado.') ?></div>
       </div>
       <div class="f">
-        <label>Canciones seguidas por persona</label>
+        <label><?= T('aj_limite_label', 'Canciones seguidas por persona') ?></label>
         <input type="text" name="limite" value="<?= $v('limite_por_invitado', 3) ?>">
-        <div class="h">Para que nadie monopolice la noche. Por defecto 3.</div>
+        <div class="h"><?= T('aj_limite_h', 'Para que nadie monopolice la noche. Por defecto 3.') ?></div>
       </div>
     </div>
 
-    <div class="seccion" id="g-musica"><h3 class="gtit">Música</h3></div>
-    <h2 id="musica">// Buscar en YouTube</h2>
+    <div class="seccion" id="g-musica"><h3 class="gtit"><?= T('aj_nav_musica', 'Música') ?></h3></div>
+    <h2 id="musica">// <?= T('aj_h2_buscar', 'Buscar en YouTube') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Claves de la YouTube Data API v3</label>
+        <label><?= T('aj_claves_label', 'Claves de la YouTube Data API v3') ?></label>
         <div class="h" style="margin-bottom:12px">
           Se quedan en tu servidor: el navegador no las ve nunca. Con más de
           una, si la de arriba se queda sin cuota (unas 100 búsquedas al
@@ -562,7 +627,10 @@ h2{scroll-margin-top:60px}
         </div>
         <?php
           $claves = claves_lista($cfg);
-          while (count($claves) < 5) $claves[] = ['nombre' => '', 'key' => '', 'activa' => true, 'propietario' => ''];
+          /* Tres filas, no cinco (2026-08-04): con una fiesta normal
+             sobran de largo -cada una aguanta ~99 búsquedas al día- y
+             cinco eran más scroll que utilidad. */
+          while (count($claves) < 3) $claves[] = ['nombre' => '', 'key' => '', 'activa' => true, 'propietario' => ''];
           /* ~99 búsquedas al día por clave es el tope real (10.000 unidades,
              101 por búsqueda contando la de duraciones) — ver cache.php.
              La barra se llena contra ESE número, no contra un 100 inventado. */
@@ -574,38 +642,36 @@ h2{scroll-margin-top:60px}
           $pct  = max(0, min(100, (int)round($usos / $topeDiario * 100)));
         ?>
           <div class="filaClave" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-            <span style="width:16px;color:var(--txt3);font-size:12px;text-align:right" title="Prioridad"><?= $i + 1 ?></span>
+            <span style="width:16px;color:var(--txt3);font-size:12px;text-align:right" title="<?= T('aj_prioridad_title', 'Prioridad') ?>"><?= $i + 1 ?></span>
             <div style="display:flex;flex-direction:column;gap:2px">
-              <button type="button" class="mover-arriba" title="Subir prioridad"
+              <button type="button" class="mover-arriba" title="<?= T('aj_subir_prioridad_title', 'Subir prioridad') ?>"
                       style="background:none;border:1px solid var(--line);border-radius:5px;color:var(--txt2);
                              width:20px;height:16px;line-height:1;cursor:pointer;font-size:10px" <?= $i === 0 ? 'disabled' : '' ?>>▲</button>
-              <button type="button" class="mover-abajo" title="Bajar prioridad"
+              <button type="button" class="mover-abajo" title="<?= T('aj_bajar_prioridad_title', 'Bajar prioridad') ?>"
                       style="background:none;border:1px solid var(--line);border-radius:5px;color:var(--txt2);
                              width:20px;height:16px;line-height:1;cursor:pointer;font-size:10px" <?= $i === count($claves) - 1 ? 'disabled' : '' ?>>▼</button>
             </div>
-            <input type="text" name="apik_nombre[<?= $i ?>]" maxlength="30"
-                   value="<?= htmlspecialchars((string)($c['nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                   style="width:100px" placeholder="Nombre" title="Un nombre para reconocerla, p.ej. Personal">
             <input type="text" name="apik_propietario[<?= $i ?>]" maxlength="30"
                    value="<?= htmlspecialchars((string)($c['propietario'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                   style="width:100px" placeholder="De quién es" title="Quién es el dueño de esta clave, p.ej. el bar o un amigo">
+                   style="width:100px" placeholder="<?= T('aj_apik_de_quien_ph', 'De quién es') ?>" title="<?= T('aj_apik_de_quien_title', 'Quién es el dueño de esta clave, p.ej. el bar o un amigo') ?>">
             <input type="text" name="apik_key[<?= $i ?>]"
                    value="<?= htmlspecialchars((string)($c['key'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                    style="flex:1;min-width:120px" placeholder="AIza…" autocomplete="off" spellcheck="false">
             <label class="sw" style="margin:0;white-space:nowrap">
               <input type="checkbox" name="apik_activa[<?= $i ?>]" <?= ($c['activa'] ?? true) ? 'checked' : '' ?>>
-              activa
+              <?= T('aj_apik_activa', 'activa') ?>
             </label>
-            <div style="width:70px" title="<?= $usos ?> de ~<?= $topeDiario ?> búsquedas de hoy">
+            <div style="width:70px" title="<?= $usos ?> <?= T('aj_apik_de_prefijo', 'de ~') ?><?= $topeDiario ?> <?= T('aj_apik_busquedas_hoy', 'búsquedas de hoy') ?>">
               <div style="height:6px;border-radius:999px;background:var(--bg4);overflow:hidden;position:relative">
                 <div style="height:100%;width:<?= $pct ?>%;border-radius:999px;
                      background:<?= $pct >= 100 ? 'var(--dang, #e2584f)' : ($pct >= 75 ? '#e0b23c' : 'var(--ac, #22d97a)') ?>"></div>
               </div>
               <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:2px"><?= $pct ?>%</div>
             </div>
-            <button type="button" class="borrar-clave" title="Borrar esta clave"
+            <button type="button" class="borrar-clave" title="<?= T('aj_borrar_clave_title', 'Borrar esta clave') ?>"
                     style="background:none;border:1px solid var(--line);border-radius:6px;color:var(--txt3);
-                           width:26px;height:26px;cursor:pointer;flex-shrink:0">✕</button>
+                           width:26px;height:26px;cursor:pointer;flex-shrink:0;padding:0;
+                           display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1">✕</button>
           </div>
         <?php endforeach; ?>
         </div>
@@ -620,7 +686,7 @@ h2{scroll-margin-top:60px}
         (function(){
           const caja = document.getElementById('filasClaves');
           if (!caja) return;
-          const campos = ['apik_nombre', 'apik_propietario', 'apik_key'];
+          const campos = ['apik_propietario', 'apik_key'];
           function valores(fila){
             const v = {};
             campos.forEach(c => { const e = fila.querySelector('[name^="' + c + '"]'); v[c] = e ? e.value : ''; });
@@ -647,7 +713,7 @@ h2{scroll-margin-top:60px}
               const sig = fila.nextElementSibling;
               if (sig) intercambiar(fila, sig);
             } else if (ev.target.classList.contains('borrar-clave')){
-              poner(fila, { apik_nombre:'', apik_propietario:'', apik_key:'', activa:true });
+              poner(fila, { apik_propietario:'', apik_key:'', activa:true });
             }
           });
         })();
@@ -656,17 +722,17 @@ h2{scroll-margin-top:60px}
 
       <details>
         <summary style="cursor:pointer;color:var(--txt2);font-size:13.5px;font-weight:700">
-          Cómo conseguir una, gratis y en cinco minutos
+          <?= T('aj_como_conseguir', 'Cómo conseguir una, gratis y en cinco minutos') ?>
         </summary>
         <ol style="margin-top:14px">
-          <li>Entra en <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> con tu cuenta de Google.</li>
-          <li>Crea un proyecto nuevo. El nombre da igual.</li>
-          <li>Ve a <em>API y servicios → Biblioteca</em>, busca <b>YouTube Data API v3</b> y pulsa Habilitar.</li>
-          <li>Ve a <em>Credenciales → Crear credenciales → Clave de API</em>.</li>
-          <li>Cópiala y pégala aquí arriba.</li>
-          <li>Recomendado: en <em>Restringir clave</em>, deja marcada solo la YouTube Data API v3.</li>
+          <li><?= T('aj_paso1_html', 'Entra en <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> con tu cuenta de Google.') ?></li>
+          <li><?= T('aj_paso2', 'Crea un proyecto nuevo. El nombre da igual.') ?></li>
+          <li><?= T('aj_paso3_html', 'Ve a <em>API y servicios → Biblioteca</em>, busca <b>YouTube Data API v3</b> y pulsa Habilitar.') ?></li>
+          <li><?= T('aj_paso4_html', 'Ve a <em>Credenciales → Crear credenciales → Clave de API</em>.') ?></li>
+          <li><?= T('aj_paso5', 'Cópiala y pégala aquí arriba.') ?></li>
+          <li><?= T('aj_paso6_html', 'Recomendado: en <em>Restringir clave</em>, deja marcada solo la YouTube Data API v3.') ?></li>
         </ol>
-        <div class="h">La cuota gratuita da unas 100 búsquedas al día, de sobra para una fiesta.</div>
+        <div class="h"><?= T('aj_cuota_gratuita', 'La cuota gratuita da unas 100 búsquedas al día, de sobra para una fiesta.') ?></div>
       </details>
       <div class="h" style="margin-top:16px">
         <b>Sin clave tambien se puede.</b> Pegando en el buscador el enlace de un
@@ -683,15 +749,15 @@ h2{scroll-margin-top:60px}
         para excluir, y trae perfiles hechos.
       </div>
     </div>
-    <h2 id="ambiente">// Música ambiente — entre actuaciones</h2>
+    <h2 id="ambiente">// <?= T('aj_h2_ambiente', 'Música ambiente — entre actuaciones') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Fuente</label>
+        <label><?= T('aj_fuente_label', 'Fuente') ?></label>
         <select name="ambiente_fuente">
-          <?php foreach (['no'      => 'Apagada — sin música entre canciones',
-                          'youtube' => 'Lista de reproducción de YouTube',
-                          'carpeta' => 'Carpeta del ordenador (mp3, m4a…)'] as $k => $t): ?>
-            <option value="<?= $k ?>" <?= ($cfg['ambiente_fuente'] ?? 'youtube') === $k ? 'selected' : '' ?>><?= $t ?></option>
+          <?php foreach (['no'      => T('aj_fuente_no', 'Apagada — sin música entre canciones'),
+                          'dj'      => T('aj_fuente_dj', 'La cola de la Cabina DJ (recomendado)'),
+                          'carpeta' => T('aj_fuente_carpeta', 'Carpeta del ordenador (mp3, m4a…)')] as $k => $t): ?>
+            <option value="<?= $k ?>" <?= ($cfg['ambiente_fuente'] ?? 'no') === $k ? 'selected' : '' ?>><?= $t ?></option>
           <?php endforeach; ?>
         </select>
         <div class="h">
@@ -701,40 +767,25 @@ h2{scroll-margin-top:60px}
           cuando preparas una actuación y vuelve cuando termina. Y desde el operador
           hay un botón para callarla en cualquier momento sin venir aquí.
           <br><br>
-          <b>Esto no es la Cabina DJ.</b> La Cabina DJ es un espacio —otra fiesta,
-          una en la que nadie canta y la lista la hacéis entre todos desde el
-          móvil—. Lo de aquí es el hilo de fondo del karaoke: suena en los huecos,
-          se aparta cuando alguien va a cantar y vuelve al terminar. Durante un
-          tiempo las dos cosas se llamaron igual y confundía a todo el mundo,
-          empezando por mí.
-        </div>
-      </div>
-
-      <div class="f">
-        <label>Lista de YouTube</label>
-        <input type="text" name="ambiente_lista" value="<?= $v('ambiente_lista') ?>"
-               placeholder="https://www.youtube.com/playlist?list=…">
-        <div class="h">
-          Pega lo que tengas: la dirección de una lista, la de un canal, o solo el
-          identificador. Se reconoce solo.
-          <?php $idAmb = lista_ambiente((string)($cfg['ambiente_lista'] ?? '')); ?>
-          <?php if ($idAmb): ?>
-            <br><b style="color:var(--ac)">Reconocido:</b> <code><?= htmlspecialchars($idAmb, ENT_QUOTES, 'UTF-8') ?></code>
-            — <a href="https://www.youtube.com/playlist?list=<?= rawurlencode($idAmb) ?>" target="_blank" rel="noopener">abrir para comprobarla</a>
-          <?php elseif (trim((string)($cfg['ambiente_lista'] ?? '')) !== ''): ?>
-            <br><b style="color:var(--dang)">No lo reconozco.</b> Un <code>@usuario</code> no vale:
-            abre el canal en YouTube y copia la dirección que empieza por <code>/channel/UC…</code>
-          <?php endif; ?>
+          <b>Ya no hay una lista aparte que configurar (2026-08-05).</b> Antes esto
+          traía su propia lista de YouTube, separada de la Cabina DJ — dos sitios
+          distintos diciendo «qué suena cuando no canta nadie», y eso tarde o
+          temprano desincroniza. Ahora, con <b>«La cola de la Cabina DJ»</b>, el
+          hueco entre canciones de karaoke lo rellena la MISMA música que la
+          fiesta ya está pidiendo desde el móvil — sin tocarla ni consumirla: solo
+          la escucha de fondo, en un segundo reproductor silencioso. Si la Cabina
+          DJ todavía no tiene ninguna canción, sencillamente no suena nada hasta
+          que llegue la primera.
           <br><br>
-          <b>Por defecto viene la de <a href="https://www.youtube.com/channel/UCAj9nn-gOcKuD4ropg44HCw" target="_blank" rel="noopener">DJ&nbsp;Noize</a></b>,
-          que publica mezclas de trap y hip hop todas las semanas. Está puesto el
-          <b>canal</b> y no una lista concreta a propósito: así se actualiza sola.
-          Una lista fija se queda vieja y a los tres meses suena siempre lo mismo.
+          <b>Esto sigue sin ser la Cabina DJ como espacio.</b> La Cabina DJ es otra
+          fiesta —una en la que nadie canta y la lista la hacéis entre todos desde
+          el móvil—. Lo de aquí es solo el hilo de fondo del karaoke: suena en los
+          huecos, se aparta cuando alguien va a cantar y vuelve al terminar.
         </div>
       </div>
 
       <div class="f">
-        <label>Carpeta con música propia</label>
+        <label><?= T('aj_carpeta_label', 'Carpeta con música propia') ?></label>
         <input type="text" name="ambiente_carpeta" value="<?= $v('ambiente_carpeta') ?>"
                placeholder="C:\Users\tu\Music\Fiesta">
         <div class="h">
@@ -747,7 +798,7 @@ h2{scroll-margin-top:60px}
       <div class="f">
         <label class="sw">
           <input type="checkbox" name="ambiente_auto" <?= !empty($cfg['ambiente_auto']) ? 'checked' : '' ?>>
-          Que vuelva sola después de cada canción
+          <?= T('aj_ambiente_auto_label', 'Que vuelva sola después de cada canción') ?>
         </label>
         <div class="h">
           <b>Apagado</b> por defecto, y es el comportamiento que recomiendo: el silencio
@@ -759,24 +810,24 @@ h2{scroll-margin-top:60px}
       </div>
 
       <div class="f">
-        <label>Volumen del ambiente</label>
+        <label><?= T('aj_volumen_label', 'Volumen del ambiente') ?></label>
         <select name="ambiente_volumen">
-          <?php foreach ([20 => '20 % — apenas se oye, para conversar',
-                          35 => '35 % — recomendado',
-                          50 => '50 % — se nota',
-                          70 => '70 % — alto'] as $k => $t): ?>
+          <?php foreach ([20 => T('aj_vol_20', '20 % — apenas se oye, para conversar'),
+                          35 => T('aj_vol_35', '35 % — recomendado'),
+                          50 => T('aj_vol_50', '50 % — se nota'),
+                          70 => T('aj_vol_70', '70 % — alto')] as $k => $t): ?>
             <option value="<?= $k ?>" <?= (int)($cfg['ambiente_volumen'] ?? 35) === $k ? 'selected' : '' ?>><?= $t ?></option>
           <?php endforeach; ?>
         </select>
-        <div class="h">Siempre por debajo de la voz: es fondo, no es el espectáculo.</div>
+        <div class="h"><?= T('aj_volumen_h', 'Siempre por debajo de la voz: es fondo, no es el espectáculo.') ?></div>
       </div>
     </div>
 
-    <div class="seccion" id="g-video"><h3 class="gtit">Vídeo y descargas</h3></div>
-    <h2 id="video">// Descargas — cantar sin internet</h2>
+    <div class="seccion" id="g-video"><h3 class="gtit"><?= T('aj_nav_video', 'Vídeo y descargas') ?></h3></div>
+    <h2 id="video">// <?= T('aj_h2_descargas', 'Descargas — cantar sin internet') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Ruta a yt-dlp</label>
+        <label><?= T('aj_ytdlp_label', 'Ruta a yt-dlp') ?></label>
         <input type="text" name="yt_dlp" value="<?= $v('yt_dlp', 'yt-dlp') ?>" placeholder="yt-dlp">
         <div class="h">
           Permite guardar los vídeos en el disco y cantar sin internet.
@@ -787,22 +838,22 @@ h2{scroll-margin-top:60px}
         </div>
       </div>
       <div class="f">
-        <label>Calidad de descarga</label>
+        <label><?= T('aj_calidad_dl_label', 'Calidad de descarga') ?></label>
         <select name="altura">
-          <?php foreach ([240=>'240p — mínimo', 360=>'360p — ligera',
-                          480=>'480p — recomendada', 720=>'720p — pesa bastante'] as $h => $t): ?>
+          <?php foreach ([240=>T('aj_altura_240', '240p — mínimo'), 360=>T('aj_altura_360', '360p — ligera'),
+                          480=>T('aj_altura_480', '480p — recomendada'), 720=>T('aj_altura_720', '720p — pesa bastante')] as $h => $t): ?>
             <option value="<?= $h ?>" <?= (int)$cfg['altura_max'] === $h ? 'selected' : '' ?>><?= $t ?></option>
           <?php endforeach; ?>
         </select>
       </div>
     </div>
 
-    <div class="seccion" id="g-avanzado"><h3 class="gtit">Avanzado</h3></div>
-    <h2 id="avanzado">// Esta página</h2>
+    <div class="seccion" id="g-avanzado"><h3 class="gtit"><?= T('aj_nav_avanzado', 'Avanzado') ?></h3></div>
+    <h2 id="avanzado">// <?= T('aj_h2_pagina', 'Esta página') ?></h2>
     <div class="card">
       <div class="f">
-        <label>Contraseña para entrar aquí</label>
-        <input type="text" name="clave_ajustes" value="<?= $v('clave_ajustes') ?>" placeholder="Vacío = sin contraseña">
+        <label><?= T('aj_clave_ajustes_label', 'Contraseña para entrar aquí') ?></label>
+        <input type="text" name="clave_ajustes" value="<?= $v('clave_ajustes') ?>" placeholder="<?= T('aj_clave_ajustes_ph', 'Vacío = sin contraseña') ?>">
         <div class="h">
           Ponla si el PC va a estar accesible desde la wifi de la fiesta: sin
           ella, cualquiera que llegue a esta dirección puede ver tu clave.
@@ -818,24 +869,23 @@ h2{scroll-margin-top:60px}
       $hayDocs  = is_dir(__DIR__ . '/docs');
     ?>
     <?php if ($haySuite || $hayDocs): ?>
-      <h2 id="desarrollo">// Desarrollo</h2>
+      <h2 id="desarrollo">// <?= T('aj_h2_desarrollo', 'Desarrollo') ?></h2>
       <div class="card">
         <div class="f">
-          <label>Herramientas de quien toca el código</label>
+          <label><?= T('aj_desarrollo_label', 'Herramientas de quien toca el código') ?></label>
           <div class="h">
-            Esto no aparece en una copia distribuida: solo se ve si la carpeta
-            <code>pruebas/</code> está presente. La suite trabaja sobre
-            <code>data/pruebas.json</code>, así que <b>no toca tu biblioteca ni tu
-            cola</b>, y solo se abre desde este mismo ordenador.
+            <?= T('aj_desarrollo_h', 'Esto no aparece en una copia distribuida: solo se ve si la carpeta') ?>
+            <code>pruebas/</code> <?= T('aj_desarrollo_h2', 'está presente. La suite trabaja sobre') ?>
+            <code>data/pruebas.json</code>, <?= T('aj_desarrollo_h3_html', 'así que <b>no toca tu biblioteca ni tu cola</b>, y solo se abre desde este mismo ordenador.') ?>
           </div>
           <div class="btns" style="margin-top:16px">
-            <a class="b g" href="qa.php" target="_blank" rel="noopener">🩺 Comprobar esta máquina</a>
+            <a class="b g" href="qa.php" target="_blank" rel="noopener">🩺 <?= T('aj_comprobar_maquina', 'Comprobar esta máquina') ?></a>
             <?php if ($haySuite): ?>
-              <a class="b p" href="pruebas/pruebas.php" target="_blank" rel="noopener">🧪 Ejecutar las pruebas</a>
+              <a class="b p" href="pruebas/pruebas.php" target="_blank" rel="noopener">🧪 <?= T('aj_ejecutar_pruebas', 'Ejecutar las pruebas') ?></a>
             <?php endif; ?>
             <?php if ($hayDocs): ?>
-              <a class="b g" href="docs/DECISIONES.md" target="_blank" rel="noopener">📄 Decisiones tomadas</a>
-              <a class="b g" href="docs/IDEAS.md" target="_blank" rel="noopener">💡 Ideas aparcadas</a>
+              <a class="b g" href="docs/DECISIONES.md" target="_blank" rel="noopener">📄 <?= T('aj_decisiones', 'Decisiones tomadas') ?></a>
+              <a class="b g" href="docs/IDEAS.md" target="_blank" rel="noopener">💡 <?= T('aj_ideas', 'Ideas aparcadas') ?></a>
             <?php endif; ?>
           </div>
         </div>
@@ -843,9 +893,9 @@ h2{scroll-margin-top:60px}
     <?php endif; ?>
 
     <div class="btns">
-      <button class="p" name="guardar" value="1">Guardar</button>
-      <button class="g" name="probar" value="1">Probar las claves</button>
-      <a class="b g" href="index.html">← Volver al karaoke</a>
+      <button class="p" name="guardar" value="1"><?= T('guardar_texto', 'Guardar') ?></button>
+      <button class="g" name="probar" value="1"><?= T('aj_probar_claves', 'Probar las claves') ?></button>
+      <a class="b g" href="index.html">← <?= T('aj_volver_karaoke', 'Volver al karaoke') ?></a>
     </div>
   </form>
 

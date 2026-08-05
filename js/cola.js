@@ -13,6 +13,8 @@
    nadie más. */
 (function () {
 
+const T = (clave, es) => (KL.idioma && KL.idioma.t(clave)) || es;
+
 /* ---- Acciones -------------------------------------------------------- */
 
 function addQueue(v, quiet){
@@ -25,7 +27,7 @@ function addQueue(v, quiet){
                 { titulo: KL.Cancion.titulo(v) }))) return;
   }
   KL.comandos.anadirALaCola(v).then(() => {
-    if(!quiet) toast('Añadida a la cola');
+    if(!quiet) toast(T('toast_anadida_cola', 'Añadida a la cola'));
     /* Si no había nada preparado, esta pasa a serlo sola. Un clic menos
        en el momento en que más prisa hay. */
     /* Solo si es la primera de ESTE espacio: añadir la primera canción a
@@ -41,7 +43,7 @@ function toggleLib(v){
   const dentro = inLib(v.videoId);
   dentro ? KL.comandos.quitarDeLaBiblioteca(v.videoId)
          : KL.comandos.guardarEnLaBiblioteca(v);
-  toast(dentro ? 'Quitada de la biblioteca' : 'Guardada en la biblioteca');
+  toast(dentro ? T('toast_quitada_biblioteca', 'Quitada de la biblioteca') : T('toast_guardada_biblioteca', 'Guardada en la biblioteca'));
 }
 
 function libItems(){
@@ -58,15 +60,15 @@ function libItems(){
 function iconoDescarga(t){
   const enCurso = S.descargas[t.videoId];
   if(enCurso && !KL.Cancion.enDisco(t)){
-    return `<span class="ib pct" title="Descargando…">${Math.round(enCurso.pct)}%</span>`;
+    return `<span class="ib pct" title="${T('dl_descargando_title', 'Descargando…')}">${Math.round(enCurso.pct)}%</span>`;
   }
   if(KL.Cancion.enDisco(t)){
-    return `<span class="ib est-ok" data-dl-ok title="Descargada: suena sin internet. Pulsa para borrar el archivo.">${icono('descargado')}</span>`;
+    return `<span class="ib est-ok" data-dl-ok title="${T('dl_descargada_title', 'Descargada: suena sin internet. Pulsa para borrar el archivo.')}">${icono('descargado')}</span>`;
   }
   if(!S.puedeDescargar){
-    return `<span class="ib est-no" title="Descarga no disponible: falta yt-dlp. Míralo en Ajustes → Sistema.">${icono('descarga-no')}</span>`;
+    return `<span class="ib est-no" title="${T('dl_no_disponible_title', 'Descarga no disponible: falta yt-dlp. Míralo en Ajustes → Sistema.')}">${icono('descarga-no')}</span>`;
   }
-  return `<button class="ib est-si dl" title="Descargar para cantar sin internet">${icono('descargar')}</button>`;
+  return `<button class="ib est-si dl" title="${T('dl_descargar_title', 'Descargar para cantar sin internet')}">${icono('descargar')}</button>`;
 }
 
 /* Quién la pidió, y solo si la pidió alguien desde el móvil. Las que pone
@@ -85,14 +87,13 @@ function quienPide(t){
 function drawLib(){
   const all = libItems();
   $('#libCount').textContent = S.library.length;
-  $('#nLib').textContent = S.library.length + (S.filterLib ? ` · ${all.length} visibles` : '');
+  $('#nLib').textContent = S.library.length + (S.filterLib ? ` · ${all.length} ${T('lib_visibles', 'visibles')}` : '');
 
   if(!S.library.length){
     $('#lib').innerHTML = `<div class="empty"><div class="b">${icono('estrella')}</div>
-      <p><b>Tu biblioteca está vacía.</b></p>
-      <p>Busca una canción arriba y pulsa <b>Biblioteca</b> en el resultado.
-      Lo que guardes aquí queda listo para el próximo karaoke sin volver a buscarlo.</p>
-      <p style="margin-top:16px"><button class="btn g" id="bEjemplos">Montar una fiesta de ejemplo</button></p>
+      <p><b>${T('lib_vacia_titulo', 'Tu biblioteca está vacía.')}</b></p>
+      <p>${T('lib_vacia_texto', 'Busca una canción arriba y pulsa <b>Biblioteca</b> en el resultado. Lo que guardes aquí queda listo para el próximo karaoke sin volver a buscarlo.')}</p>
+      <p style="margin-top:16px"><button class="btn g" id="bEjemplos">${T('bEjemplos_texto', 'Montar una fiesta de ejemplo')}</button></p>
       <p class="h" style="max-width:440px;margin:8px auto 0">Deja una noche a medias:
       tres canciones en la cola con quién las pidió, una ya cantada, cuatro en la
       biblioteca y el calentamiento encendido. Sirve para ver cómo se usa esto y para
@@ -104,7 +105,7 @@ function drawLib(){
   }
   if(!all.length){
     $('#lib').innerHTML = `<div class="empty"><div class="b">${icono('buscar')}</div>
-      <p>Nada coincide con «${esc(S.filterLib)}».</p></div>`;
+      <p>${T('lib_nada_coincide', 'Nada coincide con')} «${esc(S.filterLib)}».</p></div>`;
     return;
   }
 
@@ -165,14 +166,14 @@ function drawLib(){
    enseña por primera vez. */
 async function montarFiestaDeEjemplo(){
   if(!S.conClave){
-    toast('Hace falta la clave de YouTube. Está en Ajustes de la fiesta.');
+    toast(T('toast_falta_clave', 'Hace falta la clave de YouTube. Está en Ajustes de la fiesta.'));
     return;
   }
   const b = $('#bEjemplos');
   let plan;
   try{
     plan = await fetch('ejemplos.json', { cache:'no-cache' }).then(r => r.json());
-  }catch(e){ toast('⚠ No encuentro ejemplos.json'); return; }
+  }catch(e){ toast('⚠ ' + T('toast_sin_ejemplos', 'No encuentro ejemplos.json')); return; }
 
   const cola   = (plan.cola || []).slice(0, 6);
   const antes  = (plan.yaCantadas || []).slice(0, 3);
@@ -181,7 +182,7 @@ async function montarFiestaDeEjemplo(){
   let hecho = 0;
 
   const buscar = async titulo => {
-    if(b) b.textContent = 'Montando la fiesta… ' + (++hecho) + ' de ' + total;
+    if(b) b.textContent = T('montando_fiesta', 'Montando la fiesta… ') + (++hecho) + ' ' + T('de_total', 'de') + ' ' + total;
     try{
       const j = await KL.api('api/buscar.php?q=' + encodeURIComponent(titulo)
                              + '&sufijo=' + encodeURIComponent('karaoke'));
@@ -217,8 +218,8 @@ async function montarFiestaDeEjemplo(){
   if(plan.calentamiento) await KL.comandos.calentamiento(true);
 
   toast(hecho
-    ? 'Fiesta de ejemplo montada. Cuando quieras, «Vaciar» y a la tuya.'
-    : '⚠ No he podido montar nada. Mira la clave de YouTube en Ajustes.');
+    ? T('toast_ejemplo_montado', 'Fiesta de ejemplo montada. Cuando quieras, «Vaciar» y a la tuya.')
+    : '⚠ ' + T('toast_ejemplo_fallo', 'No he podido montar nada. Mira la clave de YouTube en Ajustes.'));
 }
 
 /* ---- Cola ------------------------------------------------------------ */
@@ -236,9 +237,8 @@ function drawQue(){
 
   if(!pendientes.length){
     $('#que').innerHTML = `<div class="empty"><div class="b">${icono('musica')}</div>
-      <p><b>La cola está vacía.</b></p>
-      <p>Añade canciones desde el buscador o pulsando una de tu biblioteca.
-      Se encadenan solas, una detrás de otra.</p></div>`;
+      <p><b>${T('que_vacia_titulo', 'La cola está vacía.')}</b></p>
+      <p>${T('que_vacia_texto', 'Añade canciones desde el buscador o pulsando una de tu biblioteca. Se encadenan solas, una detrás de otra.')}</p></div>`;
     return;
   }
 
@@ -257,11 +257,11 @@ function drawQue(){
         <div class="c">${quienPide(t)}${esc(KL.Actuacion.canal(t))}</div></div>
       <div class="acts">
         <span class="dur">${t.duration ? fmt(t.duration) : ''}</span>
-        ${t.noEmbed ? `<span class="ib warn" title="No permite incrustarse: se abre en YouTube">${icono('aviso')}</span>` : ''}
+        ${t.noEmbed ? `<span class="ib warn" title="${T('fila_no_embed_title', 'No permite incrustarse: se abre en YouTube')}">${icono('aviso')}</span>` : ''}
         ${iconoDescarga(t)}
-        <button class="ib st ${inLib(t.videoId)?'starred':''}" title="Guardar en la biblioteca">${icono(inLib(t.videoId)?'estrella':'estrella-borde')}</button>
-        <button class="ib rm" title="Quitar de la cola">${icono('cerrar')}</button>
-        <span class="ib grip" title="Arrastra para reordenar">${icono('arrastrar')}</span>
+        <button class="ib st ${inLib(t.videoId)?'starred':''}" title="${T('fila_guardar_biblioteca_title', 'Guardar en la biblioteca')}">${icono(inLib(t.videoId)?'estrella':'estrella-borde')}</button>
+        <button class="ib rm" title="${T('fila_quitar_cola_title', 'Quitar de la cola')}">${icono('cerrar')}</button>
+        <span class="ib grip" title="${T('fila_arrastra_title', 'Arrastra para reordenar')}">${icono('arrastrar')}</span>
       </div>
     </div>`;
 
@@ -403,7 +403,7 @@ let sondeoDesc = null;
 
 async function descargar(t){
   if(!S.puedeDescargar){
-    toast('Falta yt-dlp. Míralo en Ajustes → Sistema.');
+    toast(T('toast_falta_ytdlp', 'Falta yt-dlp. Míralo en Ajustes → Sistema.'));
     return;
   }
   if(S.descargas[t.videoId]) return;          // ya está en marcha
@@ -414,10 +414,10 @@ async function descargar(t){
     if(j.estado === 'hecho'){
       delete S.descargas[t.videoId];
       await KL.comandos.actualizarPista(t.videoId, { local:j.local });
-      toast('Ya la tenías descargada');
+      toast(T('toast_ya_descargada', 'Ya la tenías descargada'));
       return;
     }
-    toast('Descargando «' + KL.Cancion.titulo(t).slice(0,26) + '». Puedes seguir usando el karaoke.');
+    toast(T('toast_descargando', 'Descargando «') + KL.Cancion.titulo(t).slice(0,26) + T('toast_descargando_fin', '». Puedes seguir usando el karaoke.'));
     vigilarDescargas();
   }catch(e){
     delete S.descargas[t.videoId];
@@ -435,12 +435,12 @@ async function descargar(t){
    existía y no se toca; esto es solo el botón que faltaba. */
 async function descargarCola(){
   if(!S.puedeDescargar){
-    toast('Falta yt-dlp. Míralo en Ajustes → Sistema.');
+    toast(T('toast_falta_ytdlp', 'Falta yt-dlp. Míralo en Ajustes → Sistema.'));
     return;
   }
   const pendientes = (S.queue || []).filter(t => !t.local && !S.descargas[t.videoId]);
-  if(!pendientes.length){ toast('No hay nada pendiente de descargar en la cola.'); return; }
-  toast('Descargando ' + pendientes.length + ' canciones de la cola. Puedes seguir usando el karaoke.');
+  if(!pendientes.length){ toast(T('toast_nada_pendiente', 'No hay nada pendiente de descargar en la cola.')); return; }
+  toast(T('toast_descargando_n', 'Descargando ') + pendientes.length + ' ' + T('toast_descargando_n_fin', 'canciones de la cola. Puedes seguir usando el karaoke.'));
   for(const t of pendientes){
     /* Un respiro entre cada arranque: el servidor de PHP atiende una
        petición cada vez, y lanzar diez descargas en el mismo instante le
@@ -465,10 +465,10 @@ function vigilarDescargas(){
         const titulo = S.descargas[vid].titulo;
         delete S.descargas[vid];
         await KL.comandos.actualizarPista(vid, { local:j.local });
-        toast('✓ «' + titulo.slice(0,26) + '» descargada. Ya suena sin internet.');
+        toast('✓ «' + titulo.slice(0,26) + T('toast_descargada_fin', '» descargada. Ya suena sin internet.'));
       } else if(j.estado === 'error' || j.estado === 'no'){
         delete S.descargas[vid];
-        toast('⚠ ' + (j.error || 'La descarga no ha llegado a arrancar.'));
+        toast('⚠ ' + (j.error || T('toast_descarga_no_arranco', 'La descarga no ha llegado a arrancar.')));
         drawLib(); drawQue();
       } else {
         S.descargas[vid].pct = j.pct || 0;
@@ -485,7 +485,7 @@ async function borrarDescarga(t){
     /* No se le dice al servidor «ya no está descargada»: se le pide que
        vuelva a mirar. El disco es quien lo sabe. */
     await KL.comandos.refrescarPista(t.videoId);
-    toast('Descarga borrada');
+    toast(T('toast_descarga_borrada', 'Descarga borrada'));
   }catch(e){ toast('⚠ ' + e.message); }
 }
 
@@ -494,7 +494,7 @@ async function borrarTodasLasDescargas(){
   try{
     const j = await KL.api('api/descargar.php?borrar_todo=1', { borrar:1 });
     await cargar();
-    toast(j.borrados + ' archivos borrados');
+    toast(j.borrados + ' ' + T('toast_archivos_borrados', 'archivos borrados'));
   }catch(e){ toast('⚠ ' + e.message); }
 }
 
