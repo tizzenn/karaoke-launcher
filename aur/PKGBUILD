@@ -42,7 +42,7 @@ package() {
   find . -mindepth 1 \
     \( -path './.git*' -o -path './e2e' -o -path './pruebas/e2e*' \
        -o -path './php' -o -path './instalador*' -o -path './dist*' \
-       -o -name 'data' -o -name '*.zip' -o -name 'yt-dlp.exe' \
+       -o -path './aur' -o -name 'data' -o -name '*.zip' -o -name 'yt-dlp.exe' \
        -o -name 'ffmpeg.exe' -o -name 'ffprobe.exe' -o -name '*.bat' \) -prune \
     -o -type f -print0 | \
     xargs -0 cp --parents -t "$pkgdir/usr/share/karaoke-launcher/"
